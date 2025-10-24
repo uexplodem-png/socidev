@@ -1,0 +1,42 @@
+export const homeTranslations = {
+  en: {
+    welcome: "Welcome",
+    heroTitle: "Grow Your Social Media Presence",
+    heroDescription: "Boost your social media engagement with our professional services",
+    startEarningNow: "Start Earning Now",
+    learnMore: "Learn More",
+    activeUsers: "Active Users",
+    paidToUsers: "Paid to Users",
+    tasksCompleted: "Tasks Completed",
+    howItWorks: "How It Works",
+    step1Title: "Connect Your Account",
+    step1Description: "Link your social media accounts securely",
+    step2Title: "Choose Services",
+    step2Description: "Select from our range of engagement services",
+    step3Title: "Start Earning",
+    step3Description: "Complete tasks and earn rewards",
+    readyToStart: "Ready to Start?",
+    joinUsDescription: "Join thousands of users already growing their social presence",
+    createFreeAccount: "Create Free Account"
+  },
+  tr: {
+    welcome: "Hoş Geldiniz",
+    heroTitle: "Sosyal Medya Varlığınızı Büyütün",
+    heroDescription: "Profesyonel hizmetlerimizle sosyal medya etkileşiminizi artırın",
+    startEarningNow: "Hemen Kazanmaya Başlayın",
+    learnMore: "Daha Fazla Bilgi",
+    activeUsers: "Aktif Kullanıcılar",
+    paidToUsers: "Kullanıcılara Ödenen",
+    tasksCompleted: "Tamamlanan Görevler",
+    howItWorks: "Nasıl Çalışır",
+    step1Title: "Hesabınızı Bağlayın",
+    step1Description: "Sosyal medya hesaplarınızı güvenle bağlayın",
+    step2Title: "Hizmetleri Seçin",
+    step2Description: "Etkileşim hizmetlerimizden seçim yapın",
+    step3Title: "Kazanmaya Başlayın",
+    step3Description: "Görevleri tamamlayın ve ödüller kazanın",
+    readyToStart: "Başlamaya Hazır mısınız?",
+    joinUsDescription: "Sosyal varlıklarını büyüten binlerce kullanıcıya katılın",
+    createFreeAccount: "Ücretsiz Hesap Oluştur"
+  }
+};

@@ -1,0 +1,24 @@
+# Copilot Instructions for this Project
+
+## Important Guidelines
+- **DO NOT create summary files** (no SUMMARY.md, COMPLETION_SUMMARY.md, etc.)
+- **DO NOT create documentation files** for tracking progress
+- Focus only on actual code changes and fixes
+- Keep all explanations in the chat, not in files
+- Work directly with the existing codebase without adding new meta-files
+
+## Project Context
+- This is a full-stack social media management platform
+- Stack: React (frontend/admin-panel), Node.js/Express (backend), MySQL (database)
+- Three running apps: Backend (3000), Admin Panel (5173), Frontend (5174)
+
+## When working on tasks:
+1. Make direct code changes only
+2. Test changes and verify they work
+3. Report results in chat (not in files)
+4. Suggest next steps conversationally
+
+## Commands to Remember
+- Backend: `/Users/velatertach/Downloads/projects/project\ 5/backend_combined`
+- Admin Panel: `/Users/velatertach/Downloads/projects/project\ 5/admin-panel`
+- Frontend: `/Users/velatertach/Downloads/projects/project\ 5/frontend`
