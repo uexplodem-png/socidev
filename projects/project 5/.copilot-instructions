@@ -18,6 +18,18 @@
 3. Report results in chat (not in files)
 4. Suggest next steps conversationally
 
+## GitHub Backup Protocol
+**IMPORTANT: Back up every action to GitHub!**
+After every significant change or task completion:
+1. Stage changes: `git add .`
+2. Commit with clear message: `git commit -m "Description of changes"`
+3. Push to GitHub: `git push`
+
+GitHub Repository: https://github.com/uexplodem-png/socidev
+- Keep commits small and meaningful
+- Use present tense in commit messages (e.g., "Add user validation" not "Added")
+- Push frequently to maintain backup
+
 ## Commands to Remember
 - Backend: `/Users/velatertach/Downloads/projects/project\ 5/backend_combined`
 - Admin Panel: `/Users/velatertach/Downloads/projects/project\ 5/admin-panel`
