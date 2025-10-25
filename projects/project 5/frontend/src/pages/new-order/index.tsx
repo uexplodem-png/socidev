@@ -31,7 +31,7 @@ export const NewOrderPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getPlatforms({ isActive: true });
+        const response = await getPlatforms();
 
         // Sort platforms by displayOrder
         const sortedPlatforms = (response.platforms || []).sort(
@@ -40,9 +40,10 @@ export const NewOrderPage = () => {
 
         setPlatforms(sortedPlatforms);
 
-        // Set the first platform as default if available
-        if (sortedPlatforms.length > 0) {
-          setSelectedPlatform(sortedPlatforms[0].name.toLowerCase());
+        // Set the first active platform as default if available
+        const activePlatform = sortedPlatforms.find(p => p.isActive !== false);
+        if (activePlatform) {
+          setSelectedPlatform(activePlatform.name.toLowerCase());
         }
       } catch (err) {
         setError(
@@ -140,25 +141,36 @@ export const NewOrderPage = () => {
                 onClick={() => !isInactive && setSelectedPlatform(platformId)}
                 disabled={isInactive}
                 className={`p-6 rounded-xl border-2 transition-all ${isInactive
-                  ? "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                  ? "border-gray-300 bg-gray-50 opacity-60 cursor-not-allowed"
                   : isSelected
                     ? `border-${accentColor.border} bg-${accentColor.bg}`
                     : "border-gray-200 hover:border-gray-300 cursor-pointer"
                   }`}>
                 {Icon && (
                   <Icon
-                    className={`w-8 h-8 mx-auto mb-3 ${isSelected
-                      ? `text-${accentColor.text}`
-                      : "text-gray-400"
+                    className={`w-8 h-8 mx-auto mb-3 ${isInactive
+                      ? "text-gray-300"
+                      : isSelected
+                        ? `text-${accentColor.text}`
+                        : "text-gray-400"
                       }`}
                   />
                 )}
                 <span
-                  className={`block text-lg font-medium ${isSelected ? `text-${accentColor.text}` : "text-gray-500"
+                  className={`block text-lg font-medium ${isInactive
+                    ? "text-gray-400"
+                    : isSelected
+                      ? `text-${accentColor.text}`
+                      : "text-gray-500"
                     }`}>
                   {platform.nameEn || platform.name}
+                  {isInactive && (
+                    <span className="ml-2 text-xs font-normal text-gray-400">
+                      ({t("inactive") || "Inactive"})
+                    </span>
+                  )}
                 </span>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className={`text-sm mt-2 ${isInactive ? "text-gray-300" : "text-gray-500"}`}>
                   {platform.descriptionEn || platform.description || ""}
                 </p>
               </button>
