@@ -1,4 +1,3 @@
-import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import HomePage from "./pages/home/index";
@@ -23,18 +22,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { TasksPage } from "./pages/tasks";
 import TestPage from "./pages/test";
 
-// Create a component to handle authentication-based routing
-const AuthenticatedRouteHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-    </div>;
-  }
-
-  return <>{children}</>;
-};
 
 function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuth();

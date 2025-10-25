@@ -50,7 +50,7 @@ export const InstagramOrderForm = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedServices1, setSelectedServices] = useState<Set<string>>(
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(
     new Set()
   );
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -195,7 +195,7 @@ export const InstagramOrderForm = () => {
   ] as const;
 
   const handleServiceToggle = (serviceId: string) => {
-    const newSelected = new Set(selectedServices1);
+    const newSelected = new Set(selectedServices);
     if (newSelected.has(serviceId)) {
       newSelected.delete(serviceId);
       const newQuantities = { ...quantities };
@@ -228,7 +228,7 @@ export const InstagramOrderForm = () => {
 
   const calculatePrice = (): number => {
     let total = 0;
-    selectedServices1.forEach((serviceId) => {
+    selectedServices.forEach((serviceId) => {
       const service = services.find((s) => s.id === serviceId);
       if (service) {
         const quantity = quantities[serviceId] || service.minQuantity;
@@ -285,7 +285,7 @@ export const InstagramOrderForm = () => {
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           {services.map((service) => {
             const Icon = service.icon;
-            const isSelected = selectedServices1.has(service.id);
+            const isSelected = selectedServices.has(service.id);
             const quantity = quantities[service.id] || service.minQuantity;
             const discount = calculateDiscount(quantity);
             const price = service.basePrice * quantity * (1 - discount);
@@ -400,7 +400,7 @@ export const InstagramOrderForm = () => {
       </Card>
 
       {/* Delivery Speed */}
-      {selectedServices1.size > 0 && (
+      {selectedServices.size > 0 && (
         <Card className='p-6'>
           <h2 className='text-lg font-semibold text-gray-900 mb-4'>
             {t("deliverySpeed")}
@@ -451,7 +451,7 @@ export const InstagramOrderForm = () => {
       )}
 
       {/* Order Summary */}
-      {selectedServices1.size > 0 && (
+      {selectedServices.size > 0 && (
         <Card className='p-6'>
           <div className='flex items-center gap-3 mb-6'>
             <div className='w-10 h-10 bg-pink-50 rounded-lg flex items-center justify-center'>
@@ -464,7 +464,7 @@ export const InstagramOrderForm = () => {
           </div>
 
           <div className='space-y-4'>
-            {Array.from(selectedServices1).map((serviceId) => {
+            {Array.from(selectedServices).map((serviceId) => {
               const service = services.find((s) => s.id === serviceId);
               if (!service) return null;
 

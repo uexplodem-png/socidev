@@ -1,6 +1,5 @@
 import React from "react";
 import { Card } from "../../ui/Card";
-import { Button } from "../../ui/Button";
 import { useLanguage } from "../../../context/LanguageContext";
 import { CreditCard, Wallet, Bitcoin, Receipt, Shield } from "lucide-react";
 import { CreditCardForm } from "./forms/CreditCardForm";
@@ -13,7 +12,6 @@ export const PaymentSelector: React.FC<PaymentSelectorProps> = ({
   onMethodChange,
   amount,
   onPaymentComplete,
-  isSubmitting = false,
   selectedServices = [],
   balance,
 }) => {
