@@ -11,6 +11,7 @@ export interface Service {
   features: string[];
   urlExample?: string;
   urlPattern?: string;
+  urlLabel?: string;
 }
 
 export type Platform = "instagram" | "youtube";

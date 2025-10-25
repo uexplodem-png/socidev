@@ -34,6 +34,7 @@ interface ServiceFormData {
     inputFieldName: string;
     sampleUrl?: string;
     urlPattern?: string;
+    urlLabel?: string;
     features: string[];
     featuresEn?: string[];
     featuresTr?: string[];
@@ -82,6 +83,7 @@ const PlatformsServices: React.FC = () => {
         inputFieldName: '',
         sampleUrl: '',
         urlPattern: '',
+        urlLabel: '',
         features: [],
         featuresEn: [],
         featuresTr: [],
@@ -211,6 +213,7 @@ const PlatformsServices: React.FC = () => {
             inputFieldName: '',
             sampleUrl: '',
             urlPattern: '',
+            urlLabel: '',
             features: [],
             featuresEn: [],
             featuresTr: [],
@@ -238,6 +241,7 @@ const PlatformsServices: React.FC = () => {
             inputFieldName: service.inputFieldName,
             sampleUrl: service.sampleUrl || '',
             urlPattern: service.urlPattern || '',
+            urlLabel: service.urlLabel || '',
             features: service.features || [],
             featuresEn: service.featuresEn || [],
             featuresTr: service.featuresTr || [],
@@ -776,6 +780,20 @@ const PlatformsServices: React.FC = () => {
                                                     setServiceForm((prev) => ({ ...prev, urlPattern: e.target.value }))
                                                 }
                                                 placeholder="e.g., https://instagram.com/p"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                Target URL Label
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={serviceForm.urlLabel}
+                                                onChange={(e) =>
+                                                    setServiceForm((prev) => ({ ...prev, urlLabel: e.target.value }))
+                                                }
+                                                placeholder="e.g., Instagram Profile URL"
                                                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                                             />
                                         </div>

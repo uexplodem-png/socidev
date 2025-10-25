@@ -18,6 +18,7 @@ export interface Service {
   featuresEn?: string[];
   featuresTr?: string[];
   urlPattern?: string;
+  urlLabel?: string;
   commissionRate: number;
   isActive: boolean;
   displayOrder?: number;

@@ -93,6 +93,11 @@ const Service = sequelize.define(
       allowNull: true,
       field: "url_pattern",
     },
+    urlLabel: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "url_label",
+    },
     commissionRate: {
       type: DataTypes.DECIMAL(5, 2),
       defaultValue: 0,

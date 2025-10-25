@@ -87,6 +87,7 @@ export const InstagramOrderForm = () => {
       features: getServiceFeatures(service),
       urlExample: service.sampleUrl,
       urlPattern: service.urlPattern,
+      urlLabel: service.urlLabel,
     })),
     [apiServices, language]
   );

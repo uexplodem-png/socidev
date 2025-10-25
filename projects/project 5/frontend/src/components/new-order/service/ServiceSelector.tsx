@@ -95,6 +95,15 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   };
 
   const getUrlLabel = (service: Service): string => {
+    // If custom label is provided, use it with pattern in parentheses
+    if (service.urlLabel && service.urlPattern) {
+      return `${service.urlLabel} (Pattern: ${service.urlPattern})`;
+    }
+    // If only custom label provided
+    if (service.urlLabel) {
+      return service.urlLabel;
+    }
+    // If only pattern provided
     if (service.urlPattern) {
       return `Target URL (Pattern: ${service.urlPattern})`;
     }

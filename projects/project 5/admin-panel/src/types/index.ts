@@ -302,6 +302,7 @@ export interface ServiceConfig {
   inputFieldName: string;
   sampleUrl?: string;
   urlPattern?: string;
+  urlLabel?: string;
   features: string[];
   featuresEn?: string[];
   featuresTr?: string[];
