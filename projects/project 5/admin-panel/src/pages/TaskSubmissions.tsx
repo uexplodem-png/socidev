@@ -418,12 +418,15 @@ export const TaskSubmissions: React.FC = () => {
                     status: statusFilter,
                 });
                 
+                // Backend returns array directly, not wrapped in object
+                const tasksArray = Array.isArray(response) ? response : [];
+                
                 // Transform backend response to match frontend interface
-                const transformedTasks = response.tasks.map((task: any) => ({
+                const transformedTasks = tasksArray.map((task: any) => ({
                     id: task.id,
                     userId: task.userId,
-                    userName: task.User?.username || 'Unknown',
-                    userEmail: task.User?.email || '',
+                    userName: task.user?.username || 'Unknown',
+                    userEmail: task.user?.email || '',
                     taskId: task.id,
                     taskName: `${task.platform} ${task.type}`,
                     orderId: task.orderId || 'N/A',
@@ -442,7 +445,8 @@ export const TaskSubmissions: React.FC = () => {
                 }));
                 
                 setSubmissions(transformedTasks);
-                setTotalPages(Math.ceil((response.pagination?.total || 0) / pagination.pageSize));
+                // Backend returns array without pagination, so calculate total from array length
+                setTotalPages(Math.ceil(transformedTasks.length / pagination.pageSize));
             } catch (error: any) {
                 console.error('Failed to fetch task submissions:', error);
                 toast.error(error.message || 'Failed to load task submissions');
