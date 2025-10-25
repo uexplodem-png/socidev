@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { InstagramOrderForm } from "./forms/InstagramOrderForm";
-import { YoutubeOrderForm } from "./forms/YoutubeOrderForm";
-import { TiktokOrderForm } from "./forms/TiktokOrderForm";
-import { FacebookOrderForm } from "./forms/FacebookOrderForm";
-import { XOrderForm } from "./forms/XOrderForm";
+import { InstagramOrderForm } from "../../components/new-order/forms/InstagramOrderForm";
+import { YoutubeOrderForm } from "../../components/new-order/forms/YoutubeOrderForm";
+import { TiktokOrderForm } from "../../components/new-order/forms/TiktokOrderForm";
+import { FacebookOrderForm } from "../../components/new-order/forms/FacebookOrderForm";
+import { XOrderForm } from "../../components/new-order/forms/XOrderForm";
 import { Instagram, Youtube, AlertCircle } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { useLanguage } from "../../context/LanguageContext";
@@ -155,7 +155,13 @@ export const NewOrderPage = () => {
                 ? { border: "pink-500", bg: "pink-50", text: "pink-500" }
                 : platformId === "youtube"
                   ? { border: "red-500", bg: "red-50", text: "red-500" }
-                  : { border: "blue-500", bg: "blue-50", text: "blue-500" };
+                  : platformId === "tiktok"
+                    ? { border: "black", bg: "gray-50", text: "black" }
+                    : platformId === "facebook"
+                      ? { border: "blue-500", bg: "blue-50", text: "blue-500" }
+                      : platformId === "x"
+                        ? { border: "gray-900", bg: "gray-50", text: "gray-900" }
+                        : { border: "blue-500", bg: "blue-50", text: "blue-500" };
 
             return (
               <button
