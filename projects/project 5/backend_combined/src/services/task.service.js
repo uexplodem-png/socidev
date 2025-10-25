@@ -3,7 +3,7 @@ import Task from "../models/Task.js";
 import TaskExecution from "../models/TaskExecution.js";
 import User from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
-import sequelize from "../config/database.js";
+import { sequelize } from "../config/database.js";
 import { addHours } from "date-fns";
 
 export class TaskService {
