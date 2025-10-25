@@ -4,7 +4,7 @@ import { YoutubeOrderForm } from "../../components/new-order/forms/YoutubeOrderF
 import { TiktokOrderForm } from "../../components/new-order/forms/TiktokOrderForm";
 import { FacebookOrderForm } from "../../components/new-order/forms/FacebookOrderForm";
 import { XOrderForm } from "../../components/new-order/forms/XOrderForm";
-import { Instagram, Youtube, AlertCircle } from "lucide-react";
+import { Instagram, Youtube, AlertCircle, Music, Facebook, X } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { useLanguage } from "../../context/LanguageContext";
 import { getPlatforms, Platform } from "../../lib/api/platforms";
@@ -13,6 +13,9 @@ const getPlatformIcon = (name: string) => {
   const lowerName = name.toLowerCase();
   if (lowerName === "instagram") return Instagram;
   if (lowerName === "youtube") return Youtube;
+  if (lowerName === "tiktok") return Music;
+  if (lowerName === "facebook") return Facebook;
+  if (lowerName === "x") return X;
   return null;
 };
 
