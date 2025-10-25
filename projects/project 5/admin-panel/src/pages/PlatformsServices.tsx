@@ -50,6 +50,8 @@ const PlatformsServices: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [serviceError, setServiceError] = useState<string | null>(null);
     const [activeServiceTab, setActiveServiceTab] = useState<string>('basic');
+    const [draggedPlatformId, setDraggedPlatformId] = useState<string | null>(null);
+    const [draggedServiceId, setDraggedServiceId] = useState<string | null>(null);
 
     // Modal states
     const [showPlatformModal, setShowPlatformModal] = useState(false);
@@ -123,6 +125,125 @@ const PlatformsServices: React.FC = () => {
             ...prev,
             [platformId]: !prev[platformId],
         }));
+    };
+
+    // Drag and drop handlers for platforms
+    const handlePlatformDragStart = (e: React.DragEvent, platformId: string) => {
+        setDraggedPlatformId(platformId);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handlePlatformDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handlePlatformDrop = async (e: React.DragEvent, targetPlatformId: string) => {
+        e.preventDefault();
+        if (!draggedPlatformId || draggedPlatformId === targetPlatformId) {
+            setDraggedPlatformId(null);
+            return;
+        }
+
+        try {
+            const draggedPlatform = platforms.find(p => p.id === draggedPlatformId);
+            const targetPlatform = platforms.find(p => p.id === targetPlatformId);
+
+            if (!draggedPlatform || !targetPlatform) return;
+
+            // Swap displayOrder
+            const draggedIndex = platforms.findIndex(p => p.id === draggedPlatformId);
+            const targetIndex = platforms.findIndex(p => p.id === targetPlatformId);
+
+            const newPlatforms = [...platforms];
+            [newPlatforms[draggedIndex].displayOrder, newPlatforms[targetIndex].displayOrder] = 
+            [newPlatforms[targetIndex].displayOrder, newPlatforms[draggedIndex].displayOrder];
+
+            // Reorder array
+            if (draggedIndex < targetIndex) {
+                newPlatforms.splice(draggedIndex, 1);
+                newPlatforms.splice(targetIndex - 1, 0, draggedPlatform);
+            } else {
+                newPlatforms.splice(draggedIndex, 1);
+                newPlatforms.splice(targetIndex, 0, draggedPlatform);
+            }
+
+            setPlatforms(newPlatforms);
+
+            // Update display order on server
+            await Promise.all(
+                newPlatforms.map((p, idx) =>
+                    realApiService.updatePlatform(p.id, { ...p, displayOrder: idx })
+                )
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to reorder platforms');
+        } finally {
+            setDraggedPlatformId(null);
+        }
+    };
+
+    // Drag and drop handlers for services
+    const handleServiceDragStart = (e: React.DragEvent, serviceId: string) => {
+        setDraggedServiceId(serviceId);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleServiceDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleServiceDrop = async (e: React.DragEvent, targetServiceId: string) => {
+        e.preventDefault();
+        if (!draggedServiceId || draggedServiceId === targetServiceId) {
+            setDraggedServiceId(null);
+            return;
+        }
+
+        try {
+            const draggedService = services.find(s => s.id === draggedServiceId);
+            const targetService = services.find(s => s.id === targetServiceId);
+
+            if (!draggedService || !targetService) return;
+
+            // Only allow reordering within same platform
+            if (draggedService.platformId !== targetService.platformId) {
+                setDraggedServiceId(null);
+                return;
+            }
+
+            const draggedIndex = services.findIndex(s => s.id === draggedServiceId);
+            const targetIndex = services.findIndex(s => s.id === targetServiceId);
+
+            const newServices = [...services];
+            [newServices[draggedIndex].displayOrder, newServices[targetIndex].displayOrder] = 
+            [newServices[targetIndex].displayOrder, newServices[draggedIndex].displayOrder];
+
+            // Reorder array
+            if (draggedIndex < targetIndex) {
+                newServices.splice(draggedIndex, 1);
+                newServices.splice(targetIndex - 1, 0, draggedService);
+            } else {
+                newServices.splice(draggedIndex, 1);
+                newServices.splice(targetIndex, 0, draggedService);
+            }
+
+            setServices(newServices);
+
+            // Update display order on server
+            await Promise.all(
+                newServices
+                    .filter(s => s.platformId === draggedService.platformId)
+                    .map((s, idx) =>
+                        realApiService.updateService(s.id, { ...s, displayOrder: idx })
+                    )
+            );
+        } catch (err) {
+            setServiceError(err instanceof Error ? err.message : 'Failed to reorder services');
+        } finally {
+            setDraggedServiceId(null);
+        }
     };
 
     // Platform handlers
@@ -400,13 +521,21 @@ const PlatformsServices: React.FC = () => {
                         platforms.map((platform) => (
                             <div
                                 key={platform.id}
-                                className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden"
+                                draggable
+                                onDragStart={(e) => handlePlatformDragStart(e, platform.id)}
+                                onDragOver={handlePlatformDragOver}
+                                onDrop={(e) => handlePlatformDrop(e, platform.id)}
+                                className={`bg-white dark:bg-slate-800 rounded-lg border-2 overflow-hidden transition-all ${
+                                    draggedPlatformId === platform.id
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 opacity-50'
+                                        : 'border-gray-200 dark:border-slate-700'
+                                }`}
                             >
                                 {/* Platform header */}
                                 <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer"
                                     onClick={() => togglePlatform(platform.id)}>
                                     <div className="flex items-center gap-4 flex-1">
-                                        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                                        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-grab active:cursor-grabbing">
                                             {expandedPlatforms[platform.id] ? (
                                                 <ChevronDown className="w-5 h-5" />
                                             ) : (
@@ -480,9 +609,17 @@ const PlatformsServices: React.FC = () => {
                                                         {getPlatformServices(platform.id).map((service) => (
                                                             <div
                                                                 key={service.id}
-                                                                className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700"
+                                                                draggable
+                                                                onDragStart={(e) => handleServiceDragStart(e, service.id)}
+                                                                onDragOver={handleServiceDragOver}
+                                                                onDrop={(e) => handleServiceDrop(e, service.id)}
+                                                                className={`flex items-center justify-between p-3 rounded border-2 transition-all ${
+                                                                    draggedServiceId === service.id
+                                                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 opacity-50'
+                                                                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
+                                                                }`}
                                                             >
-                                                                <div className="flex-1">
+                                                                <div className="flex-1 cursor-grab active:cursor-grabbing">
                                                                     <p className="font-medium text-gray-900 dark:text-white">
                                                                         {service.name}
                                                                     </p>
