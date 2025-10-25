@@ -109,8 +109,11 @@ const PlatformsServices: React.FC = () => {
             const platformsResponse = await realApiService.getPlatforms({ limit: 100 });
             const servicesResponse = await realApiService.getServices({ limit: 100 });
 
-            setPlatforms(platformsResponse.data || []);
-            setServices(servicesResponse.data || []);
+            const sortedPlatforms = (platformsResponse.data || []).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+            const sortedServices = (servicesResponse.data || []).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+            setPlatforms(sortedPlatforms);
+            setServices(sortedServices);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to fetch data';
             setError(message);
