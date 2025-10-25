@@ -35,7 +35,7 @@ const getServiceIcon = (serviceName: string): React.ElementType => {
   if (lower.includes('like')) return ThumbsUp;
   if (lower.includes('follow')) return Users;
   if (lower.includes('view')) return Eye;
-  if (lower.includes('comment')) return MessageCircle;
+  if (lower.includes('comment') || lower.includes('share')) return MessageCircle;
   return Shield;
 };
 
@@ -180,15 +180,15 @@ export const TiktokOrderForm = () => {
                 key={service.id}
                 onClick={() => handleServiceToggle(service.id)}
                 className={`relative p-6 rounded-xl border-2 transition-all cursor-pointer ${isSelected
-                  ? "border-gray-500 bg-gray-50"
-                  : "border-gray-200 hover:border-gray-200"
+                  ? "border-black bg-gray-50"
+                  : "border-gray-200 hover:border-gray-300"
                 }`}>
                 <div className='flex items-start gap-4'>
                   <div
-                    className={`p-3 rounded-lg ${isSelected ? "bg-gray-100" : "bg-gray-100"
+                    className={`p-3 rounded-lg ${isSelected ? "bg-black" : "bg-gray-100"
                     }`}>
                     <Icon
-                      className={`w-6 h-6 ${isSelected ? "text-gray-600" : "text-gray-600"
+                      className={`w-6 h-6 ${isSelected ? "text-white" : "text-gray-600"
                       }`}
                     />
                   </div>
@@ -205,7 +205,7 @@ export const TiktokOrderForm = () => {
                     </p>
                   </div>
                   {isSelected && (
-                    <CheckCircle className='w-5 h-5 text-gray-500' />
+                    <CheckCircle className='w-5 h-5 text-black' />
                   )}
                 </div>
 
@@ -269,10 +269,10 @@ export const TiktokOrderForm = () => {
                 key={speed.id}
                 onClick={() => setSelectedSpeed(speed.id as any)}
                 className={`p-4 rounded-lg border-2 transition-all ${isSelected
-                  ? 'border-gray-500 bg-gray-50'
+                  ? 'border-black bg-gray-100'
                   : 'border-gray-200 hover:border-gray-300'
                 }`}>
-                <SpeedIcon className='w-6 h-6 mx-auto mb-2 text-gray-600' />
+                <SpeedIcon className='w-6 h-6 mx-auto mb-2 text-black' />
                 <p className='font-medium text-gray-900'>{speed.name}</p>
                 <p className='text-sm text-gray-500'>+₺{speed.price}</p>
               </button>
@@ -282,26 +282,26 @@ export const TiktokOrderForm = () => {
       </Card>
 
       {/* Order Summary */}
-      <Card className='p-6 bg-gradient-to-r from-gray-50 to-gray-100'>
-        <h2 className='text-lg font-semibold text-gray-900 mb-4'>{t("orderSummary")}</h2>
+      <Card className='p-6 bg-gradient-to-r from-gray-900 to-black'>
+        <h2 className='text-lg font-semibold text-white mb-4'>{t("orderSummary")}</h2>
         <div className='space-y-3'>
           <div className='flex justify-between'>
-            <span className='text-gray-700'>{t("selectedServices")}:</span>
-            <span className='font-medium text-gray-900'>{selectedServices.size}</span>
+            <span className='text-gray-300'>{t("selectedServices")}:</span>
+            <span className='font-medium text-white'>{selectedServices.size}</span>
           </div>
           <div className='flex justify-between'>
-            <span className='text-gray-700'>{t("deliverySpeed")}:</span>
-            <span className='font-medium text-gray-900 capitalize'>{selectedSpeed}</span>
+            <span className='text-gray-300'>{t("deliverySpeed")}:</span>
+            <span className='font-medium text-white capitalize'>{selectedSpeed}</span>
           </div>
-          <div className='border-t pt-3 flex justify-between'>
-            <span className='text-lg font-semibold text-gray-900'>{t("totalPrice")}:</span>
-            <span className='text-2xl font-bold text-gray-900'>₺{calculatePrice().toFixed(2)}</span>
+          <div className='border-t border-gray-700 pt-3 flex justify-between'>
+            <span className='text-lg font-semibold text-white'>{t("totalPrice")}:</span>
+            <span className='text-2xl font-bold text-white'>₺{calculatePrice().toFixed(2)}</span>
           </div>
         </div>
         <Button
           onClick={handleSubmit}
           disabled={selectedServices.size === 0}
-          className='w-full mt-6 bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-lg font-semibold transition-colors'>
+          className='w-full mt-6 bg-white hover:bg-gray-100 text-black py-3 rounded-lg font-semibold transition-colors'>
           {t("placeOrder")}
         </Button>
       </Card>
