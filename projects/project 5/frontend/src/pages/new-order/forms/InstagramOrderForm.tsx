@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { useLanguage } from "../../../context/LanguageContext";
+import { getServicesByPlatform } from "../../../lib/api/platforms";
 import {
   ThumbsUp,
   Eye,
@@ -15,20 +16,40 @@ import {
   DollarSign,
 } from "lucide-react";
 
-interface Service {
+interface DBService {
   id: string;
   name: string;
-  icon: React.ElementType;
   description: string;
+  pricePerUnit: number;
+  minOrder: number;
+  maxOrder: number;
+  features: string[];
+  urlLabel?: string;
+  displayOrder?: number;
+}
+
+interface Service extends DBService {
+  icon: React.ElementType;
   basePrice: number;
   minQuantity: number;
   maxQuantity: number;
-  features: string[];
   urlExample?: string;
 }
 
+const getServiceIcon = (serviceName: string): React.ElementType => {
+  const lower = serviceName.toLowerCase();
+  if (lower.includes("like")) return ThumbsUp;
+  if (lower.includes("follow")) return Users;
+  if (lower.includes("view")) return Eye;
+  if (lower.includes("comment")) return MessageCircle;
+  return Shield;
+};
+
 export const InstagramOrderForm = () => {
   const { t } = useLanguage();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<Set<string>>(
     new Set()
   );
@@ -38,72 +59,116 @@ export const InstagramOrderForm = () => {
     "normal" | "fast" | "express"
   >("normal");
 
-  const services: Service[] = [
-    {
-      id: "likes",
-      name: t("instagramLikes"),
-      icon: ThumbsUp,
-      description: t("instagramLikesDescription"),
-      basePrice: 0.5,
-      minQuantity: 100,
-      maxQuantity: 50000,
-      features: [
-        t("realLikes"),
-        t("instantStart"),
-        t("noPassword"),
-        t("safeAndSecure"),
-      ],
-      urlExample: "https://instagram.com/p/example",
-    },
-    {
-      id: "followers",
-      name: t("instagramFollowers"),
-      icon: Users,
-      description: t("instagramFollowersDescription"),
-      basePrice: 1.0,
-      minQuantity: 100,
-      maxQuantity: 25000,
-      features: [
-        t("activeFollowers"),
-        t("profilePicture"),
-        t("gradualDelivery"),
-        t("noDrop"),
-      ],
-      urlExample: "https://instagram.com/username",
-    },
-    {
-      id: "views",
-      name: t("instagramViews"),
-      icon: Eye,
-      description: t("instagramViewsDescription"),
-      basePrice: 0.2,
-      minQuantity: 500,
-      maxQuantity: 100000,
-      features: [
-        t("highRetention"),
-        t("fastDelivery"),
-        t("organicViews"),
-        t("support"),
-      ],
-      urlExample: "https://instagram.com/reel/example",
-    },
-    {
-      id: "comments",
-      name: t("instagramComments"),
-      icon: MessageCircle,
-      description: t("instagramCommentsDescription"),
-      basePrice: 2.0,
-      minQuantity: 10,
-      maxQuantity: 1000,
-      features: [
-        t("customComments"),
-        t("relevantContent"),
-        t("realAccounts"),
-        t("support"),
-      ],
-      urlExample: "https://instagram.com/p/example",
-    },
-  ];
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const response = await getServicesByPlatform("instagram");
+        
+        // Transform database services to include UI data
+        const transformedServices: Service[] = (response.services || []).map((dbService: any) => ({
+          ...dbService,
+          icon: getServiceIcon(dbService.name),
+          basePrice: dbService.pricePerUnit,
+          minQuantity: dbService.minOrder,
+          maxQuantity: dbService.maxOrder,
+        }));
+
+        // Sort by displayOrder
+        const sortedServices = transformedServices.sort(
+          (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+        );
+
+        setServices(sortedServices);
+      } catch (err) {
+        console.error("Error fetching services:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch services");
+        // Fallback to mock data
+        setServices([
+          {
+            id: "likes",
+            name: t("instagramLikes"),
+            icon: ThumbsUp,
+            description: t("instagramLikesDescription"),
+            basePrice: 0.5,
+            minQuantity: 100,
+            maxQuantity: 50000,
+            pricePerUnit: 0.5,
+            minOrder: 100,
+            maxOrder: 50000,
+            features: [
+              t("realLikes"),
+              t("instantStart"),
+              t("noPassword"),
+              t("safeAndSecure"),
+            ],
+            urlExample: "https://instagram.com/p/example",
+          },
+          {
+            id: "followers",
+            name: t("instagramFollowers"),
+            icon: Users,
+            description: t("instagramFollowersDescription"),
+            basePrice: 1.0,
+            minQuantity: 100,
+            maxQuantity: 25000,
+            pricePerUnit: 1.0,
+            minOrder: 100,
+            maxOrder: 25000,
+            features: [
+              t("activeFollowers"),
+              t("profilePicture"),
+              t("gradualDelivery"),
+              t("noDrop"),
+            ],
+            urlExample: "https://instagram.com/username",
+          },
+          {
+            id: "views",
+            name: t("instagramViews"),
+            icon: Eye,
+            description: t("instagramViewsDescription"),
+            basePrice: 0.2,
+            minQuantity: 500,
+            maxQuantity: 100000,
+            pricePerUnit: 0.2,
+            minOrder: 500,
+            maxOrder: 100000,
+            features: [
+              t("highRetention"),
+              t("fastDelivery"),
+              t("organicViews"),
+              t("support"),
+            ],
+            urlExample: "https://instagram.com/reel/example",
+          },
+          {
+            id: "comments",
+            name: t("instagramComments"),
+            icon: MessageCircle,
+            description: t("instagramCommentsDescription"),
+            basePrice: 2.0,
+            minQuantity: 10,
+            maxQuantity: 1000,
+            pricePerUnit: 2.0,
+            minOrder: 10,
+            maxOrder: 1000,
+            features: [
+              t("customComments"),
+              t("relevantContent"),
+              t("realAccounts"),
+              t("support"),
+            ],
+            urlExample: "https://instagram.com/p/example",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [t]);
 
   const speeds = [
     {
@@ -190,6 +255,25 @@ export const InstagramOrderForm = () => {
   const handleSubmit = () => {
     // Implement order submission
   };
+
+  if (loading) {
+    return (
+      <div className="py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6 bg-red-50 border-red-200">
+        <div className="text-red-600">
+          <p className="font-semibold">Error loading services</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className='space-y-8'>

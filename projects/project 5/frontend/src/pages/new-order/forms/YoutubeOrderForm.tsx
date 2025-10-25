@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { useLanguage } from '../../../context/LanguageContext';
+import { getServicesByPlatform } from '../../../lib/api/platforms';
 import {
   ThumbsUp,
   Eye,
@@ -24,81 +25,141 @@ interface Service {
   maxQuantity: number;
   features: string[];
   urlExample?: string;
+  displayOrder?: number;
+  pricePerUnit?: number;
+  minOrder?: number;
+  maxOrder?: number;
 }
+
+const getServiceIcon = (serviceName: string): React.ElementType => {
+  const lower = serviceName.toLowerCase();
+  if (lower.includes('view')) return Eye;
+  if (lower.includes('subscri')) return Users;
+  if (lower.includes('like')) return ThumbsUp;
+  if (lower.includes('watch') || lower.includes('time')) return Clock;
+  return Shield;
+};
 
 export const YoutubeOrderForm = () => {
   const { t } = useLanguage();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [targetUrls, setTargetUrls] = useState<Record<string, string>>({});
   const [selectedSpeed, setSelectedSpeed] = useState<'normal' | 'fast' | 'express'>('normal');
 
-  const services: Service[] = [
-    {
-      id: 'views',
-      name: t('youtubeViews'),
-      icon: Eye,
-      description: t('youtubeViewsDescription'),
-      basePrice: 0.01,
-      minQuantity: 1000,
-      maxQuantity: 100000,
-      features: [
-        t('highRetention'),
-        t('fastDelivery'),
-        t('worldwideViews'),
-        t('support')
-      ],
-      urlExample: 'https://youtube.com/watch?v=example'
-    },
-    {
-      id: 'subscribers',
-      name: t('youtubeSubscribers'),
-      icon: Users,
-      description: t('youtubeSubscribersDescription'),
-      basePrice: 0.05,
-      minQuantity: 100,
-      maxQuantity: 10000,
-      features: [
-        t('realSubscribers'),
-        t('activeProfiles'),
-        t('naturalGrowth'),
-        t('noDrop')
-      ],
-      urlExample: 'https://youtube.com/channel/example'
-    },
-    {
-      id: 'likes',
-      name: t('youtubeLikes'),
-      icon: ThumbsUp,
-      description: t('youtubeLikesDescription'),
-      basePrice: 0.02,
-      minQuantity: 100,
-      maxQuantity: 25000,
-      features: [
-        t('highQuality'),
-        t('fastDelivery'),
-        t('permanentLikes'),
-        t('safeProcess')
-      ],
-      urlExample: 'https://youtube.com/watch?v=example'
-    },
-    {
-      id: 'watchTime',
-      name: t('youtubeWatchTime'),
-      icon: Clock,
-      description: t('youtubeWatchTimeDescription'),
-      basePrice: 0.5,
-      minQuantity: 10,
-      maxQuantity: 4000,
-      features: [
-        t('realWatchTime'),
-        t('boostRankings'),
-        t('monetizationHelp'),
-        t('analyticsFriendly')
-      ],
-      urlExample: 'https://youtube.com/watch?v=example'
-    }
-  ];
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const response = await getServicesByPlatform('youtube');
+        
+        // Transform database services to include UI data
+        const transformedServices: Service[] = (response.services || []).map((dbService: any) => ({
+          ...dbService,
+          icon: getServiceIcon(dbService.name),
+          basePrice: dbService.pricePerUnit,
+          minQuantity: dbService.minOrder,
+          maxQuantity: dbService.maxOrder,
+        }));
+
+        // Sort by displayOrder
+        const sortedServices = transformedServices.sort(
+          (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+        );
+
+        setServices(sortedServices);
+      } catch (err) {
+        console.error('Error fetching services:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch services');
+        // Fallback to mock data
+        setServices([
+          {
+            id: 'views',
+            name: t('youtubeViews'),
+            icon: Eye,
+            description: t('youtubeViewsDescription'),
+            basePrice: 0.01,
+            minQuantity: 1000,
+            maxQuantity: 100000,
+            pricePerUnit: 0.01,
+            minOrder: 1000,
+            maxOrder: 100000,
+            features: [
+              t('highRetention'),
+              t('fastDelivery'),
+              t('worldwideViews'),
+              t('support')
+            ],
+            urlExample: 'https://youtube.com/watch?v=example'
+          },
+          {
+            id: 'subscribers',
+            name: t('youtubeSubscribers'),
+            icon: Users,
+            description: t('youtubeSubscribersDescription'),
+            basePrice: 0.05,
+            minQuantity: 100,
+            maxQuantity: 10000,
+            pricePerUnit: 0.05,
+            minOrder: 100,
+            maxOrder: 10000,
+            features: [
+              t('realSubscribers'),
+              t('activeProfiles'),
+              t('naturalGrowth'),
+              t('noDrop')
+            ],
+            urlExample: 'https://youtube.com/channel/example'
+          },
+          {
+            id: 'likes',
+            name: t('youtubeLikes'),
+            icon: ThumbsUp,
+            description: t('youtubeLikesDescription'),
+            basePrice: 0.02,
+            minQuantity: 100,
+            maxQuantity: 25000,
+            pricePerUnit: 0.02,
+            minOrder: 100,
+            maxOrder: 25000,
+            features: [
+              t('highQuality'),
+              t('fastDelivery'),
+              t('permanentLikes'),
+              t('safeProcess')
+            ],
+            urlExample: 'https://youtube.com/watch?v=example'
+          },
+          {
+            id: 'watchTime',
+            name: t('youtubeWatchTime'),
+            icon: Clock,
+            description: t('youtubeWatchTimeDescription'),
+            basePrice: 0.5,
+            minQuantity: 10,
+            maxQuantity: 4000,
+            pricePerUnit: 0.5,
+            minOrder: 10,
+            maxOrder: 4000,
+            features: [
+              t('realWatchTime'),
+              t('boostRankings'),
+              t('monetizationHelp'),
+              t('analyticsFriendly')
+            ],
+            urlExample: 'https://youtube.com/watch?v=example'
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [t]);
 
   const speeds = [
     {
@@ -184,6 +245,25 @@ export const YoutubeOrderForm = () => {
   const handleSubmit = () => {
     // Implement order submission
   };
+
+  if (loading) {
+    return (
+      <div className="py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6 bg-red-50 border-red-200">
+        <div className="text-red-600">
+          <p className="font-semibold">Error loading services</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-8">
