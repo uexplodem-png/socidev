@@ -164,30 +164,47 @@ export const Tasks: React.FC = () => {
     }),
     columnHelper.accessor('quantity', {
       header: 'Quantity',
-      cell: ({ getValue, row }) => (
-        <div>
-          <div className="text-sm font-medium text-gray-900 dark:text-white">{getValue().toLocaleString()}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {row.original.remainingQuantity} remaining
+      cell: ({ getValue, row }) => {
+        const quantity = getValue();
+        const numericQuantity = typeof quantity === 'number' ? quantity : parseInt(quantity) || 0;
+        const remaining = row.original.remainingQuantity || 0;
+        return (
+          <div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{numericQuantity.toLocaleString()}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {remaining} remaining
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     }),
     columnHelper.accessor('rate', {
       header: 'Rate',
-      cell: ({ getValue }) => (
-        <div className="text-sm font-medium text-gray-900 dark:text-white">
-          ${getValue().toFixed(3)}
-        </div>
-      ),
+      cell: ({ getValue }) => {
+        const rate = getValue();
+        const numericRate = typeof rate === 'number' ? rate : parseFloat(rate) || 0;
+        return (
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
+            ${numericRate.toFixed(3)}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor('createdAt', {
       header: 'Created',
-      cell: ({ getValue }) => (
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date(getValue()).toLocaleDateString()}
-        </div>
-      ),
+      cell: ({ getValue }) => {
+        const dateValue = getValue();
+        try {
+          const date = dateValue ? new Date(dateValue) : new Date();
+          return (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {date.toLocaleDateString()}
+            </div>
+          );
+        } catch (e) {
+          return <div className="text-sm text-gray-500 dark:text-gray-400">-</div>;
+        }
+      },
     }),
     columnHelper.display({
       id: 'actions',
