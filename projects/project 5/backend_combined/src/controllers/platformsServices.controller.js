@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 // Platforms CRUD Operations
 export const getPlatforms = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, isActive, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 10, search, isActive, sortBy = 'displayOrder', sortOrder = 'ASC' } = req.query;
 
     let where = {};
     if (search) {
@@ -105,7 +105,7 @@ export const createPlatform = async (req, res) => {
 export const updatePlatform = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } = req.body;
+    const { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive, displayOrder } = req.body;
 
     const platform = await Platform.findByPk(id);
     if (!platform) {
@@ -121,6 +121,7 @@ export const updatePlatform = async (req, res) => {
       descriptionTr: descriptionTr !== undefined ? descriptionTr : platform.descriptionTr,
       icon: icon !== undefined ? icon : platform.icon,
       isActive: isActive !== undefined ? isActive : platform.isActive,
+      displayOrder: displayOrder !== undefined ? displayOrder : platform.displayOrder,
     });
 
     // Log the action
@@ -131,7 +132,7 @@ export const updatePlatform = async (req, res) => {
       id,
       null,
       `Updated platform: ${platform.name}`,
-      { platformId: id, changes: { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } },
+      { platformId: id, changes: { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive, displayOrder } },
       req
     );
 
@@ -189,8 +190,8 @@ export const getServices = async (req, res) => {
       platformId,
       search,
       isActive,
-      sortBy = 'created_at',
-      sortOrder = 'DESC',
+      sortBy = 'displayOrder',
+      sortOrder = 'ASC',
     } = req.query;
 
     let where = {};
@@ -407,6 +408,7 @@ export const updateService = async (req, res) => {
       urlLabel,
       commissionRate,
       isActive,
+      displayOrder,
     } = req.body;
 
     const service = await Service.findByPk(id);
@@ -433,6 +435,7 @@ export const updateService = async (req, res) => {
       urlLabel: urlLabel !== undefined ? urlLabel : service.urlLabel,
       commissionRate: commissionRate !== undefined ? commissionRate : service.commissionRate,
       isActive: isActive !== undefined ? isActive : service.isActive,
+      displayOrder: displayOrder !== undefined ? displayOrder : service.displayOrder,
     });
 
     // Log the action
@@ -464,6 +467,7 @@ export const updateService = async (req, res) => {
           urlLabel,
           commissionRate,
           isActive,
+          displayOrder,
         },
       },
       req
@@ -536,6 +540,7 @@ export const getServicesByPlatform = async (req, res) => {
         {
           model: Service,
           as: 'services',
+          order: [['displayOrder', 'ASC']],
         },
       ],
     });
