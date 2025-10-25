@@ -6,16 +6,12 @@ import { Service as ComponentService } from "../service/types";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useBalance } from "../../../context/BalanceContext";
 import { orderApi } from "../../../lib/api/order";
-import { getServicesByPlatform, type Service as ApiService, type Platform } from "../../../lib/api/platforms";
+import { getServicesByPlatform, type Service as ApiService } from "../../../lib/api/platforms";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ThumbsUp, Eye, Users, MessageCircle, Play } from "lucide-react";
 
-interface InstagramOrderFormProps {
-  platform?: Platform;
-}
-
-export const InstagramOrderForm = ({ platform }: InstagramOrderFormProps) => {
+export const InstagramOrderForm = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { balance, refreshBalance } = useBalance();
@@ -31,13 +27,13 @@ export const InstagramOrderForm = ({ platform }: InstagramOrderFormProps) => {
   >("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch services when platform changes
+  // Fetch Instagram services on mount
   useEffect(() => {
-    if (!platform) return;
-
     const fetchServices = async () => {
       try {
-        const response = await getServicesByPlatform(platform.id);
+        // Fetch Instagram platform - you can update this with the actual Instagram platform ID
+        // For now, we'll fetch all platforms and find Instagram
+        const response = await getServicesByPlatform("instagram");
         if (response.services) {
           setApiServices(response.services);
         }
@@ -48,7 +44,7 @@ export const InstagramOrderForm = ({ platform }: InstagramOrderFormProps) => {
     };
 
     fetchServices();
-  }, [platform, t]);
+  }, [t]);
 
   // Map API services to component services
   const mapIconForService = (serviceName: string) => {
