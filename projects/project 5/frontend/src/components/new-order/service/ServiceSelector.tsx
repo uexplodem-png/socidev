@@ -139,61 +139,6 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
         )}
       </div>
 
-      {/* Target URL Area - Moved to Top */}
-      {(platform === "instagram" || platform === "youtube") &&
-        !hideTargetUrl &&
-        selectedServices.size > 0 &&
-        onTargetUrlChange && (
-          <div className='mb-6 p-4 bg-gray-50 rounded-lg space-y-3'>
-            <h3 className='text-sm font-semibold text-gray-900'>
-              {t("targetUrl")}
-            </h3>
-            {Array.from(selectedServices).map((serviceId) => {
-              const service = services.find((s) => s.id === serviceId);
-              if (!service) return null;
-
-              const currentUrl = getCurrentUrl(serviceId);
-              return (
-                <div key={serviceId} className='space-y-2'>
-                  <label className='block text-sm font-medium text-gray-700'>
-                    {service.name} - {getUrlLabel(service)}
-                  </label>
-                  <div className='relative'>
-                    <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-                      <Link2
-                        className={`w-4 h-4 ${
-                          validateUrl(currentUrl, service)
-                            ? color.iconText
-                            : "text-red-500"
-                        }`}
-                      />
-                    </div>
-                    <input
-                      type='url'
-                      value={currentUrl}
-                      onChange={(e) =>
-                        handleUrlChange(serviceId, e.target.value)
-                      }
-                      placeholder={getUrlPlaceholder(service)}
-                      className={`w-full pl-9 pr-3 py-2 rounded-lg border ${
-                        !validateUrl(currentUrl, service) && currentUrl
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                          : `border-gray-300 ${color.focus}`
-                      }`}
-                    />
-                  </div>
-                  {!validateUrl(currentUrl, service) && currentUrl && (
-                    <div className='text-sm text-red-600 flex items-center gap-1'>
-                      <AlertCircle className='w-4 h-4' />
-                      {t("invalidUrl")} (Expected: {service.urlPattern})
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
         {services.map((service) => {
           const Icon = service.icon;
@@ -251,6 +196,47 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                     max={service.maxQuantity}
                     error={quantityErrors[service.id]}
                   />
+
+                  {/* Target URL - Only for Instagram or YouTube and when not hidden */}
+                  {(platform === "instagram" || platform === "youtube") &&
+                    !hideTargetUrl &&
+                    onTargetUrlChange && (
+                      <div className='space-y-2'>
+                        <label className='block text-sm font-medium text-gray-700'>
+                          {getUrlLabel(service)}
+                        </label>
+                        <div className='relative'>
+                          <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+                            <Link2
+                              className={`w-4 h-4 ${
+                                validateUrl(getCurrentUrl(service.id), service)
+                                  ? color.iconText
+                                  : "text-red-500"
+                              }`}
+                            />
+                          </div>
+                          <input
+                            type='url'
+                            value={getCurrentUrl(service.id)}
+                            onChange={(e) =>
+                              handleUrlChange(service.id, e.target.value)
+                            }
+                            placeholder={getUrlPlaceholder(service)}
+                            className={`w-full pl-9 pr-3 py-2 rounded-lg border ${
+                              !validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id)
+                                ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                                : `border-gray-300 ${color.focus}`
+                            }`}
+                          />
+                        </div>
+                        {!validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id) && (
+                          <div className='text-sm text-red-600 flex items-center gap-1'>
+                            <AlertCircle className='w-4 h-4' />
+                            {t("invalidUrl")} (Expected: {service.urlPattern})
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {/* Service Features */}
                   <div className='mt-4 pt-4 border-t border-gray-200'>
