@@ -39,3 +39,7 @@ olds/
 *.zip
 *.csv
 export-*/
+
+# Uploads
+uploads/
+!uploads/.gitkeep

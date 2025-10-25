@@ -1,8 +1,27 @@
 import { TaskService } from "../services/task.service.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import { ApiError } from "../utils/ApiError.js";
+import multer from "multer";
 
 const taskService = new TaskService();
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new ApiError(400, 'Invalid file type. Only JPEG, PNG, and WebP are allowed'));
+    }
+  },
+});
+
+export const uploadScreenshot = upload.single('screenshot');
 
 export class TaskController {
   // Get available tasks
@@ -46,5 +65,96 @@ export class TaskController {
 
     const task = await taskService.getTaskDetails(userId, taskId);
     res.json(task);
+  });
+
+  // Submit screenshot for task
+  submitScreenshot = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const taskId = req.params.id;
+    const file = req.file;
+    const { comment } = req.body;
+
+    if (!file) {
+      throw new ApiError(400, "Screenshot file is required");
+    }
+
+    const result = await taskService.submitScreenshot(userId, taskId, file, comment);
+    res.json(result);
+  });
+
+  // Get tasks by status (for task doer's tabs)
+  getTasksByStatus = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const { status } = req.params;
+    const { platform, type, page = 1, limit = 10 } = req.query;
+
+    const tasks = await taskService.getTasksByStatus(userId, status, {
+      platform,
+      type,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+
+    res.json(tasks);
+  });
+
+  // Admin: Get submitted tasks for review
+  getSubmittedTasks = catchAsync(async (req, res) => {
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      throw new ApiError(403, "Access denied. Admin only.");
+    }
+
+    const { platform, type, page = 1, limit = 20 } = req.query;
+
+    const tasks = await taskService.getSubmittedTasksForAdmin({
+      platform,
+      type,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+
+    res.json(tasks);
+  });
+
+  // Admin: Approve task
+  approveTask = catchAsync(async (req, res) => {
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      throw new ApiError(403, "Access denied. Admin only.");
+    }
+
+    const adminId = req.user.id;
+    const taskId = req.params.id;
+
+    const task = await taskService.approveTask(adminId, taskId);
+    res.json({
+      success: true,
+      message: "Task approved and payout processed",
+      task,
+    });
+  });
+
+  // Admin: Reject task
+  rejectTask = catchAsync(async (req, res) => {
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      throw new ApiError(403, "Access denied. Admin only.");
+    }
+
+    const adminId = req.user.id;
+    const taskId = req.params.id;
+    const { reason } = req.body;
+
+    if (!reason) {
+      throw new ApiError(400, "Rejection reason is required");
+    }
+
+    const task = await taskService.rejectTask(adminId, taskId, reason);
+    res.json({
+      success: true,
+      message: "Task rejected",
+      task,
+    });
   });
 }

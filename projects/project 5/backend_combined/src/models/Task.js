@@ -68,13 +68,39 @@ const Task = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("pending", "processing", "completed", "failed", "cancelled"),
+      type: DataTypes.ENUM("pending", "in_progress", "processing", "submitted_for_approval", "completed", "failed", "cancelled", "rejected_by_admin"),
       defaultValue: "pending",
     },
     adminStatus: {
       type: DataTypes.ENUM("pending", "approved", "rejected"),
       defaultValue: "pending",
       field: "admin_status",
+    },
+    screenshotUrl: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: "screenshot_url",
+    },
+    screenshotThumbnailUrl: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: "screenshot_thumbnail_url",
+    },
+    screenshotStatus: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      allowNull: true,
+      field: "screenshot_status",
+    },
+    screenshotSubmittedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "screenshot_submitted_at",
+    },
+    payoutProcessed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+      field: "payout_processed",
     },
     adminReviewedBy: {
       type: DataTypes.UUID,
