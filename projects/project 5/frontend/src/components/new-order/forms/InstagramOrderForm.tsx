@@ -66,6 +66,7 @@ export const InstagramOrderForm = () => {
     maxQuantity: service.maxOrder,
     features: service.featuresEn || service.features || [],
     urlExample: service.sampleUrl,
+    urlPattern: service.urlPattern,
   }));
 
   const handleServiceToggle = (serviceId: string) => {

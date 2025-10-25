@@ -10,6 +10,7 @@ export interface Service {
   maxQuantity: number;
   features: string[];
   urlExample?: string;
+  urlPattern?: string;
 }
 
 export type Platform = "instagram" | "youtube";
