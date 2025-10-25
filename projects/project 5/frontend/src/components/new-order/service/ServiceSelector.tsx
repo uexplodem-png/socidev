@@ -118,23 +118,32 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     return `${t("invalidUrl") || "Invalid URL"} (${t("expectedToMatch") || "Expected to match"}: ${service.urlPattern})`;
   };
 
+  // Platforms that support multiple services with individual URLs
+  const isMultiServicePlatform = ["instagram", "youtube"].includes(
+    platform as string
+  );
+
   const handleUrlChange = (serviceId: string, url: string) => {
-    if (onTargetUrlChange) {
-      if (platform === "instagram" || platform === "youtube") {
-        (onTargetUrlChange as (serviceId: string, url: string) => void)(
-          serviceId,
-          url
-        );
-      } else {
-        (onTargetUrlChange as (url: string) => void)(url);
-      }
+    if (!onTargetUrlChange) return;
+
+    // For multi-service platforms, pass both serviceId and url
+    if (isMultiServicePlatform) {
+      (onTargetUrlChange as (serviceId: string, url: string) => void)(
+        serviceId,
+        url
+      );
+    } else {
+      // For single-service platforms, pass only url
+      (onTargetUrlChange as (url: string) => void)(url);
     }
   };
 
   const getCurrentUrl = (serviceId: string): string => {
-    if (platform === "instagram" || platform === "youtube") {
+    // For multi-service platforms, get URL from serviceId-keyed object
+    if (isMultiServicePlatform) {
       return targetUrls[serviceId] || "";
     }
+    // For single-service platforms, get from global targetUrl
     return targetUrl || "";
   };
 
