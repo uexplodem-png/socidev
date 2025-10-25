@@ -1,26 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ServiceSelector } from "../service/ServiceSelector";
 import { PaymentSelector } from "../payment/PaymentSelector";
 import { OrderOptions } from "../service/OrderOptions";
-import { ThumbsUp, Eye, Users } from "lucide-react";
-import { Service } from "../service/types";
+import { Service as ComponentService } from "../service/types";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useBalance } from "../../../context/BalanceContext";
 import { orderApi } from "../../../lib/api/order";
+import { getServicesByPlatform, type Service as ApiService, type Platform } from "../../../lib/api/platforms";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { ThumbsUp, Eye, Users, MessageCircle, Play } from "lucide-react";
 
-export const InstagramOrderForm = () => {
+interface InstagramOrderFormProps {
+  platform?: Platform;
+}
+
+export const InstagramOrderForm = ({ platform }: InstagramOrderFormProps) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { balance, refreshBalance } = useBalance();
+  const [apiServices, setApiServices] = useState<ApiService[]>([]);
   const [selectedServices, setSelectedServices] = useState<Set<string>>(
     new Set()
   );
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>(
-    {}
-  );
   const [targetUrls, setTargetUrls] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("balance");
   const [selectedSpeed, setSelectedSpeed] = useState<
@@ -28,53 +31,47 @@ export const InstagramOrderForm = () => {
   >("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const services: Service[] = [
-    {
-      id: "likes",
-      name: t("likes"),
-      icon: ThumbsUp,
-      basePrice: 0.5,
-      minQuantity: 100,
-      maxQuantity: 50000,
-      features: [
-        t("realLikes"),
-        t("instantStart"),
-        t("noPasswordRequired"),
-        t("safeAndSecure"),
-      ],
-      urlExample: t("postUrlPlaceholder"),
-    },
-    {
-      id: "views",
-      name: t("views"),
-      icon: Eye,
-      basePrice: 0.1,
-      minQuantity: 500,
-      maxQuantity: 100000,
-      features: [
-        t("realLikes"),
-        t("instantStart"),
-        t("noPasswordRequired"),
-        t("safeAndSecure"),
-      ],
-      urlExample: t("postUrlPlaceholder"),
-    },
-    {
-      id: "followers",
-      name: t("followers"),
-      icon: Users,
-      basePrice: 1.1,
-      minQuantity: 100,
-      maxQuantity: 25000,
-      features: [
-        t("realLikes"),
-        t("instantStart"),
-        t("noPasswordRequired"),
-        t("safeAndSecure"),
-      ],
-      urlExample: t("postUrlPlaceholder"),
-    },
-  ];
+  // Fetch services when platform changes
+  useEffect(() => {
+    if (!platform) return;
+
+    const fetchServices = async () => {
+      try {
+        const response = await getServicesByPlatform(platform.id);
+        if (response.services) {
+          setApiServices(response.services);
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        toast.error(t("errorLoadingServices") || "Error loading services");
+      }
+    };
+
+    fetchServices();
+  }, [platform, t]);
+
+  // Map API services to component services
+  const mapIconForService = (serviceName: string) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes("like")) return ThumbsUp;
+    if (name.includes("view")) return Eye;
+    if (name.includes("follower")) return Users;
+    if (name.includes("comment")) return MessageCircle;
+    if (name.includes("play") || name.includes("watch")) return Play;
+    return Eye;
+  };
+
+  const componentServices: ComponentService[] = apiServices.map(service => ({
+    id: service.id,
+    name: service.nameEn || service.name,
+    description: service.descriptionEn || service.description,
+    icon: mapIconForService(service.name),
+    basePrice: service.pricePerUnit,
+    minQuantity: service.minOrder,
+    maxQuantity: service.maxOrder,
+    features: service.featuresEn || service.features || [],
+    urlExample: service.sampleUrl,
+  }));
 
   const handleServiceToggle = (serviceId: string) => {
     const newSelected = new Set(selectedServices);
@@ -85,7 +82,7 @@ export const InstagramOrderForm = () => {
       setQuantities(newQuantities);
     } else {
       newSelected.add(serviceId);
-      const service = services.find((s) => s.id === serviceId);
+      const service = componentServices.find((s) => s.id === serviceId);
       if (service) {
         setQuantities((prev) => ({
           ...prev,
@@ -111,7 +108,7 @@ export const InstagramOrderForm = () => {
   };
 
   const calculateServicePrice = (serviceId: string): number => {
-    const service = services.find((s) => s.id === serviceId);
+    const service = componentServices.find((s) => s.id === serviceId);
     if (!service) return 0;
 
     const quantity = quantities[serviceId] || service.minQuantity;
@@ -142,7 +139,7 @@ export const InstagramOrderForm = () => {
 
   const getSelectedServicesDetails = () => {
     return Array.from(selectedServices).map((serviceId) => {
-      const service = services.find((s) => s.id === serviceId);
+      const service = componentServices.find((s) => s.id === serviceId);
       return {
         name: service?.name || serviceId,
         price: calculateServicePrice(serviceId),
@@ -205,10 +202,10 @@ export const InstagramOrderForm = () => {
         handleSubmit();
       }}>
       <ServiceSelector
-        services={services}
+        services={componentServices}
         selectedServices={selectedServices}
         quantities={quantities}
-        quantityErrors={quantityErrors}
+        quantityErrors={{}}
         accentColor='pink'
         platform='instagram'
         targetUrls={targetUrls}

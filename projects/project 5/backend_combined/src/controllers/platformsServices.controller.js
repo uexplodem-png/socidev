@@ -80,13 +80,16 @@ export const createPlatform = async (req, res) => {
     });
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'CREATE',
-      resource: 'Platform',
-      description: `Created platform: ${name}`,
-      metadata: { platformId: platform.id, platformName: name },
-    });
+    await AuditLog.log(
+      req.user.id,
+      'CREATE',
+      'Platform',
+      platform.id,
+      null,
+      `Created platform: ${name}`,
+      { platformId: platform.id, platformName: name },
+      req
+    );
 
     res.status(201).json({
       success: true,
@@ -121,13 +124,16 @@ export const updatePlatform = async (req, res) => {
     });
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'UPDATE',
-      resource: 'Platform',
-      description: `Updated platform: ${platform.name}`,
-      metadata: { platformId: id, changes: { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } },
-    });
+    await AuditLog.log(
+      req.user.id,
+      'UPDATE',
+      'Platform',
+      id,
+      null,
+      `Updated platform: ${platform.name}`,
+      { platformId: id, changes: { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } },
+      req
+    );
 
     res.json({
       success: true,
@@ -153,13 +159,16 @@ export const deletePlatform = async (req, res) => {
     await platform.destroy();
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'DELETE',
-      resource: 'Platform',
-      description: `Deleted platform: ${platformName}`,
-      metadata: { platformId: id, platformName },
-    });
+    await AuditLog.log(
+      req.user.id,
+      'DELETE',
+      'Platform',
+      id,
+      null,
+      `Deleted platform: ${platformName}`,
+      { platformId: id, platformName },
+      req
+    );
 
     res.json({
       success: true,
@@ -340,13 +349,16 @@ export const createService = async (req, res) => {
     });
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'CREATE',
-      resource: 'Service',
-      description: `Created service: ${name} for platform: ${platform.name}`,
-      metadata: { serviceId: service.id, serviceName: name, platformId },
-    });
+    await AuditLog.log(
+      req.user.id,
+      'CREATE',
+      'Service',
+      service.id,
+      null,
+      `Created service: ${name} for platform: ${platform.name}`,
+      { serviceId: service.id, serviceName: name, platformId },
+      req
+    );
 
     // Normalize response
     const normalizedService = {
@@ -420,12 +432,14 @@ export const updateService = async (req, res) => {
     });
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'UPDATE',
-      resource: 'Service',
-      description: `Updated service: ${service.name}`,
-      metadata: {
+    await AuditLog.log(
+      req.user.id,
+      'UPDATE',
+      'Service',
+      id,
+      null,
+      `Updated service: ${service.name}`,
+      {
         serviceId: id,
         changes: {
           name,
@@ -447,7 +461,8 @@ export const updateService = async (req, res) => {
           isActive,
         },
       },
-    });
+      req
+    );
 
     // Normalize response
     const normalizedService = {
@@ -485,13 +500,16 @@ export const deleteService = async (req, res) => {
     await service.destroy();
 
     // Log the action
-    await AuditLog.create({
-      actorId: req.user.id,
-      action: 'DELETE',
-      resource: 'Service',
-      description: `Deleted service: ${serviceName}`,
-      metadata: { serviceId: id, serviceName },
-    });
+    await AuditLog.log(
+      req.user.id,
+      'DELETE',
+      'Service',
+      id,
+      null,
+      `Deleted service: ${serviceName}`,
+      { serviceId: id, serviceName },
+      req
+    );
 
     res.json({
       success: true,

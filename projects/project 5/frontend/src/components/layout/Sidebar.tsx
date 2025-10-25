@@ -80,6 +80,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       requiredMode: "taskGiver",
     },
     {
+      id: "new-order-old",
+      label: t("newOrder") + " (Old)",
+      icon: ShoppingCart,
+      href: "/new-order-old",
+      requiredMode: "taskGiver",
+    },
+    {
       id: "my-orders",
       label: t("myOrders"),
       icon: ClipboardList,
