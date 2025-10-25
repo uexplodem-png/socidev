@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { ThumbsUp, Eye, Users, MessageCircle, Play } from "lucide-react";
 
 export const InstagramOrderForm = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { balance, refreshBalance } = useBalance();
   const [apiServices, setApiServices] = useState<ApiService[]>([]);
@@ -45,7 +45,7 @@ export const InstagramOrderForm = () => {
     fetchServices();
   }, [t]);
 
-  // Map API services to component services
+  // Map API services to component services - includes language dependency
   const mapIconForService = (serviceName: string) => {
     const name = serviceName.toLowerCase();
     if (name.includes("like")) return ThumbsUp;
@@ -56,15 +56,34 @@ export const InstagramOrderForm = () => {
     return Eye;
   };
 
+  // Get the correct name and description based on current language
+  const getServiceName = (service: ApiService): string => {
+    if (language === "tr" && service.nameTr) return service.nameTr;
+    if (service.nameEn) return service.nameEn;
+    return service.name;
+  };
+
+  const getServiceDescription = (service: ApiService): string | undefined => {
+    if (language === "tr" && service.descriptionTr) return service.descriptionTr;
+    if (service.descriptionEn) return service.descriptionEn;
+    return service.description;
+  };
+
+  const getServiceFeatures = (service: ApiService): string[] => {
+    if (language === "tr" && service.featuresTr) return service.featuresTr;
+    if (service.featuresEn) return service.featuresEn;
+    return service.features || [];
+  };
+
   const componentServices: ComponentService[] = apiServices.map(service => ({
     id: service.id,
-    name: service.nameEn || service.name,
-    description: service.descriptionEn || service.description,
+    name: getServiceName(service),
+    description: getServiceDescription(service),
     icon: mapIconForService(service.name),
     basePrice: service.pricePerUnit,
     minQuantity: service.minOrder,
     maxQuantity: service.maxOrder,
-    features: service.featuresEn || service.features || [],
+    features: getServiceFeatures(service),
     urlExample: service.sampleUrl,
     urlPattern: service.urlPattern,
   }));

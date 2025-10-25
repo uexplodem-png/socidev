@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ServiceSelector } from "../service/ServiceSelector";
 import { PaymentSelector } from "../payment/PaymentSelector";
 import { OrderOptions } from "../service/OrderOptions";
 import { Play, Eye, Users, ThumbsUp, Clock } from "lucide-react";
-import { Service } from "../service/types";
+import { Service as ComponentService } from "../service/types";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useBalance } from "../../../context/BalanceContext";
 import { orderApi } from "../../../lib/api/order";
+import { getServicesByPlatform, type Service as ApiService } from "../../../lib/api/platforms";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 export const YoutubeOrderForm = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { balance, refreshBalance } = useBalance();
+  const [apiServices, setApiServices] = useState<ApiService[]>([]);
   const [selectedServices, setSelectedServices] = useState<Set<string>>(
     new Set()
   );
@@ -28,68 +30,66 @@ export const YoutubeOrderForm = () => {
   >("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const services: Service[] = [
-    {
-      id: "views",
-      name: t("views"),
-      icon: Eye,
-      basePrice: 0.01,
-      minQuantity: 1000,
-      maxQuantity: 100000,
-      features: [
-        t("highRetention"),
-        t("fastDelivery"),
-        t("worldwideViews"),
-        t("support"),
-      ],
-      urlExample: "https://youtube.com/watch?v=example",
-    },
-    {
-      id: "subscribers",
-      name: t("subscribers"),
-      icon: Users,
-      basePrice: 0.05,
-      minQuantity: 100,
-      maxQuantity: 10000,
-      features: [
-        t("realSubscribers"),
-        t("activeProfiles"),
-        t("naturalGrowth"),
-        t("noDrop"),
-      ],
-      urlExample: "https://youtube.com/channel/example",
-    },
-    {
-      id: "likes",
-      name: t("likes"),
-      icon: ThumbsUp,
-      basePrice: 0.02,
-      minQuantity: 100,
-      maxQuantity: 25000,
-      features: [
-        t("highQuality"),
-        t("fastDelivery"),
-        t("permanentLikes"),
-        t("safeProcess"),
-      ],
-      urlExample: "https://youtube.com/watch?v=example",
-    },
-    {
-      id: "watchTime",
-      name: t("watchTime"),
-      icon: Clock,
-      basePrice: 0.5,
-      minQuantity: 10,
-      maxQuantity: 4000,
-      features: [
-        t("realWatchTime"),
-        t("boostRankings"),
-        t("monetizationHelp"),
-        t("analyticsFriendly"),
-      ],
-      urlExample: "https://youtube.com/watch?v=example",
-    },
-  ];
+  // Fetch YouTube services on mount
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        // Fetch YouTube platform services
+        const response = await getServicesByPlatform("youtube");
+        if (response.services && response.services.length > 0) {
+          setApiServices(response.services);
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        toast.error(t("errorLoadingServices") || "Error loading services");
+      }
+    };
+
+    fetchServices();
+  }, [t]);
+
+  // Map API services to component services - includes language dependency
+  const mapIconForService = (serviceName: string) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes("like")) return ThumbsUp;
+    if (name.includes("view")) return Eye;
+    if (name.includes("subscriber")) return Users;
+    if (name.includes("watch")) return Clock;
+    if (name.includes("play")) return Play;
+    return Eye;
+  };
+
+  // Get the correct name and description based on current language
+  const getServiceName = (service: ApiService): string => {
+    if (language === "tr" && service.nameTr) return service.nameTr;
+    if (service.nameEn) return service.nameEn;
+    return service.name;
+  };
+
+  const getServiceDescription = (service: ApiService): string | undefined => {
+    if (language === "tr" && service.descriptionTr) return service.descriptionTr;
+    if (service.descriptionEn) return service.descriptionEn;
+    return service.description;
+  };
+
+  const getServiceFeatures = (service: ApiService): string[] => {
+    if (language === "tr" && service.featuresTr) return service.featuresTr;
+    if (service.featuresEn) return service.featuresEn;
+    return service.features || [];
+  };
+
+  const services: ComponentService[] = apiServices.map(service => ({
+    id: service.id,
+    name: getServiceName(service),
+    description: getServiceDescription(service),
+    icon: mapIconForService(service.name),
+    basePrice: service.pricePerUnit,
+    minQuantity: service.minOrder,
+    maxQuantity: service.maxOrder,
+    features: getServiceFeatures(service),
+    urlExample: service.sampleUrl,
+    urlPattern: service.urlPattern,
+  }));
 
   const handleServiceToggle = (serviceId: string) => {
     const newSelected = new Set(selectedServices);
