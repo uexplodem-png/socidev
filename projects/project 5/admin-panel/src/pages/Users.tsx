@@ -1777,9 +1777,9 @@ const Users: React.FC = () => {
                     <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
                       <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Status</span>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${selectedActivityLog.metadata.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' :
-                          selectedActivityLog.metadata.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
-                            selectedActivityLog.metadata.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200' :
-                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
+                        selectedActivityLog.metadata.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
+                          selectedActivityLog.metadata.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200' :
+                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
                         }`}>
                         {selectedActivityLog.metadata.status}
                       </span>

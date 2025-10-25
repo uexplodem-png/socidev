@@ -55,7 +55,7 @@ export const YoutubeOrderForm = () => {
       try {
         setLoading(true);
         const response = await getServicesByPlatform('youtube');
-        
+
         // Transform database services to include UI data
         const transformedServices: Service[] = (response.services || []).map((dbService: any) => ({
           ...dbService,
@@ -283,8 +283,8 @@ export const YoutubeOrderForm = () => {
                 key={service.id}
                 onClick={() => handleServiceToggle(service.id)}
                 className={`relative p-6 rounded-xl border-2 transition-all cursor-pointer ${isSelected
-                    ? 'border-red-500 bg-red-50'
-                    : 'border-gray-200 hover:border-red-200'
+                  ? 'border-red-500 bg-red-50'
+                  : 'border-gray-200 hover:border-red-200'
                   }`}
               >
                 <div className="flex items-start gap-4">
@@ -376,8 +376,8 @@ export const YoutubeOrderForm = () => {
                 type="button"
                 onClick={() => setSelectedSpeed(id)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${selectedSpeed === id
-                    ? 'border-red-500 bg-red-50'
-                    : 'border-gray-200 hover:border-red-200'
+                  ? 'border-red-500 bg-red-50'
+                  : 'border-gray-200 hover:border-red-200'
                   }`}
               >
                 <div className="flex items-center gap-3 mb-2">

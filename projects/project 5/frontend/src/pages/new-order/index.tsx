@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
-import { InstagramOrderForm } from "../../components/new-order/forms/InstagramOrderForm";
-import { YoutubeOrderForm } from "../../components/new-order/forms/YoutubeOrderForm";
+import { InstagramOrderForm } from "./forms/InstagramOrderForm";
+import { YoutubeOrderForm } from "./forms/YoutubeOrderForm";
+import { TiktokOrderForm } from "./forms/TiktokOrderForm";
+import { FacebookOrderForm } from "./forms/FacebookOrderForm";
+import { XOrderForm } from "./forms/XOrderForm";
 import { Instagram, Youtube, AlertCircle } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { useLanguage } from "../../context/LanguageContext";
@@ -27,12 +30,12 @@ export const NewOrderPage = () => {
         setLoading(true);
         setError(null);
         const response = await getPlatforms({ isActive: true });
-        
+
         // Sort platforms by displayOrder
         const sortedPlatforms = (response.platforms || []).sort(
           (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
         );
-        
+
         setPlatforms(sortedPlatforms);
 
         // Set the first platform as default if available
@@ -77,8 +80,8 @@ export const NewOrderPage = () => {
     }
 
     const newPlatforms = [...platforms];
-    [newPlatforms[draggedIndex], newPlatforms[targetIndex]] = 
-    [newPlatforms[targetIndex], newPlatforms[draggedIndex]];
+    [newPlatforms[draggedIndex], newPlatforms[targetIndex]] =
+      [newPlatforms[targetIndex], newPlatforms[draggedIndex]];
 
     setPlatforms(newPlatforms);
     setDraggedPlatformId(null);
@@ -140,9 +143,8 @@ export const NewOrderPage = () => {
           {t("selectPlatform")}
         </h2>
         <div
-          className={`grid gap-4 ${
-            platforms.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          }`}>
+          className={`grid gap-4 ${platforms.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            }`}>
           {platforms.map((platform) => {
             const platformId = platform.name.toLowerCase();
             const Icon = getPlatformIcon(platform.name);
@@ -163,26 +165,23 @@ export const NewOrderPage = () => {
                 onDragOver={handlePlatformDragOver}
                 onDrop={(e) => handlePlatformDrop(e, platform.id)}
                 onClick={() => setSelectedPlatform(platformId)}
-                className={`p-6 rounded-xl border-2 transition-all ${
-                  draggedPlatformId === platform.id
-                    ? "border-blue-500 bg-blue-50 opacity-50"
-                    : isSelected
+                className={`p-6 rounded-xl border-2 transition-all ${draggedPlatformId === platform.id
+                  ? "border-blue-500 bg-blue-50 opacity-50"
+                  : isSelected
                     ? `border-${accentColor.border} bg-${accentColor.bg}`
                     : "border-gray-200 hover:border-gray-300 cursor-grab active:cursor-grabbing"
-                }`}>
+                  }`}>
                 {Icon && (
                   <Icon
-                    className={`w-8 h-8 mx-auto mb-3 ${
-                      isSelected
-                        ? `text-${accentColor.text}`
-                        : "text-gray-400"
-                    }`}
+                    className={`w-8 h-8 mx-auto mb-3 ${isSelected
+                      ? `text-${accentColor.text}`
+                      : "text-gray-400"
+                      }`}
                   />
                 )}
                 <span
-                  className={`block text-lg font-medium ${
-                    isSelected ? `text-${accentColor.text}` : "text-gray-500"
-                  }`}>
+                  className={`block text-lg font-medium ${isSelected ? `text-${accentColor.text}` : "text-gray-500"
+                    }`}>
                   {platform.nameEn || platform.name}
                 </span>
                 <p className="text-sm text-gray-500 mt-2">
@@ -198,6 +197,12 @@ export const NewOrderPage = () => {
         <InstagramOrderForm />
       ) : selectedPlatform === "youtube" ? (
         <YoutubeOrderForm />
+      ) : selectedPlatform === "tiktok" ? (
+        <TiktokOrderForm />
+      ) : selectedPlatform === "facebook" ? (
+        <FacebookOrderForm />
+      ) : selectedPlatform === "x" ? (
+        <XOrderForm />
       ) : null}
     </div>
   );

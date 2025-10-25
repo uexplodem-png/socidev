@@ -196,8 +196,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}>
           <div
             className={`flex-shrink-0 ${isActive
-                ? "text-blue-600"
-                : "text-gray-400 group-hover:text-gray-600"
+              ? "text-blue-600"
+              : "text-gray-400 group-hover:text-gray-600"
               }`}>
             {<item.icon className='w-5 h-5' />}
           </div>
@@ -237,8 +237,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition-all rounded-lg ${location.pathname === child.href
-                    ? "bg-blue-50 text-blue-600"
-                    : ""
+                  ? "bg-blue-50 text-blue-600"
+                  : ""
                   }`}>
                 <child.icon className='w-4 h-4' />
                 <span className='text-sm font-medium'>{child.label}</span>
