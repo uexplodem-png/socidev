@@ -58,35 +58,33 @@ const Modal: React.FC<ModalProps> = ({
   };
   
   return createPortal(
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={onClose}
-        />
-        <div
-          className={cn(
-            'relative w-full transform rounded-lg bg-white shadow-xl transition-all dark:bg-gray-800',
-            sizes[size],
-            className
-          )}
-        >
-          {title && (
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {title}
-              </h3>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          <div className="px-6 py-4">
-            {children}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+      <div
+        className={cn(
+          'relative w-full transform rounded-lg bg-white shadow-xl transition-all dark:bg-gray-800 flex flex-col max-h-[90vh]',
+          sizes[size],
+          className
+        )}
+      >
+        {title && (
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {title}
+            </h3>
+            <button
+              onClick={onClose}
+              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
+        )}
+        <div className="overflow-y-auto px-6 py-4">
+          {children}
         </div>
       </div>
     </div>,

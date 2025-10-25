@@ -3,6 +3,7 @@ import { PlatformConfig, ServiceConfig } from '../types';
 import { realApiService } from '../services/realApi';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import Tabs from '../components/ui/Tabs';
 import { ChevronDown, ChevronRight, Plus, Edit2, Trash2, AlertCircle, Loader, X } from 'lucide-react';
 
 interface ExpandedPlatforms {
@@ -47,6 +48,7 @@ const PlatformsServices: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [serviceError, setServiceError] = useState<string | null>(null);
+    const [activeServiceTab, setActiveServiceTab] = useState<string>('basic');
 
     // Modal states
     const [showPlatformModal, setShowPlatformModal] = useState(false);
@@ -679,229 +681,271 @@ const PlatformsServices: React.FC = () => {
             {/* Service Modal */}
             <Modal
                 isOpen={showServiceModal}
-                onClose={() => setShowServiceModal(false)}
+                onClose={() => {
+                    setShowServiceModal(false);
+                    setActiveServiceTab('basic');
+                }}
                 title={editingService ? 'Edit Service' : 'Add New Service'}
+                size="lg"
             >
-                <div className="space-y-4 max-h-[85vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Service Name (Default) *
-                            </label>
-                            <input
-                                type="text"
-                                value={serviceForm.name}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, name: e.target.value }))
-                                }
-                                placeholder="e.g., Instagram Followers"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                English Name
-                            </label>
-                            <input
-                                type="text"
-                                value={serviceForm.nameEn || ''}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, nameEn: e.target.value }))
-                                }
-                                placeholder="English name"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Turkish Name
-                            </label>
-                            <input
-                                type="text"
-                                value={serviceForm.nameTr || ''}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, nameTr: e.target.value }))
-                                }
-                                placeholder="Turkish name"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
+                <Tabs
+                    tabs={[
+                        { id: 'basic', label: 'Basic Info' },
+                        { id: 'pricing', label: 'Pricing & Rules' },
+                        { id: 'content', label: 'Multilingual' },
+                        { id: 'features', label: 'Features' },
+                    ]}
+                    activeTab={activeServiceTab}
+                    onTabChange={setActiveServiceTab}
+                >
+                    {/* Basic Info Tab */}
+                    {activeServiceTab === 'basic' && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Service Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={serviceForm.name}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder="e.g., Instagram Followers"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Input Field Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={serviceForm.inputFieldName}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, inputFieldName: e.target.value }))
+                                        }
+                                        placeholder="e.g., Instagram Username"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Description (Default)
-                            </label>
-                            <textarea
-                                value={serviceForm.description || ''}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, description: e.target.value }))
-                                }
-                                placeholder="Describe this service..."
-                                rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                English Description
-                            </label>
-                            <textarea
-                                value={serviceForm.descriptionEn || ''}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, descriptionEn: e.target.value }))
-                                }
-                                placeholder="English description..."
-                                rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Turkish Description
-                            </label>
-                            <textarea
-                                value={serviceForm.descriptionTr || ''}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, descriptionTr: e.target.value }))
-                                }
-                                placeholder="Turkish description..."
-                                rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Description (Default)
+                                </label>
+                                <textarea
+                                    value={serviceForm.description || ''}
+                                    onChange={(e) =>
+                                        setServiceForm((prev) => ({ ...prev, description: e.target.value }))
+                                    }
+                                    placeholder="Describe this service..."
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Price Per Unit *
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={serviceForm.pricePerUnit}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({
-                                        ...prev,
-                                        pricePerUnit: parseFloat(e.target.value) || 0,
-                                    }))
-                                }
-                                placeholder="0.00"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Commission Rate (%)
-                            </label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={serviceForm.commissionRate}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({
-                                        ...prev,
-                                        commissionRate: parseFloat(e.target.value) || 0,
-                                    }))
-                                }
-                                placeholder="10"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Sample URL
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={serviceForm.sampleUrl}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, sampleUrl: e.target.value }))
+                                        }
+                                        placeholder="e.g., https://instagram.com/example"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        URL Pattern (Regex)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={serviceForm.urlPattern}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, urlPattern: e.target.value }))
+                                        }
+                                        placeholder="e.g., ^https://instagram.com/"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Min Order *
-                            </label>
-                            <input
-                                type="number"
-                                value={serviceForm.minOrder}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({
-                                        ...prev,
-                                        minOrder: parseInt(e.target.value) || 1,
-                                    }))
-                                }
-                                placeholder="1"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="serviceActive"
+                                    checked={serviceForm.isActive ?? true}
+                                    onChange={(e) =>
+                                        setServiceForm((prev) => ({ ...prev, isActive: e.target.checked }))
+                                    }
+                                    className="rounded border-gray-300 dark:border-slate-600"
+                                />
+                                <label htmlFor="serviceActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Active
+                                </label>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Max Order *
-                            </label>
-                            <input
-                                type="number"
-                                value={serviceForm.maxOrder}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({
-                                        ...prev,
-                                        maxOrder: parseInt(e.target.value) || 1000,
-                                    }))
-                                }
-                                placeholder="1000"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
+                    )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Input Field Name *
-                        </label>
-                        <input
-                            type="text"
-                            value={serviceForm.inputFieldName}
-                            onChange={(e) =>
-                                setServiceForm((prev) => ({ ...prev, inputFieldName: e.target.value }))
-                            }
-                            placeholder="e.g., Instagram Username"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                        />
-                    </div>
+                    {/* Pricing & Rules Tab */}
+                    {activeServiceTab === 'pricing' && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Price Per Unit *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={serviceForm.pricePerUnit}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({
+                                                ...prev,
+                                                pricePerUnit: parseFloat(e.target.value) || 0,
+                                            }))
+                                        }
+                                        placeholder="0.00"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Commission Rate (%)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={serviceForm.commissionRate}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({
+                                                ...prev,
+                                                commissionRate: parseFloat(e.target.value) || 0,
+                                            }))
+                                        }
+                                        placeholder="10"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Sample URL
-                            </label>
-                            <input
-                                type="url"
-                                value={serviceForm.sampleUrl}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, sampleUrl: e.target.value }))
-                                }
-                                placeholder="e.g., https://instagram.com/example"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Min Order *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={serviceForm.minOrder}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({
+                                                ...prev,
+                                                minOrder: parseInt(e.target.value) || 1,
+                                            }))
+                                        }
+                                        placeholder="1"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Max Order *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={serviceForm.maxOrder}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({
+                                                ...prev,
+                                                maxOrder: parseInt(e.target.value) || 1000,
+                                            }))
+                                        }
+                                        placeholder="1000"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                URL Pattern (Regex)
-                            </label>
-                            <input
-                                type="text"
-                                value={serviceForm.urlPattern}
-                                onChange={(e) =>
-                                    setServiceForm((prev) => ({ ...prev, urlPattern: e.target.value }))
-                                }
-                                placeholder="e.g., ^https://instagram.com/"
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
+                    )}
 
-                    {/* Features Section */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Features
-                        </label>
-                        <div className="space-y-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {/* Multilingual Tab */}
+                    {activeServiceTab === 'content' && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        English Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={serviceForm.nameEn || ''}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, nameEn: e.target.value }))
+                                        }
+                                        placeholder="English name"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Turkish Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={serviceForm.nameTr || ''}
+                                        onChange={(e) =>
+                                            setServiceForm((prev) => ({ ...prev, nameTr: e.target.value }))
+                                        }
+                                        placeholder="Turkish name"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    English Description
+                                </label>
+                                <textarea
+                                    value={serviceForm.descriptionEn || ''}
+                                    onChange={(e) =>
+                                        setServiceForm((prev) => ({ ...prev, descriptionEn: e.target.value }))
+                                    }
+                                    placeholder="English description..."
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Turkish Description
+                                </label>
+                                <textarea
+                                    value={serviceForm.descriptionTr || ''}
+                                    onChange={(e) =>
+                                        setServiceForm((prev) => ({ ...prev, descriptionTr: e.target.value }))
+                                    }
+                                    placeholder="Turkish description..."
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Features Tab */}
+                    {activeServiceTab === 'features' && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <input
                                     type="text"
                                     value={newFeatureEn}
@@ -929,12 +973,13 @@ const PlatformsServices: React.FC = () => {
 
                             {(serviceForm.featuresEn || []).length > 0 && (
                                 <div className="space-y-2">
+                                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Added Features:</h4>
                                     {(serviceForm.featuresEn || []).map((featureEn, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                        <div key={idx} className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                                             <div className="flex-1 text-sm">
                                                 <p className="font-medium text-gray-700 dark:text-gray-300">{featureEn}</p>
                                                 {serviceForm.featuresTr?.[idx] && (
-                                                    <p className="text-gray-600 dark:text-gray-400">{serviceForm.featuresTr[idx]}</p>
+                                                    <p className="text-gray-600 dark:text-gray-400 text-xs">{serviceForm.featuresTr[idx]}</p>
                                                 )}
                                             </div>
                                             <button
@@ -948,39 +993,25 @@ const PlatformsServices: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    )}
+                </Tabs>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="serviceActive"
-                            checked={serviceForm.isActive ?? true}
-                            onChange={(e) =>
-                                setServiceForm((prev) => ({ ...prev, isActive: e.target.checked }))
-                            }
-                            className="rounded border-gray-300 dark:border-slate-600"
-                        />
-                        <label htmlFor="serviceActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Active
-                        </label>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                        <Button
-                            onClick={handleSaveService}
-                            variant="primary"
-                            className="flex-1"
-                        >
-                            {editingService ? 'Update' : 'Create'} Service
-                        </Button>
-                        <Button
-                            onClick={() => setShowServiceModal(false)}
-                            variant="secondary"
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                    </div>
+                {/* Action Buttons - Fixed at bottom */}
+                <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 -mx-6 -mb-4 px-6 py-4 dark:bg-gray-800 bg-gray-50">
+                    <Button
+                        onClick={handleSaveService}
+                        variant="primary"
+                        className="flex-1"
+                    >
+                        {editingService ? 'Update' : 'Create'} Service
+                    </Button>
+                    <Button
+                        onClick={() => setShowServiceModal(false)}
+                        variant="secondary"
+                        className="flex-1"
+                    >
+                        Cancel
+                    </Button>
                 </div>
             </Modal>
         </div>
