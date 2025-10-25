@@ -76,8 +76,12 @@ if (process.env.NODE_ENV !== 'test') {
   }));
 }
 
-// Static files
-app.use('/uploads', express.static(join(__dirname, '../uploads')));
+// Static files with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(join(__dirname, '../uploads')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

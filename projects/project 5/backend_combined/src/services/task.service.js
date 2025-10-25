@@ -389,7 +389,7 @@ export class TaskService {
       await Transaction.create(
         {
           userId: task.userId,
-          type: "task_payout",
+          type: "task_earning",
           amount: payoutAmount,
           status: "completed",
           method: "balance",
