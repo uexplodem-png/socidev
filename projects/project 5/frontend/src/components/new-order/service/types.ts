@@ -14,8 +14,8 @@ export interface Service {
   urlLabel?: string;
 }
 
-export type Platform = "instagram" | "youtube";
-export type AccentColor = "pink" | "red";
+export type Platform = "instagram" | "youtube" | "tiktok" | "facebook" | "x";
+export type AccentColor = "pink" | "red" | "black" | "blue" | "gray-900";
 
 export interface ServiceSelectorProps {
   services: Service[];

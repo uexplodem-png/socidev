@@ -1,7 +1,7 @@
 import { fetchApi } from "../api";
 
 export interface OrderCreation {
-  platform: "instagram" | "youtube";
+  platform: "instagram" | "youtube" | "tiktok" | "facebook" | "x";
   service: string;
   targetUrl: string;
   quantity: number;
@@ -34,7 +34,7 @@ export interface OrderStats {
 export interface OrdersResponse {
   orders: Array<{
     id: string;
-    platform: "instagram" | "youtube";
+    platform: "instagram" | "youtube" | "tiktok" | "facebook" | "x";
     service: string;
     targetUrl: string;
     quantity: number;

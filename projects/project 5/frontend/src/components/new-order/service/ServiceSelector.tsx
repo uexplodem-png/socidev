@@ -67,6 +67,30 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       iconText: "text-red-600",
       focus: "focus:border-red-500 focus:ring-red-200",
     },
+    black: {
+      border: "border-black",
+      bg: "bg-gray-50",
+      hoverBorder: "hover:border-gray-400",
+      iconBg: "bg-gray-200",
+      iconText: "text-black",
+      focus: "focus:border-black focus:ring-gray-200",
+    },
+    blue: {
+      border: "border-blue-500",
+      bg: "bg-blue-50",
+      hoverBorder: "hover:border-blue-200",
+      iconBg: "bg-blue-100",
+      iconText: "text-blue-600",
+      focus: "focus:border-blue-500 focus:ring-blue-200",
+    },
+    "gray-900": {
+      border: "border-gray-900",
+      bg: "bg-gray-50",
+      hoverBorder: "hover:border-gray-400",
+      iconBg: "bg-gray-200",
+      iconText: "text-gray-900",
+      focus: "focus:border-gray-900 focus:ring-gray-200",
+    },
   };
 
   const color = colors[accentColor];
@@ -119,7 +143,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   };
 
   // Platforms that support multiple services with individual URLs
-  const isMultiServicePlatform = ["instagram", "youtube"].includes(
+  const isMultiServicePlatform = ["instagram", "youtube", "tiktok", "facebook", "x"].includes(
     platform as string
   );
 
@@ -219,8 +243,8 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                     error={quantityErrors[service.id]}
                   />
 
-                  {/* Target URL - Only for Instagram or YouTube and when not hidden */}
-                  {(platform === "instagram" || platform === "youtube") &&
+                  {/* Target URL - Only for Instagram, YouTube, TikTok, Facebook, or X and when not hidden */}
+                  {(platform === "instagram" || platform === "youtube" || platform === "tiktok" || platform === "facebook" || platform === "x") &&
                     !hideTargetUrl &&
                     onTargetUrlChange && (
                       <div className='space-y-2'>
