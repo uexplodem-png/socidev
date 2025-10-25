@@ -55,6 +55,7 @@ export const newOrderTranslations = {
     targetUrl: "Target URL",
     enterTargetUrl: "Enter target URL",
     invalidUrl: "Please enter a valid URL",
+    expectedToMatch: "Expected to match",
 
     // Delivery Speed
     deliverySpeed: "Delivery Speed",
@@ -152,6 +153,7 @@ export const newOrderTranslations = {
     targetUrl: "Hedef URL",
     enterTargetUrl: "Hedef URL girin",
     invalidUrl: "Lütfen geçerli bir URL girin",
+    expectedToMatch: "Beklenen format",
 
     // Delivery Speed
     deliverySpeed: "Teslimat Hızı",
