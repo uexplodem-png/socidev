@@ -310,6 +310,7 @@ export const createService = async (req, res) => {
       featuresEn,
       featuresTr,
       urlPattern,
+      urlLabel,
       commissionRate,
       isActive,
     } = req.body;
@@ -344,6 +345,7 @@ export const createService = async (req, res) => {
       featuresEn: featuresEn || [],
       featuresTr: featuresTr || [],
       urlPattern: urlPattern || null,
+      urlLabel: urlLabel || null,
       commissionRate: commissionRate || 0,
       isActive: isActive !== undefined ? isActive : true,
     });
@@ -402,6 +404,7 @@ export const updateService = async (req, res) => {
       featuresEn,
       featuresTr,
       urlPattern,
+      urlLabel,
       commissionRate,
       isActive,
     } = req.body;
@@ -427,6 +430,7 @@ export const updateService = async (req, res) => {
       featuresEn: featuresEn !== undefined ? featuresEn : service.featuresEn,
       featuresTr: featuresTr !== undefined ? featuresTr : service.featuresTr,
       urlPattern: urlPattern !== undefined ? urlPattern : service.urlPattern,
+      urlLabel: urlLabel !== undefined ? urlLabel : service.urlLabel,
       commissionRate: commissionRate !== undefined ? commissionRate : service.commissionRate,
       isActive: isActive !== undefined ? isActive : service.isActive,
     });
@@ -457,6 +461,7 @@ export const updateService = async (req, res) => {
           featuresEn,
           featuresTr,
           urlPattern,
+          urlLabel,
           commissionRate,
           isActive,
         },
