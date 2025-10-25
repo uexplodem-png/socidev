@@ -6,7 +6,6 @@ import DashboardPage from "./pages/dashboard/index";
 import { LoginPage } from "./pages/login/index";
 import { RegisterPage } from "./pages/register/index";
 import { NewOrderPage } from "./pages/new-order/index";
-import { NewOrderPageOld } from "./pages/new-order-old/index";
 import { MyOrdersPage } from "./pages/my-orders/index";
 import { AddBalancePage } from "./pages/add-balance/index";
 import { WithdrawBalancePage } from "./pages/withdraw-balance/index";
@@ -106,16 +105,6 @@ function AppRoutes() {
           <ProtectedRoute requiredMode='taskGiver'>
             <Layout>
               <NewOrderPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/new-order-old'
-        element={
-          <ProtectedRoute requiredMode='taskGiver'>
-            <Layout>
-              <NewOrderPageOld />
             </Layout>
           </ProtectedRoute>
         }
