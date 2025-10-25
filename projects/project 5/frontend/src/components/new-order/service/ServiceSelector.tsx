@@ -71,71 +71,88 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
 
   const color = colors[accentColor];
 
-  const validateUrl = (url: string, serviceId: string): boolean => {
+  const validateUrl = (url: string, service: Service): boolean => {
     if (!url) return true;
 
-    const urlPattern = {
-      instagram: {
-        followers: /instagram\.com\/[^/]+\/?$/,
-        likes: /instagram\.com\/(p|reel)\/[^/]+\/?$/,
-        views: /instagram\.com\/reel\/[^/]+\/?$/,
-      },
-      youtube: {
-        subscribers: /youtube\.com\/(channel|c)\/[^/]+\/?$/,
-        views: /youtube\.com\/(watch\?v=|shorts\/)[^&]+/,
-        likes: /youtube\.com\/(watch\?v=|shorts\/)[^&]+/,
-        watchTime: /youtube\.com\/(watch\?v=|shorts\/)[^&]+/,
-      },
-    };
+    const lowerUrl = url.toLowerCase();
+    const serviceName = service.name.toLowerCase();
 
-    const patterns = urlPattern[platform];
-    if (!patterns || !patterns[serviceId as keyof typeof patterns]) {
-      return true;
+    // For Instagram services
+    if (platform === "instagram") {
+      if (serviceName.includes("like")) {
+        // Post or Reel URL
+        return lowerUrl.includes("instagram.com") && 
+               (lowerUrl.includes("/p/") || lowerUrl.includes("/reel/"));
+      } else if (serviceName.includes("follower")) {
+        // Profile URL
+        return lowerUrl.includes("instagram.com");
+      } else if (serviceName.includes("view")) {
+        // Reel URL
+        return lowerUrl.includes("instagram.com") && lowerUrl.includes("/reel/");
+      } else if (serviceName.includes("comment")) {
+        // Post or Reel URL
+        return lowerUrl.includes("instagram.com") && 
+               (lowerUrl.includes("/p/") || lowerUrl.includes("/reel/"));
+      }
+    }
+    
+    // For YouTube services
+    if (platform === "youtube") {
+      if (serviceName.includes("view") || serviceName.includes("like") || serviceName.includes("watch")) {
+        // Video URL
+        return lowerUrl.includes("youtube.com");
+      } else if (serviceName.includes("subscribe") || serviceName.includes("subscriber")) {
+        // Channel URL
+        return lowerUrl.includes("youtube.com") && 
+               (lowerUrl.includes("/channel/") || lowerUrl.includes("/c/"));
+      }
     }
 
-    return patterns[serviceId as keyof typeof patterns].test(url);
+    return true;
   };
 
-  const getUrlPlaceholder = (serviceId: string): string => {
+  const getUrlPlaceholder = (service: Service): string => {
+    const serviceName = service.name.toLowerCase();
     if (platform === "instagram") {
-      if (serviceId === "likes") {
+      if (serviceName.includes("like")) {
         return "https://instagram.com/p/ABC123... or https://instagram.com/reel/ABC123...";
-      } else if (serviceId === "followers") {
+      } else if (serviceName.includes("follower")) {
         return "https://instagram.com/username";
-      } else if (serviceId === "views") {
+      } else if (serviceName.includes("view")) {
         return "https://instagram.com/reel/ABC123...";
       }
     } else if (platform === "youtube") {
       if (
-        serviceId === "views" ||
-        serviceId === "likes" ||
-        serviceId === "watchTime"
+        serviceName.includes("view") ||
+        serviceName.includes("like") ||
+        serviceName.includes("watch")
       ) {
         return "https://youtube.com/watch?v=...";
-      } else if (serviceId === "subscribers") {
+      } else if (serviceName.includes("subscribe")) {
         return "https://youtube.com/channel/...";
       }
     }
     return `https://${platform}.com/...`;
   };
 
-  const getUrlLabel = (serviceId: string): string => {
+  const getUrlLabel = (service: Service): string => {
+    const serviceName = service.name.toLowerCase();
     if (platform === "instagram") {
-      if (serviceId === "likes") {
+      if (serviceName.includes("like")) {
         return t("postOrReelUrl");
-      } else if (serviceId === "followers") {
+      } else if (serviceName.includes("follower")) {
         return t("profileUrl");
-      } else if (serviceId === "views") {
+      } else if (serviceName.includes("view")) {
         return t("reelUrl");
       }
     } else if (platform === "youtube") {
       if (
-        serviceId === "views" ||
-        serviceId === "likes" ||
-        serviceId === "watchTime"
+        serviceName.includes("view") ||
+        serviceName.includes("like") ||
+        serviceName.includes("watch")
       ) {
         return t("videoUrl");
-      } else if (serviceId === "subscribers") {
+      } else if (serviceName.includes("subscribe")) {
         return t("channelUrl");
       }
     }
@@ -245,13 +262,13 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                     onTargetUrlChange && (
                       <div className='space-y-2'>
                         <label className='block text-sm font-medium text-gray-700'>
-                          {getUrlLabel(service.id)}
+                          {getUrlLabel(service)}
                         </label>
                         <div className='relative'>
                           <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
                             <Link2
                               className={`w-4 h-4 ${
-                                validateUrl(currentUrl, service.id)
+                                validateUrl(currentUrl, service)
                                   ? color.iconText
                                   : "text-red-500"
                               }`}
@@ -263,15 +280,15 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                             onChange={(e) =>
                               handleUrlChange(service.id, e.target.value)
                             }
-                            placeholder={getUrlPlaceholder(service.id)}
+                            placeholder={getUrlPlaceholder(service)}
                             className={`w-full pl-9 pr-3 py-2 rounded-lg border ${
-                              !validateUrl(currentUrl, service.id) && currentUrl
+                              !validateUrl(currentUrl, service) && currentUrl
                                 ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                 : `border-gray-300 ${color.focus}`
                             }`}
                           />
                         </div>
-                        {!validateUrl(currentUrl, service.id) && currentUrl && (
+                        {!validateUrl(currentUrl, service) && currentUrl && (
                           <div className='text-sm text-red-600 flex items-center gap-1'>
                             <AlertCircle className='w-4 h-4' />
                             {t("invalidUrl")}
