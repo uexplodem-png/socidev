@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Task from "../models/Task.js";
 import Transaction from "../models/Transaction.js";
 import Service from "../models/Service.js";
+import AuditLog from "../models/AuditLog.js";
 import { ApiError } from "../utils/ApiError.js";
 import sequelize from "../config/database.js";
 import { StatisticsService } from "./statistics.service.js";
@@ -267,8 +268,16 @@ export class OrderService {
   }
 
   async calculateOrderCost(orderData) {
-    // Fetch the service by ID to get the price
-    const service = await Service.findByPk(orderData.service);
+    // Fetch the service - try by ID first, then by name if it's a UUID
+    let service = await Service.findByPk(orderData.service);
+    
+    // If not found by ID, try to find by name (for repeat orders that store service name)
+    if (!service && typeof orderData.service === 'string') {
+      service = await Service.findOne({
+        where: { name: orderData.service },
+      });
+    }
+
     if (!service) {
       throw new ApiError(400, "Invalid service");
     }

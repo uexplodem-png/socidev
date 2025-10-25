@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Task from "../models/Task.js";
 import Transaction from "../models/Transaction.js";
 import Service from "../models/Service.js";
+import AuditLog from "../models/AuditLog.js";
 import { ApiError } from "../utils/ApiError.js";
 import { sequelize } from "../config/database.js";
 import { StatisticsService } from "./statistics.service.js";
@@ -97,6 +98,12 @@ export class OrderService {
         throw new ApiError(404, "User not found");
       }
 
+      // Fetch service to get service name
+      const service = await Service.findByPk(orderData.service, { transaction: dbTransaction });
+      if (!service) {
+        throw new ApiError(400, "Invalid service");
+      }
+
       // Calculate total cost
       const totalCost = await this.calculateOrderCost(orderData);
 
@@ -105,11 +112,15 @@ export class OrderService {
         throw new ApiError(400, "Insufficient balance");
       }
 
-      // Create order
+      // Create order with service name instead of service ID
       const order = await Order.create(
         {
           userId,
-          ...orderData,
+          platform: orderData.platform,
+          service: service.name, // Store service name instead of ID
+          targetUrl: orderData.targetUrl,
+          quantity: orderData.quantity,
+          speed: orderData.speed,
           amount: totalCost,
           status: "pending",
           remainingCount: orderData.quantity,
@@ -121,9 +132,9 @@ export class OrderService {
       await Task.create(
         {
           userId,
-          title: `${orderData.service} for ${orderData.targetUrl}`,
-          description: `Process ${orderData.quantity} ${orderData.service} for ${orderData.targetUrl}`,
-          type: this.mapServiceToTaskType(orderData.service),
+          title: `${service.name} for ${orderData.targetUrl}`,
+          description: `Process ${orderData.quantity} ${service.name} for ${orderData.targetUrl}`,
+          type: this.mapServiceToTaskType(service.name),
           platform: orderData.platform,
           targetUrl: orderData.targetUrl,
           quantity: orderData.quantity,
@@ -146,11 +157,30 @@ export class OrderService {
           method: "balance",
           details: {
             platform: orderData.platform,
-            service: orderData.service,
+            service: service.name,
             quantity: orderData.quantity,
           },
         },
         { transaction: dbTransaction }
+      );
+
+      // Add to audit log
+      await AuditLog.log(
+        userId,
+        "create",
+        "Order",
+        order.id,
+        null,
+        `Created order for ${service.name} service with quantity ${orderData.quantity} on ${orderData.platform} platform`,
+        {
+          platform: orderData.platform,
+          service: service.name,
+          quantity: orderData.quantity,
+          targetUrl: orderData.targetUrl,
+          speed: orderData.speed,
+          amount: totalCost,
+        },
+        null
       );
 
       // Deduct balance
@@ -182,6 +212,26 @@ export class OrderService {
         throw new ApiError(404, "User not found");
       }
 
+      // Fetch all services to get service names
+      const services = await Service.findAll({
+        where: {
+          id: orders.map((o) => o.service),
+        },
+        transaction: dbTransaction,
+      });
+
+      const serviceMap = services.reduce((map, svc) => {
+        map[svc.id] = svc.name;
+        return map;
+      }, {});
+
+      // Validate all services exist
+      for (const order of orders) {
+        if (!serviceMap[order.service]) {
+          throw new ApiError(400, `Invalid service: ${order.service}`);
+        }
+      }
+
       // Calculate total cost for all orders
       const orderCosts = await Promise.all(
         orders.map((order) => this.calculateOrderCost(order))
@@ -197,10 +247,16 @@ export class OrderService {
       const createdOrders = await Promise.all(
         orders.map(async (orderData, index) => {
           const amount = orderCosts[index];
+          const serviceName = serviceMap[orderData.service];
+
           const order = await Order.create(
             {
               userId,
-              ...orderData,
+              platform: orderData.platform,
+              service: serviceName, // Store service name instead of ID
+              targetUrl: orderData.targetUrl,
+              quantity: orderData.quantity,
+              speed: orderData.speed,
               amount,
               status: "pending",
               remainingCount: orderData.quantity,
@@ -212,9 +268,9 @@ export class OrderService {
           await Task.create(
             {
               userId,
-              title: `${orderData.service} for ${orderData.targetUrl}`,
-              description: `Process ${orderData.quantity} ${orderData.service} for ${orderData.targetUrl}`,
-              type: this.mapServiceToTaskType(orderData.service),
+              title: `${serviceName} for ${orderData.targetUrl}`,
+              description: `Process ${orderData.quantity} ${serviceName} for ${orderData.targetUrl}`,
+              type: this.mapServiceToTaskType(serviceName),
               platform: orderData.platform,
               targetUrl: orderData.targetUrl,
               quantity: orderData.quantity,
@@ -224,6 +280,26 @@ export class OrderService {
               lastUpdatedAt: new Date(),
             },
             { transaction: dbTransaction }
+          );
+
+          // Add audit log for each order
+          await AuditLog.log(
+            userId,
+            "create",
+            "Order",
+            order.id,
+            null,
+            `Created order for ${serviceName} service with quantity ${orderData.quantity} on ${orderData.platform} platform (bulk order)`,
+            {
+              platform: orderData.platform,
+              service: serviceName,
+              quantity: orderData.quantity,
+              targetUrl: orderData.targetUrl,
+              speed: orderData.speed,
+              amount,
+              isBulk: true,
+            },
+            null
           );
 
           return order;
@@ -275,8 +351,16 @@ export class OrderService {
   }
 
   async calculateOrderCost(orderData) {
-    // Fetch the service by ID to get the price
-    const service = await Service.findByPk(orderData.service);
+    // Fetch the service - try by ID first, then by name if it's a UUID
+    let service = await Service.findByPk(orderData.service);
+    
+    // If not found by ID, try to find by name (for repeat orders that store service name)
+    if (!service && typeof orderData.service === 'string') {
+      service = await Service.findOne({
+        where: { name: orderData.service },
+      });
+    }
+
     if (!service) {
       throw new ApiError(400, "Invalid service");
     }
@@ -391,7 +475,11 @@ export class OrderService {
       const newOrder = await Order.create(
         {
           userId,
-          ...orderData,
+          platform: orderData.platform,
+          service: orderData.service, // Already stored as service name from original order
+          targetUrl: orderData.targetUrl,
+          quantity: orderData.quantity,
+          speed: orderData.speed,
           amount: totalCost,
           status: "pending",
           remainingCount: orderData.quantity,
@@ -432,6 +520,27 @@ export class OrderService {
           },
         },
         { transaction: dbTransaction }
+      );
+
+      // Add to audit log
+      await AuditLog.log(
+        userId,
+        "create",
+        "Order",
+        newOrder.id,
+        null,
+        `Repeated order for ${orderData.service} service with quantity ${orderData.quantity} on ${orderData.platform} platform (original: ${orderId})`,
+        {
+          platform: orderData.platform,
+          service: orderData.service,
+          quantity: orderData.quantity,
+          targetUrl: orderData.targetUrl,
+          speed: orderData.speed,
+          amount: totalCost,
+          isRepeat: true,
+          originalOrderId: orderId,
+        },
+        null
       );
 
       // Deduct balance
