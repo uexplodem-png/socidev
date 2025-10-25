@@ -72,18 +72,18 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const color = colors[accentColor];
 
   const validateUrl = (url: string, service: Service): boolean => {
-    if (!url || !service.urlPattern) return true;
+    if (!url) return true; // Empty is valid (will be caught by required field validation)
+    if (!service.urlPattern) return true; // No pattern = no validation needed
 
-    // Use the URL pattern from the database
     try {
-      // If urlPattern contains common URL patterns, do basic string matching
+      // Try to use pattern as regex first
+      const regex = new RegExp(service.urlPattern, 'i'); // case-insensitive
+      return regex.test(url);
+    } catch (error) {
+      // If it's not a valid regex, fall back to string matching
       const lowerUrl = url.toLowerCase();
       const lowerPattern = service.urlPattern.toLowerCase();
-      
-      // Simple validation: check if the URL contains the pattern
       return lowerUrl.includes(lowerPattern);
-    } catch (error) {
-      return true;
     }
   };
 
@@ -99,6 +99,10 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       return `Target URL (Pattern: ${service.urlPattern})`;
     }
     return t("targetUrl");
+  };
+
+  const getValidationErrorMessage = (service: Service): string => {
+    return `${t("invalidUrl") || "Invalid URL"} (Expected to match: ${service.urlPattern})`;
   };
 
   const handleUrlChange = (serviceId: string, url: string) => {
@@ -232,7 +236,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                         {!validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id) && (
                           <div className='text-sm text-red-600 flex items-center gap-1'>
                             <AlertCircle className='w-4 h-4' />
-                            {t("invalidUrl")} (Expected: {service.urlPattern})
+                            {getValidationErrorMessage(service)}
                           </div>
                         )}
                       </div>
