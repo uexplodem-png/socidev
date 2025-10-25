@@ -97,7 +97,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const getUrlLabel = (service: Service): string => {
     // If custom label is provided, use it with pattern in parentheses
     if (service.urlLabel && service.urlPattern) {
-      return `${service.urlLabel} (${t("pattern") || "Pattern"}: ${service.urlPattern})`;
+      return `${service.urlLabel}`;
     }
     // If only custom label provided
     if (service.urlLabel) {
@@ -196,7 +196,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                       {service.name}
                     </h3>
                     <p className='text-sm text-gray-500'>
-                      ₺{service.basePrice.toFixed(3)}/each
+                      {service.basePrice.toFixed(2)}₺/${t("each")}
                     </p>
                   </div>
                 </div>
@@ -285,7 +285,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   )}
 
                   <div className='text-right font-medium'>
-                    {t("total")}: ₺{price.toFixed(2)}
+                    {t("total")}: {price.toFixed(2)}₺
                   </div>
                 </div>
               )}
