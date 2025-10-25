@@ -150,10 +150,28 @@ export const InstagramOrderForm = () => {
         throw new Error("Not authenticated");
       }
 
+      // Validate all selected services have target URLs and quantities
+      for (const serviceId of selectedServices) {
+        if (!targetUrls[serviceId] || targetUrls[serviceId].trim() === "") {
+          toast.error(
+            t("targetUrlRequired") || `Target URL required for this service`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        if (!quantities[serviceId] || quantities[serviceId] < 1) {
+          toast.error(
+            t("invalidQuantity") || `Invalid quantity for this service`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const orderData = Array.from(selectedServices).map((serviceId) => ({
         platform: "instagram" as const,
         service: serviceId,
-        targetUrl: targetUrls[serviceId],
+        targetUrl: targetUrls[serviceId].trim(),
         quantity: quantities[serviceId],
         speed: selectedSpeed,
       }));
