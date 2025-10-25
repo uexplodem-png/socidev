@@ -199,15 +199,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
             }
           }}
-          className={`w-full flex items-center gap-3 px-4 py-2.5 text-gray-600 hover:bg-gray-50 transition-all rounded-lg group ${
-            isActive ? "bg-blue-50 text-blue-600" : ""
-          }`}>
+          className={`w-full flex items-center gap-3 px-4 py-2.5 text-gray-600 hover:bg-gray-50 transition-all rounded-lg group ${isActive ? "bg-blue-50 text-blue-600" : ""
+            }`}>
           <div
-            className={`flex-shrink-0 ${
-              isActive
+            className={`flex-shrink-0 ${isActive
                 ? "text-blue-600"
                 : "text-gray-400 group-hover:text-gray-600"
-            }`}>
+              }`}>
             {<item.icon className='w-5 h-5' />}
           </div>
 
@@ -218,9 +216,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
               {hasChildren && visibleChildren && visibleChildren.length > 0 && (
                 <ChevronRight
-                  className={`w-4 h-4 transition-transform ${
-                    isExpanded ? "rotate-90" : ""
-                  }`}
+                  className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""
+                    }`}
                 />
               )}
               {item.badge && (
@@ -246,11 +243,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition-all rounded-lg ${
-                  location.pathname === child.href
+                className={`w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-50 transition-all rounded-lg ${location.pathname === child.href
                     ? "bg-blue-50 text-blue-600"
                     : ""
-                }`}>
+                  }`}>
                 <child.icon className='w-4 h-4' />
                 <span className='text-sm font-medium'>{child.label}</span>
                 {child.badge && (
@@ -268,9 +264,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const sidebarClasses = isMobile
     ? "fixed inset-0 bg-white z-50"
-    : `fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
-        isCollapsed ? "w-16" : "w-64"
-      }`;
+    : `fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 ${isCollapsed ? "w-16" : "w-64"
+    }`;
 
   return (
     <aside className={`${sidebarClasses} ${className}`}>

@@ -16,8 +16,8 @@ interface ServiceSelectorProps {
   targetUrls?: Record<string, string>;
   targetUrl?: string;
   onTargetUrlChange?:
-    | ((serviceId: string, url: string) => void)
-    | ((url: string) => void);
+  | ((serviceId: string, url: string) => void)
+  | ((url: string) => void);
   onServiceToggle: (serviceId: string) => void;
   onQuantityChange: (serviceId: string, value: number) => void;
   hideTargetUrl?: boolean;
@@ -164,21 +164,18 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
             <div
               key={service.id}
               onClick={() => onServiceToggle(service.id)}
-              className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                isSelected
+              className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer ${isSelected
                   ? `${color.border} ${color.bg}`
                   : `border-gray-200 ${color.hoverBorder}`
-              }`}>
+                }`}>
               <div className='flex items-start justify-between mb-4'>
                 <div className='flex items-center gap-3'>
                   <div
-                    className={`p-2 rounded-lg ${
-                      isSelected ? color.iconBg : "bg-gray-100"
-                    }`}>
+                    className={`p-2 rounded-lg ${isSelected ? color.iconBg : "bg-gray-100"
+                      }`}>
                     <Icon
-                      className={`w-5 h-5 ${
-                        isSelected ? color.iconText : "text-gray-600"
-                      }`}
+                      className={`w-5 h-5 ${isSelected ? color.iconText : "text-gray-600"
+                        }`}
                     />
                   </div>
                   <div>
@@ -191,11 +188,10 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                   </div>
                 </div>
                 <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    isSelected
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected
                       ? `${color.border} ${color.bg} text-white`
                       : "border-gray-300"
-                  }`}>
+                    }`}>
                   {isSelected && <CheckCircle className='w-4 h-4' />}
                 </div>
               </div>
@@ -221,11 +217,10 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                         <div className='relative'>
                           <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
                             <Link2
-                              className={`w-4 h-4 ${
-                                validateUrl(getCurrentUrl(service.id), service)
+                              className={`w-4 h-4 ${validateUrl(getCurrentUrl(service.id), service)
                                   ? color.iconText
                                   : "text-red-500"
-                              }`}
+                                }`}
                             />
                           </div>
                           <input
@@ -235,11 +230,10 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                               handleUrlChange(service.id, e.target.value)
                             }
                             placeholder={getUrlPlaceholder(service)}
-                            className={`w-full pl-9 pr-3 py-2 rounded-lg border ${
-                              !validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id)
+                            className={`w-full pl-9 pr-3 py-2 rounded-lg border ${!validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id)
                                 ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                 : `border-gray-300 ${color.focus}`
-                            }`}
+                              }`}
                           />
                         </div>
                         {!validateUrl(getCurrentUrl(service.id), service) && getCurrentUrl(service.id) && (

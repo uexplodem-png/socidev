@@ -75,7 +75,7 @@ export const InstagramOrderForm = () => {
     return service.features || [];
   };
 
-  const componentServices: ComponentService[] = useMemo(() => 
+  const componentServices: ComponentService[] = useMemo(() =>
     apiServices.map(service => ({
       id: service.id,
       name: getServiceName(service),
@@ -223,7 +223,7 @@ export const InstagramOrderForm = () => {
       }, 2000);
     } catch (error) {
       console.error("Order creation failed:", error);
-      
+
       // Handle validation errors from backend
       if (error instanceof Error && error.message.includes("Validation Error")) {
         toast.error(t("validationError") || "Please fill in all required fields (Target URL, Quantity)");
@@ -264,11 +264,11 @@ export const InstagramOrderForm = () => {
             selectedSpeed={selectedSpeed}
             onSpeedChange={setSelectedSpeed}
             needsInvoice={false}
-            onInvoiceChange={() => {}}
+            onInvoiceChange={() => { }}
             companyName=''
-            onCompanyNameChange={() => {}}
+            onCompanyNameChange={() => { }}
             taxId=''
-            onTaxIdChange={() => {}}
+            onTaxIdChange={() => { }}
           />
 
           <PaymentSelector

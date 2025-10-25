@@ -27,8 +27,8 @@ export interface ServiceSelectorProps {
   targetUrls?: Record<string, string>;
   targetUrl?: string;
   onTargetUrlChange?:
-    | ((serviceId: string, url: string) => void)
-    | ((url: string) => void);
+  | ((serviceId: string, url: string) => void)
+  | ((url: string) => void);
   onServiceToggle: (serviceId: string) => void;
   onQuantityChange: (serviceId: string, value: number) => void;
   hideTargetUrl?: boolean;

@@ -27,19 +27,19 @@ export const NewOrderPage = () => {
           <button
             onClick={() => setSelectedPlatform("instagram")}
             className={`p-6 rounded-xl border-2 transition-all ${selectedPlatform === "instagram"
-                ? "border-pink-500 bg-pink-50"
-                : "border-gray-200 hover:border-pink-200"
+              ? "border-pink-500 bg-pink-50"
+              : "border-gray-200 hover:border-pink-200"
               }`}>
             <Instagram
               className={`w-8 h-8 mx-auto mb-3 ${selectedPlatform === "instagram"
-                  ? "text-pink-500"
-                  : "text-gray-400"
+                ? "text-pink-500"
+                : "text-gray-400"
                 }`}
             />
             <span
               className={`block text-lg font-medium ${selectedPlatform === "instagram"
-                  ? "text-pink-500"
-                  : "text-gray-500"
+                ? "text-pink-500"
+                : "text-gray-500"
                 }`}>
               {t("instagramServices")}
             </span>
@@ -51,19 +51,19 @@ export const NewOrderPage = () => {
           <button
             onClick={() => setSelectedPlatform("youtube")}
             className={`p-6 rounded-xl border-2 transition-all ${selectedPlatform === "youtube"
-                ? "border-red-500 bg-red-50"
-                : "border-gray-200 hover:border-red-200"
+              ? "border-red-500 bg-red-50"
+              : "border-gray-200 hover:border-red-200"
               }`}>
             <Youtube
               className={`w-8 h-8 mx-auto mb-3 ${selectedPlatform === "youtube"
-                  ? "text-red-500"
-                  : "text-gray-400"
+                ? "text-red-500"
+                : "text-gray-400"
                 }`}
             />
             <span
               className={`block text-lg font-medium ${selectedPlatform === "youtube"
-                  ? "text-red-500"
-                  : "text-gray-500"
+                ? "text-red-500"
+                : "text-gray-500"
                 }`}>
               {t("youtubeServices")}
             </span>
