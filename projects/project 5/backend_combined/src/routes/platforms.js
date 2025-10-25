@@ -47,7 +47,7 @@ router.get('/services', async (req, res) => {
       where: { isActive: true },
       offset,
       limit: parseInt(limit),
-      order: [['createdAt', 'DESC']],
+      order: [['displayOrder', 'ASC'], ['createdAt', 'DESC']],
     });
 
     // Normalize services
@@ -89,6 +89,7 @@ router.get('/:platformId/services', async (req, res) => {
           model: Service,
           as: 'services',
           where: { isActive: true },
+          order: [['displayOrder', 'ASC']],
         },
       ],
     });
@@ -102,6 +103,7 @@ router.get('/:platformId/services', async (req, res) => {
             model: Service,
             as: 'services',
             where: { isActive: true },
+            order: [['displayOrder', 'ASC']],
           },
         ],
       });
