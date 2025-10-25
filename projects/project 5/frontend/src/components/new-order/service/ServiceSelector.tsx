@@ -97,7 +97,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
   const getUrlLabel = (service: Service): string => {
     // If custom label is provided, use it with pattern in parentheses
     if (service.urlLabel && service.urlPattern) {
-      return `${service.urlLabel} (Pattern: ${service.urlPattern})`;
+      return `${service.urlLabel} (${t("pattern") || "Pattern"}: ${service.urlPattern})`;
     }
     // If only custom label provided
     if (service.urlLabel) {
@@ -105,7 +105,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
     }
     // If only pattern provided
     if (service.urlPattern) {
-      return `${t("targetUrl")} (Pattern: ${service.urlPattern})`;
+      return `${t("targetUrl")} (${t("pattern") || "Pattern"}: ${service.urlPattern})`;
     }
     // Fallback to translation
     return t("targetUrl");
