@@ -275,7 +275,11 @@ export interface AuthState {
 export interface PlatformConfig {
   id: string;
   name: string;
-  description: string;
+  nameEn?: string;
+  nameTr?: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionTr?: string;
   icon?: string;
   isActive?: boolean;
   displayOrder?: number;
@@ -287,12 +291,20 @@ export interface ServiceConfig {
   id: string;
   platformId: string;
   name: string;
+  nameEn?: string;
+  nameTr?: string;
+  description?: string;
+  descriptionEn?: string;
+  descriptionTr?: string;
   pricePerUnit: number;
   minOrder: number;
   maxOrder: number;
   inputFieldName: string;
-  sampleUrl: string;
+  sampleUrl?: string;
+  urlPattern?: string;
   features: string[];
+  featuresEn?: string[];
+  featuresTr?: string[];
   // Added commission rate field
   commissionRate?: number;
   isActive?: boolean;

@@ -25,9 +25,29 @@ const Service = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
+    nameEn: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "name_en",
+    },
+    nameTr: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "name_tr",
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    descriptionEn: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "description_en",
+    },
+    descriptionTr: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "description_tr",
     },
     pricePerUnit: {
       type: DataTypes.DECIMAL(10, 5),
@@ -57,6 +77,21 @@ const Service = sequelize.define(
     features: {
       type: DataTypes.JSON,
       defaultValue: [],
+    },
+    featuresEn: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "features_en",
+    },
+    featuresTr: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "features_tr",
+    },
+    urlPattern: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: "url_pattern",
     },
     commissionRate: {
       type: DataTypes.DECIMAL(5, 2),

@@ -62,7 +62,7 @@ export const getPlatformById = async (req, res) => {
 
 export const createPlatform = async (req, res) => {
   try {
-    const { name, description, icon } = req.body;
+    const { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, message: 'Platform name is required' });
@@ -70,8 +70,13 @@ export const createPlatform = async (req, res) => {
 
     const platform = await Platform.create({
       name,
+      nameEn: nameEn || null,
+      nameTr: nameTr || null,
       description,
+      descriptionEn: descriptionEn || null,
+      descriptionTr: descriptionTr || null,
       icon,
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     // Log the action
@@ -97,7 +102,7 @@ export const createPlatform = async (req, res) => {
 export const updatePlatform = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, icon, isActive } = req.body;
+    const { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } = req.body;
 
     const platform = await Platform.findByPk(id);
     if (!platform) {
@@ -106,7 +111,11 @@ export const updatePlatform = async (req, res) => {
 
     await platform.update({
       name: name || platform.name,
+      nameEn: nameEn !== undefined ? nameEn : platform.nameEn,
+      nameTr: nameTr !== undefined ? nameTr : platform.nameTr,
       description: description !== undefined ? description : platform.description,
+      descriptionEn: descriptionEn !== undefined ? descriptionEn : platform.descriptionEn,
+      descriptionTr: descriptionTr !== undefined ? descriptionTr : platform.descriptionTr,
       icon: icon !== undefined ? icon : platform.icon,
       isActive: isActive !== undefined ? isActive : platform.isActive,
     });
@@ -117,7 +126,7 @@ export const updatePlatform = async (req, res) => {
       action: 'UPDATE',
       resource: 'Platform',
       description: `Updated platform: ${platform.name}`,
-      metadata: { platformId: id, changes: { name, description, icon, isActive } },
+      metadata: { platformId: id, changes: { name, nameEn, nameTr, description, descriptionEn, descriptionTr, icon, isActive } },
     });
 
     res.json({
@@ -194,7 +203,7 @@ export const getServices = async (req, res) => {
     
     const { count, rows } = await Service.findAndCountAll({
       where,
-      attributes: ['id', 'platformId', 'name', 'description', 'pricePerUnit', 'minOrder', 'maxOrder', 'inputFieldName', 'sampleUrl', 'features', 'commissionRate', 'isActive', 'displayOrder', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'platformId', 'name', 'nameEn', 'nameTr', 'description', 'descriptionEn', 'descriptionTr', 'pricePerUnit', 'minOrder', 'maxOrder', 'inputFieldName', 'sampleUrl', 'features', 'featuresEn', 'featuresTr', 'urlPattern', 'commissionRate', 'isActive', 'displayOrder', 'createdAt', 'updatedAt'],
       include: [
         {
           model: Platform,
@@ -208,8 +217,23 @@ export const getServices = async (req, res) => {
       subQuery: false,
     });
 
+    // Parse JSON fields and numeric strings
+    const normalizedRows = rows.map(service => {
+      const serviceData = service.toJSON();
+      return {
+        ...serviceData,
+        features: typeof serviceData.features === 'string' ? JSON.parse(serviceData.features) : (serviceData.features || []),
+        featuresEn: typeof serviceData.featuresEn === 'string' ? JSON.parse(serviceData.featuresEn) : (serviceData.featuresEn || []),
+        featuresTr: typeof serviceData.featuresTr === 'string' ? JSON.parse(serviceData.featuresTr) : (serviceData.featuresTr || []),
+        pricePerUnit: parseFloat(serviceData.pricePerUnit),
+        commissionRate: parseFloat(serviceData.commissionRate),
+        minOrder: parseInt(serviceData.minOrder),
+        maxOrder: parseInt(serviceData.maxOrder),
+      };
+    });
+
     res.json({
-      services: rows,
+      services: normalizedRows,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -239,7 +263,19 @@ export const getServiceById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Service not found' });
     }
 
-    res.json(service);
+    // Normalize the response
+    const normalizedService = {
+      ...service.toJSON(),
+      features: typeof service.features === 'string' ? JSON.parse(service.features) : (service.features || []),
+      featuresEn: typeof service.featuresEn === 'string' ? JSON.parse(service.featuresEn) : (service.featuresEn || []),
+      featuresTr: typeof service.featuresTr === 'string' ? JSON.parse(service.featuresTr) : (service.featuresTr || []),
+      pricePerUnit: parseFloat(service.pricePerUnit),
+      commissionRate: parseFloat(service.commissionRate),
+      minOrder: parseInt(service.minOrder),
+      maxOrder: parseInt(service.maxOrder),
+    };
+
+    res.json(normalizedService);
   } catch (error) {
     console.error('Error fetching service:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -251,14 +287,22 @@ export const createService = async (req, res) => {
     const {
       platformId,
       name,
+      nameEn,
+      nameTr,
       description,
+      descriptionEn,
+      descriptionTr,
       pricePerUnit,
       minOrder,
       maxOrder,
       inputFieldName,
       sampleUrl,
       features,
+      featuresEn,
+      featuresTr,
+      urlPattern,
       commissionRate,
+      isActive,
     } = req.body;
 
     if (!platformId || !name || !pricePerUnit || !minOrder || !maxOrder || !inputFieldName) {
@@ -277,14 +321,22 @@ export const createService = async (req, res) => {
     const service = await Service.create({
       platformId,
       name,
+      nameEn: nameEn || null,
+      nameTr: nameTr || null,
       description,
+      descriptionEn: descriptionEn || null,
+      descriptionTr: descriptionTr || null,
       pricePerUnit,
       minOrder,
       maxOrder,
       inputFieldName,
       sampleUrl,
       features: features || [],
+      featuresEn: featuresEn || [],
+      featuresTr: featuresTr || [],
+      urlPattern: urlPattern || null,
       commissionRate: commissionRate || 0,
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     // Log the action
@@ -296,10 +348,22 @@ export const createService = async (req, res) => {
       metadata: { serviceId: service.id, serviceName: name, platformId },
     });
 
+    // Normalize response
+    const normalizedService = {
+      ...service.toJSON(),
+      features: Array.isArray(features) ? features : [],
+      featuresEn: Array.isArray(featuresEn) ? featuresEn : [],
+      featuresTr: Array.isArray(featuresTr) ? featuresTr : [],
+      pricePerUnit: parseFloat(pricePerUnit),
+      commissionRate: parseFloat(commissionRate || 0),
+      minOrder: parseInt(minOrder),
+      maxOrder: parseInt(maxOrder),
+    };
+
     res.status(201).json({
       success: true,
       message: 'Service created successfully',
-      service,
+      service: normalizedService,
     });
   } catch (error) {
     console.error('Error creating service:', error);
@@ -312,13 +376,20 @@ export const updateService = async (req, res) => {
     const { id } = req.params;
     const {
       name,
+      nameEn,
+      nameTr,
       description,
+      descriptionEn,
+      descriptionTr,
       pricePerUnit,
       minOrder,
       maxOrder,
       inputFieldName,
       sampleUrl,
       features,
+      featuresEn,
+      featuresTr,
+      urlPattern,
       commissionRate,
       isActive,
     } = req.body;
@@ -330,13 +401,20 @@ export const updateService = async (req, res) => {
 
     await service.update({
       name: name || service.name,
+      nameEn: nameEn !== undefined ? nameEn : service.nameEn,
+      nameTr: nameTr !== undefined ? nameTr : service.nameTr,
       description: description !== undefined ? description : service.description,
+      descriptionEn: descriptionEn !== undefined ? descriptionEn : service.descriptionEn,
+      descriptionTr: descriptionTr !== undefined ? descriptionTr : service.descriptionTr,
       pricePerUnit: pricePerUnit !== undefined ? pricePerUnit : service.pricePerUnit,
       minOrder: minOrder !== undefined ? minOrder : service.minOrder,
       maxOrder: maxOrder !== undefined ? maxOrder : service.maxOrder,
       inputFieldName: inputFieldName || service.inputFieldName,
       sampleUrl: sampleUrl !== undefined ? sampleUrl : service.sampleUrl,
       features: features !== undefined ? features : service.features,
+      featuresEn: featuresEn !== undefined ? featuresEn : service.featuresEn,
+      featuresTr: featuresTr !== undefined ? featuresTr : service.featuresTr,
+      urlPattern: urlPattern !== undefined ? urlPattern : service.urlPattern,
       commissionRate: commissionRate !== undefined ? commissionRate : service.commissionRate,
       isActive: isActive !== undefined ? isActive : service.isActive,
     });
@@ -351,23 +429,42 @@ export const updateService = async (req, res) => {
         serviceId: id,
         changes: {
           name,
+          nameEn,
+          nameTr,
           description,
+          descriptionEn,
+          descriptionTr,
           pricePerUnit,
           minOrder,
           maxOrder,
           inputFieldName,
           sampleUrl,
           features,
+          featuresEn,
+          featuresTr,
+          urlPattern,
           commissionRate,
           isActive,
         },
       },
     });
 
+    // Normalize response
+    const normalizedService = {
+      ...service.toJSON(),
+      features: typeof service.features === 'string' ? JSON.parse(service.features) : (service.features || []),
+      featuresEn: typeof service.featuresEn === 'string' ? JSON.parse(service.featuresEn) : (service.featuresEn || []),
+      featuresTr: typeof service.featuresTr === 'string' ? JSON.parse(service.featuresTr) : (service.featuresTr || []),
+      pricePerUnit: parseFloat(service.pricePerUnit),
+      commissionRate: parseFloat(service.commissionRate),
+      minOrder: parseInt(service.minOrder),
+      maxOrder: parseInt(service.maxOrder),
+    };
+
     res.json({
       success: true,
       message: 'Service updated successfully',
-      service,
+      service: normalizedService,
     });
   } catch (error) {
     console.error('Error updating service:', error);
@@ -424,10 +521,22 @@ export const getServicesByPlatform = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Platform not found' });
     }
 
+    // Normalize services
+    const normalizedServices = platform.services.map(service => ({
+      ...service.toJSON(),
+      features: typeof service.features === 'string' ? JSON.parse(service.features) : (service.features || []),
+      featuresEn: typeof service.featuresEn === 'string' ? JSON.parse(service.featuresEn) : (service.featuresEn || []),
+      featuresTr: typeof service.featuresTr === 'string' ? JSON.parse(service.featuresTr) : (service.featuresTr || []),
+      pricePerUnit: parseFloat(service.pricePerUnit),
+      commissionRate: parseFloat(service.commissionRate),
+      minOrder: parseInt(service.minOrder),
+      maxOrder: parseInt(service.maxOrder),
+    }));
+
     res.json({
       success: true,
       platform,
-      services: platform.services,
+      services: normalizedServices,
     });
   } catch (error) {
     console.error('Error fetching services by platform:', error);

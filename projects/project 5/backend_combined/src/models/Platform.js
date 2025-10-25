@@ -14,9 +14,29 @@ const Platform = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    nameEn: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "name_en",
+    },
+    nameTr: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "name_tr",
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    descriptionEn: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "description_en",
+    },
+    descriptionTr: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "description_tr",
     },
     icon: {
       type: DataTypes.STRING(100),
