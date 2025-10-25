@@ -151,7 +151,7 @@ const Users: React.FC = () => {
 
           setUserTransactions(transactionsWithNumericAmounts);
 
-          // Fetch activity logs for this user (logs where this user was updated)
+          // Fetch activity logs for this user (logs where this user was the actor or target)
           try {
             // Get all audit logs without strict filters first
             const auditData = await realApiService.getAuditLogs({
@@ -160,14 +160,21 @@ const Users: React.FC = () => {
             });
             console.log('All audit logs:', auditData.auditLogs?.length);
 
-            // Filter logs where the target user ID matches this user
+            // Filter logs where:
+            // 1. The actor ID matches this user (user performed the action - e.g., created order)
+            // 2. OR the target user ID matches this user (user was modified by admin)
             const filteredLogs = (auditData.auditLogs || []).filter((log: any) => {
+              const isActor = log.actor_id === selectedUser.id;
+              const isTarget = log.target_user_id === selectedUser.id;
               console.log('Checking log:', {
+                logActorId: log.actor_id,
                 logTargetUserId: log.target_user_id,
                 selectedUserId: selectedUser.id,
-                match: log.target_user_id === selectedUser.id
+                isActor,
+                isTarget,
+                match: isActor || isTarget
               });
-              return log.target_user_id === selectedUser.id;
+              return isActor || isTarget;
             });
             console.log('Filtered logs for user:', filteredLogs.length);
             setUserActivityLogs(filteredLogs);
