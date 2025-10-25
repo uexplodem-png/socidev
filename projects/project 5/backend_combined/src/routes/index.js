@@ -6,12 +6,14 @@ import { instagramAccountRouter } from "./instagram-account.js";
 import { userRouter } from "./user.js";
 import { taskRouter } from "./tasks.js";
 import { adminRouter } from "./admin/index.js";
+import { platformsRouter } from "./platforms.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Public routes
 router.use("/auth", authRouter);
+router.use("/platforms", platformsRouter);
 
 // Protected routes (require authentication)
 router.use(authenticateToken);
