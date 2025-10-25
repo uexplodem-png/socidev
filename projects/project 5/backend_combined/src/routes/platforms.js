@@ -123,7 +123,7 @@ router.get('/:platformId/services', async (req, res) => {
       commissionRate: parseFloat(service.commissionRate),
       minOrder: parseInt(service.minOrder),
       maxOrder: parseInt(service.maxOrder),
-    }));
+    })).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
     res.json({
       platform,
