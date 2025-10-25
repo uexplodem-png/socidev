@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
+import { tasksAPI } from '../services/api';
 
 interface Task {
   id: string;
@@ -241,31 +242,36 @@ export const Tasks: React.FC = () => {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem('auth-token');
-      const endpoint = activeTab === 'pending' ? '/api/admin/tasks/pending' : '/api/admin/tasks';
-      const params = new URLSearchParams({
-        page: (pagination.pageIndex + 1).toString(),
-        limit: pagination.pageSize.toString(),
+      setIsLoading(true);
+      const params: any = {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
         search: globalFilter,
         status: statusFilter,
         platform: platformFilter,
         type: typeFilter,
         sortBy: sorting[0]?.id || 'createdAt',
         sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+      };
+
+      // Filter out empty params
+      Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === undefined) {
+          delete params[key];
+        }
       });
 
-      const response = await fetch(`${endpoint}?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks);
-        setTotalPages(data.pagination.totalPages);
+      if (activeTab === 'pending') {
+        params.admin_status = 'pending';
       }
-    } catch (error) {
+
+      const data = await tasksAPI.getTasks(params);
+      setTasks(data.data || []);
+      setTotalPages(data.pagination.totalPages || 1);
+    } catch (error: any) {
       console.error('Failed to fetch tasks:', error);
-      toast.error('Failed to load tasks');
+      toast.error(error.message || 'Failed to load tasks');
+      setTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -282,19 +288,12 @@ export const Tasks: React.FC = () => {
 
   const handleApproveTask = async (taskId: string) => {
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch(`/api/admin/tasks/${taskId}/approve`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        toast.success('Task approved successfully');
-        fetchTasks();
-      }
-    } catch (error) {
+      await tasksAPI.approveTask(taskId);
+      toast.success('Task approved successfully');
+      fetchTasks();
+    } catch (error: any) {
       console.error('Failed to approve task:', error);
-      toast.error('Failed to approve task');
+      toast.error(error.message || 'Failed to approve task');
     }
   };
 
@@ -303,23 +302,12 @@ export const Tasks: React.FC = () => {
     if (!reason) return;
 
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch(`/api/admin/tasks/${taskId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-
-      if (response.ok) {
-        toast.success('Task rejected successfully');
-        fetchTasks();
-      }
-    } catch (error) {
+      await tasksAPI.rejectTask(taskId, reason);
+      toast.success('Task rejected successfully');
+      fetchTasks();
+    } catch (error: any) {
       console.error('Failed to reject task:', error);
-      toast.error('Failed to reject task');
+      toast.error(error.message || 'Failed to reject task');
     }
   };
 
@@ -331,26 +319,15 @@ export const Tasks: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/admin/tasks/bulk-approve', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ taskIds: selectedTaskIds })
-      });
-
-      if (response.ok) {
-        toast.success(`Successfully approved ${selectedTaskIds.length} task(s)`);
-        setRowSelection({});
-        fetchTasks();
-      } else {
-        toast.error('Failed to approve tasks');
+      for (const taskId of selectedTaskIds) {
+        await tasksAPI.approveTask(taskId);
       }
-    } catch (error) {
+      toast.success(`Successfully approved ${selectedTaskIds.length} task(s)`);
+      setRowSelection({});
+      fetchTasks();
+    } catch (error: any) {
       console.error('Bulk approve failed:', error);
-      toast.error('Bulk approve failed');
+      toast.error(error.message || 'Bulk approve failed');
     }
   };
 
@@ -365,26 +342,15 @@ export const Tasks: React.FC = () => {
     if (!reason) return;
 
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/admin/tasks/bulk-reject', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ taskIds: selectedTaskIds, reason })
-      });
-
-      if (response.ok) {
-        toast.success(`Successfully rejected ${selectedTaskIds.length} task(s)`);
-        setRowSelection({});
-        fetchTasks();
-      } else {
-        toast.error('Failed to reject tasks');
+      for (const taskId of selectedTaskIds) {
+        await tasksAPI.rejectTask(taskId, reason);
       }
-    } catch (error) {
+      toast.success(`Successfully rejected ${selectedTaskIds.length} task(s)`);
+      setRowSelection({});
+      fetchTasks();
+    } catch (error: any) {
       console.error('Bulk reject failed:', error);
-      toast.error('Bulk reject failed');
+      toast.error(error.message || 'Bulk reject failed');
     }
   };
 
