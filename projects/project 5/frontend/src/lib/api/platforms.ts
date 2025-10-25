@@ -52,6 +52,7 @@ export interface PlatformsResponse {
 
 export interface ServicesResponse {
   services: Service[];
+  platform?: Platform;
   pagination?: {
     page: number;
     limit: number;

@@ -31,10 +31,9 @@ export const InstagramOrderForm = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        // Fetch Instagram platform - you can update this with the actual Instagram platform ID
-        // For now, we'll fetch all platforms and find Instagram
+        // Fetch Instagram platform services
         const response = await getServicesByPlatform("instagram");
-        if (response.services) {
+        if (response.services && response.services.length > 0) {
           setApiServices(response.services);
         }
       } catch (error) {
