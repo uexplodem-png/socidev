@@ -35,6 +35,7 @@ import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { TaskSubmission, TaskSubmissionStatus } from '../types';
+import { tasksAPI } from '../services/api';
 
 interface TaskSubmissionWithOrder extends TaskSubmission {
     orderId: string;
@@ -42,6 +43,8 @@ interface TaskSubmissionWithOrder extends TaskSubmission {
     moneyEarned: number;
     proofsSent: number;
 }
+
+const API_BASE_URL = 'http://localhost:3000';
 
 // Mock order data for demonstration
 const mockOrders = [
@@ -405,13 +408,52 @@ export const TaskSubmissions: React.FC = () => {
     });
 
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            setSubmissions(mockSubmissions);
-            setTotalPages(1);
-            setIsLoading(false);
-        }, 500);
-    }, [pagination, globalFilter, statusFilter, taskFilter, userFilter, sorting]);
+        const fetchSubmissions = async () => {
+            try {
+                setIsLoading(true);
+                const response = await tasksAPI.getSubmittedTasks({
+                    page: pagination.pageIndex + 1,
+                    limit: pagination.pageSize,
+                    search: globalFilter,
+                    status: statusFilter,
+                });
+                
+                // Transform backend response to match frontend interface
+                const transformedTasks = response.tasks.map((task: any) => ({
+                    id: task.id,
+                    userId: task.userId,
+                    userName: task.User?.username || 'Unknown',
+                    userEmail: task.User?.email || '',
+                    taskId: task.id,
+                    taskName: `${task.platform} ${task.type}`,
+                    orderId: task.orderId || 'N/A',
+                    screenshotUrl: task.screenshotUrl || '',
+                    submissionNumber: 1, // Backend doesn't track this yet
+                    status: task.screenshotStatus || 'pending',
+                    submittedAt: task.screenshotSubmittedAt,
+                    reviewedAt: task.completedAt,
+                    reviewedBy: 'Admin',
+                    rejectionReason: task.rejectionReason,
+                    moneyEarned: task.rate || 0,
+                    proofsSent: 1, // Backend doesn't track this yet
+                    targetUrl: task.targetUrl,
+                    platform: task.platform,
+                    type: task.type,
+                }));
+                
+                setSubmissions(transformedTasks);
+                setTotalPages(Math.ceil((response.pagination?.total || 0) / pagination.pageSize));
+            } catch (error: any) {
+                console.error('Failed to fetch task submissions:', error);
+                toast.error(error.message || 'Failed to load task submissions');
+                setSubmissions([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchSubmissions();
+    }, [pagination.pageIndex, pagination.pageSize, globalFilter, statusFilter, taskFilter, userFilter, sorting]);
 
     useEffect(() => {
         const selectedRowIds = Object.keys(rowSelection).filter(id => rowSelection[id as keyof typeof rowSelection]);
@@ -420,14 +462,14 @@ export const TaskSubmissions: React.FC = () => {
 
     const handleApproveSubmission = async (submissionId: string) => {
         try {
-            // Simulate API call
+            await tasksAPI.approveTaskScreenshot(submissionId);
             setSubmissions(submissions.map(sub =>
                 sub.id === submissionId ? { ...sub, status: 'approved', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin' } : sub
             ));
-            toast.success('Submission approved successfully');
-        } catch (error) {
+            toast.success('Submission approved successfully - Payment processed');
+        } catch (error: any) {
             console.error('Failed to approve submission:', error);
-            toast.error('Failed to approve submission');
+            toast.error(error.message || 'Failed to approve submission');
         }
     };
 
@@ -438,17 +480,30 @@ export const TaskSubmissions: React.FC = () => {
         }
 
         try {
-            // Simulate API call
-            setSubmissions(submissions.map(sub =>
-                sub.id === rejectingSubmissionId ?
-                    { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
-            ));
-            toast.success('Submission rejected successfully');
+            if (rejectingSubmissionId === 'bulk') {
+                // Handle bulk rejection
+                const selectedSubmissionIds = Object.keys(rowSelection).filter(id => rowSelection[id as keyof typeof rowSelection]);
+                for (const id of selectedSubmissionIds) {
+                    await tasksAPI.rejectTaskScreenshot(id, rejectionReason);
+                }
+                toast.success(`Successfully rejected ${selectedSubmissionIds.length} submission(s)`);
+                setRowSelection({});
+            } else {
+                // Handle single rejection
+                await tasksAPI.rejectTaskScreenshot(rejectingSubmissionId, rejectionReason);
+                setSubmissions(submissions.map(sub =>
+                    sub.id === rejectingSubmissionId ?
+                        { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
+                ));
+                toast.success('Submission rejected successfully');
+            }
             setRejectingSubmissionId(null);
             setRejectionReason('');
-        } catch (error) {
+            // Refetch submissions
+            window.location.reload(); // Simple refetch - could be improved with state management
+        } catch (error: any) {
             console.error('Failed to reject submission:', error);
-            toast.error('Failed to reject submission');
+            toast.error(error.message || 'Failed to reject submission');
         }
     };
 
@@ -460,7 +515,9 @@ export const TaskSubmissions: React.FC = () => {
         }
 
         try {
-            // Simulate API call
+            for (const id of selectedSubmissionIds) {
+                await tasksAPI.approveTaskScreenshot(id);
+            }
             setSubmissions(submissions.map(sub =>
                 selectedSubmissionIds.includes(sub.id) ?
                     { ...sub, status: 'approved', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin' } : sub
@@ -732,7 +789,7 @@ export const TaskSubmissions: React.FC = () => {
                         </div>
                         <div className="p-4">
                             <img
-                                src={currentScreenshot}
+                                src={currentScreenshot.startsWith('http') ? currentScreenshot : `${API_BASE_URL}${currentScreenshot}`}
                                 alt="Submission screenshot"
                                 className="max-w-full h-auto rounded-lg"
                             />

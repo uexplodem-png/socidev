@@ -842,6 +842,25 @@ class RealApiService {
             body: JSON.stringify({ reason, notes }),
         });
     }
+
+    // Task Screenshot Submissions
+    async getSubmittedTasks(params?: any): Promise<any> {
+        const queryParams = new URLSearchParams(params).toString();
+        return this.request<any>(`/tasks/admin/submitted?${queryParams}`);
+    }
+
+    async approveTaskScreenshot(id: string): Promise<any> {
+        return this.request<any>(`/tasks/admin/${id}/approve`, {
+            method: 'POST',
+        });
+    }
+
+    async rejectTaskScreenshot(id: string, reason: string): Promise<any> {
+        return this.request<any>(`/tasks/admin/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason }),
+        });
+    }
 }
 
 

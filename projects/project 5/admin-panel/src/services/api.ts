@@ -204,4 +204,17 @@ export const tasksAPI = {
   rejectTask: async (id: string, reason?: string, notes?: string) => {
     return realApiService.rejectTask(id, reason, notes);
   },
+
+  // Screenshot submission approval
+  getSubmittedTasks: async (params?: any) => {
+    return realApiService.getSubmittedTasks(params);
+  },
+
+  approveTaskScreenshot: async (id: string) => {
+    return realApiService.approveTaskScreenshot(id);
+  },
+
+  rejectTaskScreenshot: async (id: string, reason: string) => {
+    return realApiService.rejectTaskScreenshot(id, reason);
+  },
 };
