@@ -24,7 +24,6 @@ export const NewOrderPage = () => {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draggedPlatformId, setDraggedPlatformId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -56,39 +55,6 @@ export const NewOrderPage = () => {
 
     fetchPlatforms();
   }, []);
-
-  const handlePlatformDragStart = (e: React.DragEvent, platformId: string) => {
-    setDraggedPlatformId(platformId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handlePlatformDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handlePlatformDrop = (e: React.DragEvent, targetPlatformId: string) => {
-    e.preventDefault();
-    if (!draggedPlatformId || draggedPlatformId === targetPlatformId) {
-      setDraggedPlatformId(null);
-      return;
-    }
-
-    const draggedIndex = platforms.findIndex(p => p.id === draggedPlatformId);
-    const targetIndex = platforms.findIndex(p => p.id === targetPlatformId);
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedPlatformId(null);
-      return;
-    }
-
-    const newPlatforms = [...platforms];
-    [newPlatforms[draggedIndex], newPlatforms[targetIndex]] =
-      [newPlatforms[targetIndex], newPlatforms[draggedIndex]];
-
-    setPlatforms(newPlatforms);
-    setDraggedPlatformId(null);
-  };
 
   if (loading) {
     return (
@@ -166,19 +132,18 @@ export const NewOrderPage = () => {
                         ? { border: "gray-900", bg: "gray-50", text: "gray-900" }
                         : { border: "blue-500", bg: "blue-50", text: "blue-500" };
 
+            const isInactive = platform.isActive === false;
+
             return (
               <button
                 key={platform.id}
-                draggable
-                onDragStart={(e) => handlePlatformDragStart(e, platform.id)}
-                onDragOver={handlePlatformDragOver}
-                onDrop={(e) => handlePlatformDrop(e, platform.id)}
-                onClick={() => setSelectedPlatform(platformId)}
-                className={`p-6 rounded-xl border-2 transition-all ${draggedPlatformId === platform.id
-                  ? "border-blue-500 bg-blue-50 opacity-50"
+                onClick={() => !isInactive && setSelectedPlatform(platformId)}
+                disabled={isInactive}
+                className={`p-6 rounded-xl border-2 transition-all ${isInactive
+                  ? "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
                   : isSelected
                     ? `border-${accentColor.border} bg-${accentColor.bg}`
-                    : "border-gray-200 hover:border-gray-300 cursor-grab active:cursor-grabbing"
+                    : "border-gray-200 hover:border-gray-300 cursor-pointer"
                   }`}>
                 {Icon && (
                   <Icon
