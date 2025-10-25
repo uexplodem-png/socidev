@@ -243,6 +243,14 @@ export const Tasks: React.FC = () => {
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
+      
+      // Convert camelCase to snake_case for sortBy
+      const sortByField = sorting[0]?.id || 'createdAt';
+      const sortBySnakeCase = sortByField === 'createdAt' ? 'created_at' 
+        : sortByField === 'updatedAt' ? 'updated_at'
+        : sortByField === 'lastUpdatedAt' ? 'last_updated_at'
+        : sortByField;
+      
       const params: any = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
@@ -250,7 +258,7 @@ export const Tasks: React.FC = () => {
         status: statusFilter,
         platform: platformFilter,
         type: typeFilter,
-        sortBy: sorting[0]?.id || 'createdAt',
+        sortBy: sortBySnakeCase,
         sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
       };
 

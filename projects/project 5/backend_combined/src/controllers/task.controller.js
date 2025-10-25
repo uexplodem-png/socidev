@@ -101,8 +101,8 @@ export class TaskController {
   // Admin: Get submitted tasks for review
   getSubmittedTasks = catchAsync(async (req, res) => {
     // Check if user is admin
-    if (req.user.role !== "admin") {
-      throw new ApiError(403, "Access denied. Admin only.");
+    if (!["admin", "super_admin", "moderator"].includes(req.user.role)) {
+      throw new ApiError(403, "Access denied. Admin privileges required.");
     }
 
     const { platform, type, page = 1, limit = 20 } = req.query;
@@ -120,8 +120,8 @@ export class TaskController {
   // Admin: Approve task
   approveTask = catchAsync(async (req, res) => {
     // Check if user is admin
-    if (req.user.role !== "admin") {
-      throw new ApiError(403, "Access denied. Admin only.");
+    if (!["admin", "super_admin", "moderator"].includes(req.user.role)) {
+      throw new ApiError(403, "Access denied. Admin privileges required.");
     }
 
     const adminId = req.user.id;
@@ -138,8 +138,8 @@ export class TaskController {
   // Admin: Reject task
   rejectTask = catchAsync(async (req, res) => {
     // Check if user is admin
-    if (req.user.role !== "admin") {
-      throw new ApiError(403, "Access denied. Admin only.");
+    if (!["admin", "super_admin", "moderator"].includes(req.user.role)) {
+      throw new ApiError(403, "Access denied. Admin privileges required.");
     }
 
     const adminId = req.user.id;
