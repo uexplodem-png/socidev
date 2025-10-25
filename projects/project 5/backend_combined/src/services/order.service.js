@@ -3,6 +3,7 @@ import Order from "../models/Order.js";
 import User from "../models/User.js";
 import Task from "../models/Task.js";
 import Transaction from "../models/Transaction.js";
+import Service from "../models/Service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { sequelize } from "../config/database.js";
 import { StatisticsService } from "./statistics.service.js";
@@ -97,7 +98,7 @@ export class OrderService {
       }
 
       // Calculate total cost
-      const totalCost = this.calculateOrderCost(orderData);
+      const totalCost = await this.calculateOrderCost(orderData);
 
       // Check if user has enough balance
       if (user.balance < totalCost) {
@@ -182,10 +183,10 @@ export class OrderService {
       }
 
       // Calculate total cost for all orders
-      const totalCost = orders.reduce(
-        (sum, order) => sum + this.calculateOrderCost(order),
-        0
+      const orderCosts = await Promise.all(
+        orders.map((order) => this.calculateOrderCost(order))
       );
+      const totalCost = orderCosts.reduce((sum, cost) => sum + cost, 0);
 
       // Check if user has enough balance
       if (user.balance < totalCost) {
@@ -194,12 +195,13 @@ export class OrderService {
 
       // Create all orders and corresponding tasks
       const createdOrders = await Promise.all(
-        orders.map(async (orderData) => {
+        orders.map(async (orderData, index) => {
+          const amount = orderCosts[index];
           const order = await Order.create(
             {
               userId,
               ...orderData,
-              amount: this.calculateOrderCost(orderData),
+              amount,
               status: "pending",
               remainingCount: orderData.quantity,
             },
@@ -272,28 +274,14 @@ export class OrderService {
     }
   }
 
-  calculateOrderCost(orderData) {
-    let basePrice;
-    switch (orderData.service) {
-      case "likes":
-        basePrice = 0.5;
-        break;
-      case "followers":
-        basePrice = 1.0;
-        break;
-      case "views":
-        basePrice = 0.2;
-        break;
-      case "comments":
-        basePrice = 2.0;
-        break;
-      case "subscribers":
-        basePrice = 1.0;
-        break;
-      default:
-        throw new ApiError(400, "Invalid service type");
+  async calculateOrderCost(orderData) {
+    // Fetch the service by ID to get the price
+    const service = await Service.findByPk(orderData.service);
+    if (!service) {
+      throw new ApiError(400, "Invalid service");
     }
 
+    let basePrice = parseFloat(service.pricePerUnit);
     let total = basePrice * orderData.quantity;
 
     // Apply bulk discount
@@ -392,7 +380,7 @@ export class OrderService {
       }
 
       // Calculate total cost
-      const totalCost = this.calculateOrderCost(orderData);
+      const totalCost = await this.calculateOrderCost(orderData);
 
       // Check if user has enough balance
       if (user.balance < totalCost) {
