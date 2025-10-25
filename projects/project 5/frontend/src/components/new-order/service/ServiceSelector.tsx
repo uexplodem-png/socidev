@@ -226,7 +226,7 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({
                 </div>
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected
-                    ? `${color.border} ${color.bg} text-white`
+                    ? `${color.border} ${color.bg} ${color.iconText}`
                     : "border-gray-300"
                     }`}>
                   {isSelected && <CheckCircle className='w-4 h-4' />}

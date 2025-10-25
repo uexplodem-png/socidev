@@ -62,6 +62,10 @@ const Order = sequelize.define(
     amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+      get() {
+        const value = this.getDataValue('amount');
+        return value === null ? 0 : parseFloat(value);
+      }
     },
     progress: {
       type: DataTypes.INTEGER,

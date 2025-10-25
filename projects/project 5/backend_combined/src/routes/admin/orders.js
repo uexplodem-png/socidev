@@ -1,6 +1,6 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import { Order, User, Transaction, ActivityLog } from '../../models/index.js';
+import { Order, User, Transaction, ActivityLog, Task } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
@@ -197,18 +197,106 @@ router.post('/:id/status',
     const { id } = req.params;
     const { status, notes } = req.body;
 
+    console.log(`[ORDER STATUS UPDATE] Received request for order ${id}, new status: ${status}`);
+
     const order = await Order.findByPk(id);
     if (!order) {
       throw new NotFoundError('Order');
     }
 
     const originalStatus = order.status;
+    console.log(`[ORDER STATUS UPDATE] Original status: ${originalStatus}, New status: ${status}`);
     
     // Update order status
     await order.update({ 
       status,
       notes: notes || order.notes,
     });
+
+    console.log(`[ORDER STATUS UPDATE] Order updated. Checking if task should be created...`);
+    console.log(`[ORDER STATUS UPDATE] Condition check: status === 'processing' (${status === 'processing'}) && originalStatus !== 'processing' (${originalStatus !== 'processing'})`);
+
+    // If status is changed to "processing", create a task for task doers
+    if (status === 'processing' && originalStatus !== 'processing') {
+      console.log(`[TASK CREATION] Creating task for order ${id}`);
+      
+      try {
+        // Map the service to a task type (like, follow, view, subscribe, comment, share)
+        // Default to the service name, or map known services
+        const serviceTypeMap = {
+          'like': 'like',
+          'follow': 'follow',
+          'view': 'view',
+          'subscribe': 'subscribe',
+          'comment': 'comment',
+          'share': 'share',
+        };
+        
+        const taskType = serviceTypeMap[order.service.toLowerCase()] || 'like';
+        console.log(`[TASK CREATION] Task type: ${taskType}, Platform: ${order.platform}, Service: ${order.service}`);
+        
+        // Calculate rate per unit - divide total amount by quantity
+        const ratePerUnit = parseFloat(order.amount) / order.quantity;
+        console.log(`[TASK CREATION] Rate: ${ratePerUnit}, Quantity: ${order.quantity}`);
+        
+        // Create a task for task doers
+        const task = await Task.create({
+          userId: null, // No specific user assigned yet
+          orderId: order.id,
+          title: `${order.platform.charAt(0).toUpperCase() + order.platform.slice(1)} - ${order.service}`,
+          description: `Complete ${order.quantity} ${order.service} on ${order.targetUrl}`,
+          type: taskType,
+          platform: order.platform,
+          targetUrl: order.targetUrl,
+          quantity: order.quantity,
+          remainingQuantity: order.quantity,
+          rate: ratePerUnit,
+          priority: order.speed === 'express' ? 'urgent' : order.speed === 'fast' ? 'high' : 'medium',
+          requirements: `Complete ${order.quantity} ${order.service} on the target URL`,
+          status: 'pending',
+          adminStatus: 'approved', // Auto-approve tasks created from orders
+        });
+
+        console.log(`[TASK CREATION] Task created successfully: ${task.id}`);
+
+        // Log the task creation
+        await ActivityLog.log(
+          req.user.id,
+          'TASK_CREATED_FROM_ORDER',
+          'task',
+          task.id,
+          null,
+          `Task created from order - ${order.quantity} ${order.service} on ${order.platform}`,
+          {
+            orderId: order.id,
+            taskId: task.id,
+            service: order.service,
+            quantity: order.quantity,
+            platform: order.platform,
+          },
+          req
+        );
+      } catch (taskError) {
+        console.error('[TASK CREATION ERROR]', taskError.message);
+        console.error('[TASK CREATION ERROR]', taskError);
+        // Don't fail the entire request if task creation fails
+        await ActivityLog.log(
+          req.user.id,
+          'TASK_CREATION_FAILED',
+          'order',
+          order.id,
+          null,
+          `Failed to create task from order: ${taskError.message}`,
+          {
+            error: taskError.message,
+            orderId: order.id,
+          },
+          req
+        );
+      }
+    } else {
+      console.log(`[TASK CREATION] Skipping task creation: status === 'processing'? ${status === 'processing'}, originalStatus !== 'processing'? ${originalStatus !== 'processing'}`);
+    }
 
     // Log the status change
     await ActivityLog.log(
@@ -295,13 +383,15 @@ router.post('/:id/refund',
     }
 
     // Calculate refund amount
+    const orderAmount = parseFloat(order.amount);
     const finalRefundAmount = partial && refundAmount 
-      ? Math.min(refundAmount, order.amount)
-      : order.amount;
+      ? Math.min(refundAmount, orderAmount)
+      : orderAmount;
 
     // Update user balance
     const user = order.user;
-    const newBalance = parseFloat(user.balance) + finalRefundAmount;
+    const currentBalance = parseFloat(user.balance);
+    const newBalance = currentBalance + finalRefundAmount;
     await user.update({ balance: newBalance });
 
     // Update order status

@@ -270,7 +270,7 @@ export const InstagramAccountsPage = () => {
         <Card className='p-6 flex items-center justify-center'>
           <Button
             onClick={() => setShowAddModal(true)}
-            className='w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white'>
+            className='w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-black'>
             <Plus className='w-4 h-4 mr-2' />
             {t("addAccount")}
           </Button>
@@ -339,13 +339,12 @@ export const InstagramAccountsPage = () => {
                       className='w-12 h-12 rounded-xl object-cover ring-2 ring-pink-100'
                     />
                     <div
-                      className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                        account.status === "active"
+                      className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${account.status === "active"
                           ? "bg-green-500"
                           : account.status === "inactive"
-                          ? "bg-red-500"
-                          : "bg-yellow-500"
-                      }`}
+                            ? "bg-red-500"
+                            : "bg-yellow-500"
+                        }`}
                     />
                   </div>
                   <div>

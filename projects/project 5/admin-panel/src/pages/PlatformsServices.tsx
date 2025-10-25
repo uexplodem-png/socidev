@@ -529,8 +529,8 @@ const PlatformsServices: React.FC = () => {
                                 onDragOver={handlePlatformDragOver}
                                 onDrop={(e) => handlePlatformDrop(e, platform.id)}
                                 className={`bg-white dark:bg-slate-800 rounded-lg border-2 overflow-hidden transition-all ${draggedPlatformId === platform.id
-                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 opacity-50'
-                                        : 'border-gray-200 dark:border-slate-700'
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 opacity-50'
+                                    : 'border-gray-200 dark:border-slate-700'
                                     }`}
                             >
                                 {/* Platform header */}
@@ -616,8 +616,8 @@ const PlatformsServices: React.FC = () => {
                                                                 onDragOver={handleServiceDragOver}
                                                                 onDrop={(e) => handleServiceDrop(e, service.id)}
                                                                 className={`flex items-center justify-between p-3 rounded border-2 transition-all ${draggedServiceId === service.id
-                                                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 opacity-50'
-                                                                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
+                                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 opacity-50'
+                                                                    : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
                                                                     }`}
                                                             >
                                                                 <div className="flex-1 cursor-grab active:cursor-grabbing">

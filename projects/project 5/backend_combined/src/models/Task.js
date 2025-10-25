@@ -12,12 +12,21 @@ const Task = sequelize.define(
     },
     userId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: User,
         key: "id",
       },
       field: "user_id",
+    },
+    orderId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "orders",
+        key: "id",
+      },
+      field: "order_id",
     },
     title: {
       type: DataTypes.STRING(255),
@@ -137,6 +146,5 @@ const Task = sequelize.define(
 );
 
 Task.belongsTo(User, { foreignKey: "userId" });
-User.hasMany(Task, { foreignKey: "userId" });
 
 export default Task;

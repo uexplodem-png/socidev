@@ -20,8 +20,15 @@ export class TaskService {
     const executedTaskIds = userExecutions.map(execution => execution.taskId);
 
     const where = {
-      userId: { [Op.ne]: userId }, // Exclude user's own tasks
+      // Show tasks that are either:
+      // 1. Created from orders (userId is null) - available for all task doers
+      // 2. Created by other users (userId not equal to current user)
+      [Op.or]: [
+        { userId: null }, // Tasks from orders
+        { userId: { [Op.ne]: userId } } // Other users' tasks
+      ],
       status: { [Op.in]: ["pending", "processing"] },
+      adminStatus: "approved", // Only show admin-approved tasks
       id: { [Op.notIn]: executedTaskIds }, // Exclude tasks user has already executed
     };
 
@@ -80,9 +87,14 @@ export class TaskService {
         throw new ApiError(404, "Task not found");
       }
 
-      // Check if user owns the task
-      if (task.userId === userId) {
+      // Check if user owns the task (skip if task.userId is null - tasks from orders)
+      if (task.userId && task.userId === userId) {
         throw new ApiError(400, "Cannot execute own task");
+      }
+
+      // Check if task is admin approved
+      if (task.adminStatus !== "approved") {
+        throw new ApiError(400, "Task is not approved by admin");
       }
 
       // Check if task is already completed by this user

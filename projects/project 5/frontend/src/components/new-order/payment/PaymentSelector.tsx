@@ -86,18 +86,16 @@ export const PaymentSelector: React.FC<PaymentSelectorProps> = ({
               key={method.id}
               type='button'
               onClick={() => onMethodChange(method.id)}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${
-                selectedMethod === method.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-200"
-              }`}>
+              className={`p-4 rounded-xl border-2 text-left transition-all ${selectedMethod === method.id
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:border-blue-200"
+                }`}>
               <div className='flex items-center gap-2'>
                 <method.icon
-                  className={`w-5 h-5 ${
-                    selectedMethod === method.id
-                      ? "text-blue-600"
-                      : "text-gray-600"
-                  }`}
+                  className={`w-5 h-5 ${selectedMethod === method.id
+                    ? "text-blue-600"
+                    : "text-gray-600"
+                    }`}
                 />
                 <span className='font-medium'>{method.name}</span>
               </div>

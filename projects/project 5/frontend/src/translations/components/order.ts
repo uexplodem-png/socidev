@@ -41,6 +41,8 @@ export const orderTranslations = {
     platformFee: "Platform Fee",
     totalAmount: "Total Amount",
     deliverySpeed: "Delivery Speed",
+
+    selectedServices: "Selected Services",
   },
   tr: {
     // Order Filters
@@ -84,5 +86,7 @@ export const orderTranslations = {
     platformFee: "Platform Ücreti",
     totalAmount: "Toplam Tutar",
     deliverySpeed: "Teslimat Hızı",
+    selectedServices: "Seçilen Hizmetler",
+
   },
 };

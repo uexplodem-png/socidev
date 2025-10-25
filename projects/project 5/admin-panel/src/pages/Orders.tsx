@@ -483,16 +483,18 @@ export const Orders: React.FC = () => {
     if (!selectedOrder) return;
 
     try {
-      // Update order
-      // In a real app, you would call an API to update the order
-      // For now, we'll just update it in the local state
+      // If status has changed, update it via the API
+      if (editOrder.status !== selectedOrder.status) {
+        await ordersAPI.updateOrderStatus(selectedOrder.id, editOrder.status);
+      }
+
+      // Update local state
       const updatedOrder = {
         ...selectedOrder,
         ...editOrder,
         updatedAt: new Date().toISOString(),
       };
 
-      // Update local state
       setOrders(prev =>
         prev.map(order => order.id === selectedOrder.id ? updatedOrder : order)
       );

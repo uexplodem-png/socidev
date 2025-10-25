@@ -42,10 +42,12 @@ const defineAssociations = () => {
   Order.hasMany(Transaction, { foreignKey: 'order_id', as: 'transactions' });
   Order.hasMany(Dispute, { foreignKey: 'order_id', as: 'disputes' });
   Order.hasMany(Refund, { foreignKey: 'order_id', as: 'refunds' });
+  Order.hasMany(Task, { foreignKey: 'order_id', as: 'tasks' });
 
   // Task associations
   Task.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   Task.belongsTo(User, { foreignKey: 'admin_reviewed_by', as: 'reviewer' });
+  Task.belongsTo(Order, { foreignKey: 'order_id', as: 'order' }); // Task belongs to an order
   Task.hasMany(TaskExecution, { foreignKey: 'task_id', as: 'executions' });
   Task.hasMany(Dispute, { foreignKey: 'task_id', as: 'disputes' });
 

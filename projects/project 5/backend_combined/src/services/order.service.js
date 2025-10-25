@@ -128,10 +128,11 @@ export class OrderService {
         { transaction: dbTransaction }
       );
 
-      // Create corresponding task
+      // Create corresponding task (without userId so task doers can claim it)
       await Task.create(
         {
-          userId,
+          orderId: order.id, // Link task to order
+          userId: null, // No specific user - available for task doers to claim
           title: `${service.name} for ${orderData.targetUrl}`,
           description: `Process ${orderData.quantity} ${service.name} for ${orderData.targetUrl}`,
           type: this.mapServiceToTaskType(service.name),
@@ -141,6 +142,7 @@ export class OrderService {
           remainingQuantity: orderData.quantity,
           rate: this.calculateTaskRate(orderData),
           status: "pending",
+          adminStatus: "approved", // Auto-approve tasks from orders
           lastUpdatedAt: new Date(),
         },
         { transaction: dbTransaction }
@@ -264,10 +266,11 @@ export class OrderService {
             { transaction: dbTransaction }
           );
 
-          // Create corresponding task
+          // Create corresponding task (without userId so task doers can claim it)
           await Task.create(
             {
-              userId,
+              orderId: order.id, // Link task to order
+              userId: null, // No specific user - available for task doers to claim
               title: `${serviceName} for ${orderData.targetUrl}`,
               description: `Process ${orderData.quantity} ${serviceName} for ${orderData.targetUrl}`,
               type: this.mapServiceToTaskType(serviceName),
@@ -277,6 +280,7 @@ export class OrderService {
               remainingQuantity: orderData.quantity,
               rate: this.calculateTaskRate(orderData),
               status: "pending",
+              adminStatus: "approved", // Auto-approve tasks from orders
               lastUpdatedAt: new Date(),
             },
             { transaction: dbTransaction }
@@ -487,10 +491,13 @@ export class OrderService {
         { transaction: dbTransaction }
       );
 
-      // Create corresponding task
+      // Create corresponding task (without userId so task doers can claim it)
       await Task.create(
         {
-          userId,
+          orderId: newOrder.id, // Link task to order
+          userId: null, // No specific user - available for task doers to claim
+          title: `${orderData.service} for ${orderData.targetUrl}`,
+          description: `Process ${orderData.quantity} ${orderData.service} for ${orderData.targetUrl}`,
           type: this.mapServiceToTaskType(orderData.service),
           platform: orderData.platform,
           targetUrl: orderData.targetUrl,
@@ -498,6 +505,8 @@ export class OrderService {
           remainingQuantity: orderData.quantity,
           rate: this.calculateTaskRate(orderData),
           status: "pending",
+          adminStatus: "approved", // Auto-approve tasks from orders
+          lastUpdatedAt: new Date(),
         },
         { transaction: dbTransaction }
       );

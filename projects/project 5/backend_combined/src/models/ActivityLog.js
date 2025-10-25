@@ -38,4 +38,22 @@ const ActivityLog = sequelize.define('ActivityLog', {
 
 ActivityLog.belongsTo(User, { foreignKey: 'userId' });
 
+// Static method to log activity with standard signature
+ActivityLog.log = async function(userId, action, resourceType, resourceId, targetUserId, description, metadata = {}, req = null) {
+  return await ActivityLog.create({
+    userId,
+    type: action,
+    action: `${resourceType}:${action}`,
+    details: {
+      resourceType,
+      resourceId,
+      targetUserId,
+      description,
+      ...metadata
+    },
+    ipAddress: req?.ip,
+    userAgent: req?.headers?.['user-agent']
+  });
+};
+
 export default ActivityLog;
