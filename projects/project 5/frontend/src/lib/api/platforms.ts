@@ -36,6 +36,7 @@ export interface Platform {
     descriptionTr?: string;
     icon?: string;
     isActive: boolean;
+    displayOrder?: number;
     createdAt: string;
     updatedAt: string;
     services?: Service[];

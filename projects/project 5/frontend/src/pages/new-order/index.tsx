@@ -18,6 +18,7 @@ export const NewOrderPage = () => {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draggedPlatformId, setDraggedPlatformId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -26,11 +27,17 @@ export const NewOrderPage = () => {
         setLoading(true);
         setError(null);
         const response = await getPlatforms({ isActive: true });
-        setPlatforms(response.platforms);
+        
+        // Sort platforms by displayOrder
+        const sortedPlatforms = (response.platforms || []).sort(
+          (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+        );
+        
+        setPlatforms(sortedPlatforms);
 
         // Set the first platform as default if available
-        if (response.platforms.length > 0) {
-          setSelectedPlatform(response.platforms[0].name.toLowerCase());
+        if (sortedPlatforms.length > 0) {
+          setSelectedPlatform(sortedPlatforms[0].name.toLowerCase());
         }
       } catch (err) {
         setError(
@@ -43,6 +50,39 @@ export const NewOrderPage = () => {
 
     fetchPlatforms();
   }, []);
+
+  const handlePlatformDragStart = (e: React.DragEvent, platformId: string) => {
+    setDraggedPlatformId(platformId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handlePlatformDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handlePlatformDrop = (e: React.DragEvent, targetPlatformId: string) => {
+    e.preventDefault();
+    if (!draggedPlatformId || draggedPlatformId === targetPlatformId) {
+      setDraggedPlatformId(null);
+      return;
+    }
+
+    const draggedIndex = platforms.findIndex(p => p.id === draggedPlatformId);
+    const targetIndex = platforms.findIndex(p => p.id === targetPlatformId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedPlatformId(null);
+      return;
+    }
+
+    const newPlatforms = [...platforms];
+    [newPlatforms[draggedIndex], newPlatforms[targetIndex]] = 
+    [newPlatforms[targetIndex], newPlatforms[draggedIndex]];
+
+    setPlatforms(newPlatforms);
+    setDraggedPlatformId(null);
+  };
 
   if (loading) {
     return (
@@ -118,11 +158,17 @@ export const NewOrderPage = () => {
             return (
               <button
                 key={platform.id}
+                draggable
+                onDragStart={(e) => handlePlatformDragStart(e, platform.id)}
+                onDragOver={handlePlatformDragOver}
+                onDrop={(e) => handlePlatformDrop(e, platform.id)}
                 onClick={() => setSelectedPlatform(platformId)}
                 className={`p-6 rounded-xl border-2 transition-all ${
-                  isSelected
+                  draggedPlatformId === platform.id
+                    ? "border-blue-500 bg-blue-50 opacity-50"
+                    : isSelected
                     ? `border-${accentColor.border} bg-${accentColor.bg}`
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-gray-200 hover:border-gray-300 cursor-grab active:cursor-grabbing"
                 }`}>
                 {Icon && (
                   <Icon
