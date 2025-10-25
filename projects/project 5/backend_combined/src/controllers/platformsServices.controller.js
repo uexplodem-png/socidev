@@ -212,7 +212,7 @@ export const getServices = async (req, res) => {
     
     const { count, rows } = await Service.findAndCountAll({
       where,
-      attributes: ['id', 'platformId', 'name', 'nameEn', 'nameTr', 'description', 'descriptionEn', 'descriptionTr', 'pricePerUnit', 'minOrder', 'maxOrder', 'inputFieldName', 'sampleUrl', 'features', 'featuresEn', 'featuresTr', 'urlPattern', 'commissionRate', 'isActive', 'displayOrder', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'platformId', 'name', 'nameEn', 'nameTr', 'description', 'descriptionEn', 'descriptionTr', 'pricePerUnit', 'minOrder', 'maxOrder', 'inputFieldName', 'sampleUrl', 'features', 'featuresEn', 'featuresTr', 'urlPattern', 'urlLabel', 'commissionRate', 'isActive', 'displayOrder', 'createdAt', 'updatedAt'],
       include: [
         {
           model: Platform,
