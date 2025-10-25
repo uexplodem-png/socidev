@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ServiceSelector } from "../service/ServiceSelector";
 import { PaymentSelector } from "../payment/PaymentSelector";
 import { OrderOptions } from "../service/OrderOptions";
@@ -75,18 +75,21 @@ export const InstagramOrderForm = () => {
     return service.features || [];
   };
 
-  const componentServices: ComponentService[] = apiServices.map(service => ({
-    id: service.id,
-    name: getServiceName(service),
-    description: getServiceDescription(service),
-    icon: mapIconForService(service.name),
-    basePrice: service.pricePerUnit,
-    minQuantity: service.minOrder,
-    maxQuantity: service.maxOrder,
-    features: getServiceFeatures(service),
-    urlExample: service.sampleUrl,
-    urlPattern: service.urlPattern,
-  }));
+  const componentServices: ComponentService[] = useMemo(() => 
+    apiServices.map(service => ({
+      id: service.id,
+      name: getServiceName(service),
+      description: getServiceDescription(service),
+      icon: mapIconForService(service.name),
+      basePrice: service.pricePerUnit,
+      minQuantity: service.minOrder,
+      maxQuantity: service.maxOrder,
+      features: getServiceFeatures(service),
+      urlExample: service.sampleUrl,
+      urlPattern: service.urlPattern,
+    })),
+    [apiServices, language]
+  );
 
   const handleServiceToggle = (serviceId: string) => {
     const newSelected = new Set(selectedServices);

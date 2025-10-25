@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ServiceSelector } from "../service/ServiceSelector";
 import { PaymentSelector } from "../payment/PaymentSelector";
 import { OrderOptions } from "../service/OrderOptions";
@@ -20,9 +20,6 @@ export const YoutubeOrderForm = () => {
     new Set()
   );
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>(
-    {}
-  );
   const [targetUrls, setTargetUrls] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState("balance");
   const [selectedSpeed, setSelectedSpeed] = useState<
@@ -78,18 +75,21 @@ export const YoutubeOrderForm = () => {
     return service.features || [];
   };
 
-  const services: ComponentService[] = apiServices.map(service => ({
-    id: service.id,
-    name: getServiceName(service),
-    description: getServiceDescription(service),
-    icon: mapIconForService(service.name),
-    basePrice: service.pricePerUnit,
-    minQuantity: service.minOrder,
-    maxQuantity: service.maxOrder,
-    features: getServiceFeatures(service),
-    urlExample: service.sampleUrl,
-    urlPattern: service.urlPattern,
-  }));
+  const services: ComponentService[] = useMemo(() =>
+    apiServices.map(service => ({
+      id: service.id,
+      name: getServiceName(service),
+      description: getServiceDescription(service),
+      icon: mapIconForService(service.name),
+      basePrice: service.pricePerUnit,
+      minQuantity: service.minOrder,
+      maxQuantity: service.maxOrder,
+      features: getServiceFeatures(service),
+      urlExample: service.sampleUrl,
+      urlPattern: service.urlPattern,
+    })),
+    [apiServices, language]
+  );
 
   const handleServiceToggle = (serviceId: string) => {
     const newSelected = new Set(selectedServices);
@@ -117,46 +117,6 @@ export const YoutubeOrderForm = () => {
       ...prev,
       [serviceId]: value,
     }));
-  };
-
-  const handleQuantityValidation = (serviceId: string) => {
-    const service = services.find((s) => s.id === serviceId);
-    if (!service) return;
-
-    const value = quantities[serviceId];
-    if (value < service.minQuantity) {
-      setQuantities((prev) => ({
-        ...prev,
-        [serviceId]: service.minQuantity,
-      }));
-      setQuantityErrors((prev) => ({
-        ...prev,
-        [serviceId]: `Minimum quantity is ${service.minQuantity.toLocaleString()}`,
-      }));
-      setTimeout(() => {
-        setQuantityErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[serviceId];
-          return newErrors;
-        });
-      }, 1500);
-    } else if (value > service.maxQuantity) {
-      setQuantities((prev) => ({
-        ...prev,
-        [serviceId]: service.maxQuantity,
-      }));
-      setQuantityErrors((prev) => ({
-        ...prev,
-        [serviceId]: `Maximum quantity is ${service.maxQuantity.toLocaleString()}`,
-      }));
-      setTimeout(() => {
-        setQuantityErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[serviceId];
-          return newErrors;
-        });
-      }, 1500);
-    }
   };
 
   const handleTargetUrlChange = (serviceId: string, url: string) => {
@@ -264,14 +224,13 @@ export const YoutubeOrderForm = () => {
         services={services}
         selectedServices={selectedServices}
         quantities={quantities}
-        quantityErrors={quantityErrors}
+        quantityErrors={{}}
         accentColor='red'
         platform='youtube'
         targetUrls={targetUrls}
         onTargetUrlChange={handleTargetUrlChange}
         onServiceToggle={handleServiceToggle}
         onQuantityChange={handleQuantityChange}
-        onQuantityBlur={handleQuantityValidation}
         hideTargetUrl={false}
       />
 
@@ -281,11 +240,11 @@ export const YoutubeOrderForm = () => {
             selectedSpeed={selectedSpeed}
             onSpeedChange={setSelectedSpeed}
             needsInvoice={false}
-            onInvoiceChange={() => {}}
+            onInvoiceChange={() => { }}
             companyName=''
-            onCompanyNameChange={() => {}}
+            onCompanyNameChange={() => { }}
             taxId=''
-            onTaxIdChange={() => {}}
+            onTaxIdChange={() => { }}
           />
 
           <PaymentSelector
