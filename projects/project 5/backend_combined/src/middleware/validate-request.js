@@ -7,8 +7,11 @@ export const validateRequest = (req, res, next) => {
     const validationErrors = errors.array().map((error) => ({
       field: error.param,
       message: error.msg,
+      value: error.value,
     }));
-    throw new ApiError(400, "Validation Error", validationErrors);
+    const errorMessage = validationErrors.map(e => `${e.field}: ${e.message}`).join("; ");
+    throw new ApiError(400, "Validation Error: " + errorMessage, validationErrors);
   }
   next();
 };
+

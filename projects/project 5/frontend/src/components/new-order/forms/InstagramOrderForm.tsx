@@ -198,8 +198,14 @@ export const InstagramOrderForm = () => {
         navigate("/my-orders");
       }, 2000);
     } catch (error) {
-      toast.error(t("orderError"));
       console.error("Order creation failed:", error);
+      
+      // Handle validation errors from backend
+      if (error instanceof Error && error.message.includes("Validation Error")) {
+        toast.error(t("validationError") || "Please fill in all required fields (Target URL, Quantity)");
+      } else {
+        toast.error(t("orderError") || "Failed to create order. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
