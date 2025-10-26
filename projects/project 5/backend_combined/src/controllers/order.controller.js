@@ -64,6 +64,15 @@ export class OrderController {
     res.json(order);
   });
 
+  // Get specific order stats (progress tracking)
+  getOrderStatsById = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const orderId = req.params.id;
+
+    const stats = await orderService.getOrderStatsById(userId, orderId);
+    res.json(stats);
+  });
+
   // Create single order
   createOrder = catchAsync(async (req, res) => {
     const userId = req.user.id;

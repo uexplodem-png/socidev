@@ -89,6 +89,28 @@ export class OrderService {
     return order;
   }
 
+  async getOrderStatsById(userId, orderId) {
+    const order = await Order.findOne({
+      where: { id: orderId, userId },
+      attributes: ["id", "quantity", "completedCount", "remainingCount", "status", "createdAt", "completedAt"],
+    });
+
+    if (!order) {
+      throw new ApiError(404, "Order not found");
+    }
+
+    return {
+      id: order.id,
+      quantity: order.quantity,
+      completedCount: order.completedCount,
+      remainingCount: order.remainingCount,
+      status: order.status,
+      progressPercentage: order.quantity > 0 ? Math.round((order.completedCount / order.quantity) * 100) : 0,
+      createdAt: order.createdAt,
+      completedAt: order.completedAt,
+    };
+  }
+
   async createOrder(userId, orderData) {
     const dbTransaction = await sequelize.transaction();
 
@@ -124,29 +146,49 @@ export class OrderService {
           amount: totalCost,
           status: "pending",
           remainingCount: orderData.quantity,
+          completedCount: 0,
         },
         { transaction: dbTransaction }
       );
 
-      // Create corresponding task (without userId so task doers can claim it)
-      await Task.create(
-        {
-          orderId: order.id, // Link task to order
-          userId: null, // No specific user - available for task doers to claim
-          title: `${service.name} for ${orderData.targetUrl}`,
-          description: `Process ${orderData.quantity} ${service.name} for ${orderData.targetUrl}`,
-          type: this.mapServiceToTaskType(service.name),
+      // Create N individual tasks (one per required action)
+      // For quantity = 100, create 100 tasks that can be claimed by different task doers
+      const taskRate = this.calculateTaskRate(orderData);
+      const taskType = this.mapServiceToTaskType(service.name);
+      const batchSize = 500; // Batch size for bulk inserts
+      const tasksToCreate = [];
+
+      for (let i = 0; i < orderData.quantity; i++) {
+        tasksToCreate.push({
+          orderId: order.id,
+          userId: null, // Available for any task doer to claim
+          title: `${service.name} - ${orderData.targetUrl}`,
+          description: `Complete ${service.name} task for ${orderData.targetUrl}`,
+          type: taskType,
           platform: orderData.platform,
           targetUrl: orderData.targetUrl,
-          quantity: orderData.quantity,
-          remainingQuantity: orderData.quantity,
-          rate: this.calculateTaskRate(orderData),
+          quantity: 1, // Each task is for 1 action
+          remainingQuantity: 1,
+          completedQuantity: 0,
+          rate: taskRate,
           status: "pending",
           adminStatus: "approved", // Auto-approve tasks from orders
           lastUpdatedAt: new Date(),
-        },
-        { transaction: dbTransaction }
-      );
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        // Insert in batches to avoid overwhelming the database
+        if (tasksToCreate.length === batchSize) {
+          await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+          tasksToCreate.length = 0; // Clear array
+        }
+      }
+
+      // Insert remaining tasks
+      if (tasksToCreate.length > 0) {
+        await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+      }
 
       // Create transaction record
       await Transaction.create(
@@ -262,29 +304,46 @@ export class OrderService {
               amount,
               status: "pending",
               remainingCount: orderData.quantity,
+              completedCount: 0,
             },
             { transaction: dbTransaction }
           );
 
-          // Create corresponding task (without userId so task doers can claim it)
-          await Task.create(
-            {
-              orderId: order.id, // Link task to order
-              userId: null, // No specific user - available for task doers to claim
-              title: `${serviceName} for ${orderData.targetUrl}`,
-              description: `Process ${orderData.quantity} ${serviceName} for ${orderData.targetUrl}`,
-              type: this.mapServiceToTaskType(serviceName),
+          // Create N individual tasks (one per required action)
+          const taskRate = this.calculateTaskRate(orderData);
+          const taskType = this.mapServiceToTaskType(serviceName);
+          const batchSize = 500;
+          const tasksToCreate = [];
+
+          for (let i = 0; i < orderData.quantity; i++) {
+            tasksToCreate.push({
+              orderId: order.id,
+              userId: null,
+              title: `${serviceName} - ${orderData.targetUrl}`,
+              description: `Complete ${serviceName} task for ${orderData.targetUrl}`,
+              type: taskType,
               platform: orderData.platform,
               targetUrl: orderData.targetUrl,
-              quantity: orderData.quantity,
-              remainingQuantity: orderData.quantity,
-              rate: this.calculateTaskRate(orderData),
+              quantity: 1,
+              remainingQuantity: 1,
+              completedQuantity: 0,
+              rate: taskRate,
               status: "pending",
-              adminStatus: "approved", // Auto-approve tasks from orders
+              adminStatus: "approved",
               lastUpdatedAt: new Date(),
-            },
-            { transaction: dbTransaction }
-          );
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+
+            if (tasksToCreate.length === batchSize) {
+              await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+              tasksToCreate.length = 0;
+            }
+          }
+
+          if (tasksToCreate.length > 0) {
+            await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+          }
 
           // Add audit log for each order
           await AuditLog.log(
@@ -487,29 +546,46 @@ export class OrderService {
           amount: totalCost,
           status: "pending",
           remainingCount: orderData.quantity,
+          completedCount: 0,
         },
         { transaction: dbTransaction }
       );
 
-      // Create corresponding task (without userId so task doers can claim it)
-      await Task.create(
-        {
-          orderId: newOrder.id, // Link task to order
-          userId: null, // No specific user - available for task doers to claim
-          title: `${orderData.service} for ${orderData.targetUrl}`,
-          description: `Process ${orderData.quantity} ${orderData.service} for ${orderData.targetUrl}`,
-          type: this.mapServiceToTaskType(orderData.service),
+      // Create N individual tasks (one per required action)
+      const taskRate = this.calculateTaskRate(orderData);
+      const taskType = this.mapServiceToTaskType(orderData.service);
+      const batchSize = 500;
+      const tasksToCreate = [];
+
+      for (let i = 0; i < orderData.quantity; i++) {
+        tasksToCreate.push({
+          orderId: newOrder.id,
+          userId: null,
+          title: `${orderData.service} - ${orderData.targetUrl}`,
+          description: `Complete ${orderData.service} task for ${orderData.targetUrl}`,
+          type: taskType,
           platform: orderData.platform,
           targetUrl: orderData.targetUrl,
-          quantity: orderData.quantity,
-          remainingQuantity: orderData.quantity,
-          rate: this.calculateTaskRate(orderData),
+          quantity: 1,
+          remainingQuantity: 1,
+          completedQuantity: 0,
+          rate: taskRate,
           status: "pending",
-          adminStatus: "approved", // Auto-approve tasks from orders
+          adminStatus: "approved",
           lastUpdatedAt: new Date(),
-        },
-        { transaction: dbTransaction }
-      );
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        if (tasksToCreate.length === batchSize) {
+          await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+          tasksToCreate.length = 0;
+        }
+      }
+
+      if (tasksToCreate.length > 0) {
+        await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
+      }
 
       // Create transaction record
       await Transaction.create(

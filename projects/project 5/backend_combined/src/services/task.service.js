@@ -338,7 +338,7 @@ export class TaskService {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task
+      // Get task with row-level lock to prevent concurrent approvals
       const task = await Task.findByPk(taskId, {
         include: [
           {
@@ -347,6 +347,7 @@ export class TaskService {
             attributes: ["id", "username", "balance"],
           },
         ],
+        lock: dbTransaction.LOCK.UPDATE,
         transaction: dbTransaction,
       });
 
@@ -354,14 +355,15 @@ export class TaskService {
         throw new ApiError(404, "Task not found");
       }
 
+      // Idempotency check: if already processed, return success without double-paying
+      if (task.payoutProcessed) {
+        await dbTransaction.commit();
+        return task;
+      }
+
       // Verify screenshot is pending approval
       if (task.screenshotStatus !== "pending") {
         throw new ApiError(400, "Task screenshot is not pending approval");
-      }
-
-      // Verify payout not already processed
-      if (task.payoutProcessed) {
-        throw new ApiError(400, "Payout already processed for this task");
       }
 
       // Verify task has a doer
@@ -411,34 +413,43 @@ export class TaskService {
         transaction: dbTransaction,
       });
 
-      // If task is linked to an order, decrement order's remaining count
+      // If task is linked to an order, update order counters atomically
       if (task.orderId) {
-        const order = await Order.findByPk(task.orderId, { transaction: dbTransaction });
-        if (order && order.remainingCount > 0) {
+        // Lock order row to prevent lost updates
+        const order = await Order.findByPk(task.orderId, {
+          lock: dbTransaction.LOCK.UPDATE,
+          transaction: dbTransaction,
+        });
+
+        if (order) {
+          // Atomically increment completedCount and decrement remainingCount
+          await order.increment("completedCount", {
+            by: 1,
+            transaction: dbTransaction,
+          });
+
           await order.decrement("remainingCount", {
             by: 1,
             transaction: dbTransaction,
           });
 
+          // Reload to get updated values
+          await order.reload({ transaction: dbTransaction });
+
           // Update order status if fully completed
-          if (order.remainingCount - 1 <= 0) {
+          if (order.remainingCount <= 0) {
             await order.update(
-              { status: "completed" },
+              {
+                status: "completed",
+                completedAt: new Date(),
+              },
               { transaction: dbTransaction }
             );
           }
         }
-
-        // Decrement task remaining quantity
-        if (task.remainingQuantity > 0) {
-          await task.decrement("remainingQuantity", {
-            by: 1,
-            transaction: dbTransaction,
-          });
-        }
       }
 
-      // Log approval
+      // Log approval with order details
       await AuditLog.log(
         adminId,
         "approve",

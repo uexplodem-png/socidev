@@ -19,6 +19,9 @@ router.get("/", auth, orderController.getOrders);
 // Get order details
 router.get("/:id", auth, orderController.getOrderDetails);
 
+// Get specific order stats (progress tracking)
+router.get("/:id/stats", auth, orderController.getOrderStatsById);
+
 // Create single order
 router.post("/", auth, validateOrder, orderController.createOrder);
 
