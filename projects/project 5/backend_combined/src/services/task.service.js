@@ -343,7 +343,6 @@ export class TaskService {
         include: [
           {
             model: User,
-            as: "user",
             attributes: ["id", "username", "balance"],
           },
         ],
@@ -456,7 +455,7 @@ export class TaskService {
         "Task",
         taskId,
         null,
-        `Approved task screenshot and processed payout of ${payoutAmount} for user ${task.user.username}`,
+        `Approved task screenshot and processed payout of ${payoutAmount} for user ${task.User?.username || task.userId}`,
         {
           payoutAmount,
           userId: task.userId,
