@@ -153,11 +153,11 @@ export const Tasks: React.FC = () => {
           medium: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
           high: { bg: 'bg-red-100', text: 'text-red-800' }
         };
-        const config = priorityConfig[priority];
+        const config = priorityConfig[priority as keyof typeof priorityConfig] || { bg: 'bg-gray-100', text: 'text-gray-800' };
 
         return (
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-            {priority}
+            {priority || 'N/A'}
           </span>
         );
       },
