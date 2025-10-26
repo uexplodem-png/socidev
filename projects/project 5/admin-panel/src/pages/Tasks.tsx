@@ -52,7 +52,7 @@ const columnHelper = createColumnHelper<Task>();
 export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending'>('pending');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all'); // Changed default to 'all'
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -260,14 +260,14 @@ export const Tasks: React.FC = () => {
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
-      
+
       // Convert camelCase to snake_case for sortBy
       const sortByField = sorting[0]?.id || 'createdAt';
-      const sortBySnakeCase = sortByField === 'createdAt' ? 'created_at' 
+      const sortBySnakeCase = sortByField === 'createdAt' ? 'created_at'
         : sortByField === 'updatedAt' ? 'updated_at'
-        : sortByField === 'lastUpdatedAt' ? 'last_updated_at'
-        : sortByField;
-      
+          : sortByField === 'lastUpdatedAt' ? 'last_updated_at'
+            : sortByField;
+
       const params: any = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
