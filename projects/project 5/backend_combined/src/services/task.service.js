@@ -61,6 +61,11 @@ export class TaskService {
           model: User,
           attributes: ["username"],
         },
+        {
+          model: Order,
+          attributes: ["id", "status"],
+          required: false, // LEFT JOIN - include tasks without orders too
+        },
       ],
       order: [["createdAt", "DESC"]],
       limit: filters.limit ? parseInt(filters.limit) : undefined,
@@ -71,22 +76,42 @@ export class TaskService {
 
     // Transform tasks to available status (since we've already filtered out executed tasks)
     // Ensure rate is converted to number
-    return tasks.map((task) => {
-      const taskData = task.toJSON();
-      return {
-        ...taskData,
-        rate: Number(taskData.rate),
-        status: "available",
-      };
-    });
+    // Filter out tasks from pending orders (only show tasks from processing/completed orders or tasks without orders)
+    return tasks
+      .filter((task) => {
+        const taskData = task.toJSON();
+        // If task has an order, only show if order status is NOT pending
+        if (taskData.Order) {
+          return taskData.Order.status !== "pending";
+        }
+        // If task has no order, show it (standalone tasks)
+        return true;
+      })
+      .map((task) => {
+        const taskData = task.toJSON();
+        return {
+          ...taskData,
+          rate: Number(taskData.rate),
+          status: "available",
+        };
+      });
   }
 
   async startTask(userId, taskId) {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task and check if it exists
-      const task = await Task.findByPk(taskId, { transaction: dbTransaction });
+      // Get task and check if it exists (include Order to check status)
+      const task = await Task.findByPk(taskId, { 
+        include: [
+          {
+            model: Order,
+            attributes: ["id", "status"],
+          },
+        ],
+        transaction: dbTransaction 
+      });
+      
       if (!task) {
         throw new ApiError(404, "Task not found");
       }
@@ -94,6 +119,11 @@ export class TaskService {
       // Check if task is admin approved
       if (task.adminStatus !== "approved") {
         throw new ApiError(400, "Task is not approved by admin");
+      }
+
+      // Check if task is from a pending order - prevent claiming
+      if (task.Order && task.Order.status === "pending") {
+        throw new ApiError(400, "Cannot claim task from pending order. Order must be approved first.");
       }
 
       // For tasks from orders (userId is null), claim the task
