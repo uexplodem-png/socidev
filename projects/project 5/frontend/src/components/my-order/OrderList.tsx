@@ -68,6 +68,9 @@ export const OrderList: React.FC<OrderListProps> = ({
                 {t("quantity")}
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                {t("progress")}
+              </th>
+              <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 {t("startCount")}
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -101,6 +104,22 @@ export const OrderList: React.FC<OrderListProps> = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                   {order.quantity.toLocaleString()}
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='w-full max-w-xs'>
+                    <div className='flex items-center justify-between text-xs text-gray-600 mb-1'>
+                      <span>{order.completedCount || 0} / {order.quantity}</span>
+                      <span>{Math.round(((order.completedCount || 0) / order.quantity) * 100)}%</span>
+                    </div>
+                    <div className='w-full bg-gray-200 rounded-full h-2'>
+                      <div
+                        className='bg-blue-600 h-2 rounded-full transition-all duration-300'
+                        style={{
+                          width: `${Math.min(100, ((order.completedCount || 0) / order.quantity) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                   {order.startCount.toLocaleString()}

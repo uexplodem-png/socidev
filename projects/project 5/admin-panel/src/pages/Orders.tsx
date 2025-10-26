@@ -342,6 +342,23 @@ export const Orders: React.FC = () => {
     fetchOrders();
   }, [pagination, globalFilter, statusFilter, platformFilter, sorting]);
 
+  // Poll for order progress updates every 20 seconds for active orders
+  useEffect(() => {
+    const hasActiveOrders = orders.some(
+      (order) => order.status === "processing" || order.status === "pending"
+    );
+
+    if (!hasActiveOrders) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 20000); // Poll every 20 seconds
+
+    return () => clearInterval(intervalId);
+  }, [orders, pagination, globalFilter, statusFilter, platformFilter, sorting]);
+
   const handleViewOrder = async (orderId: string) => {
     try {
       // Use the real API to fetch order details

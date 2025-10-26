@@ -6,6 +6,7 @@ export interface Order {
   quantity: number;
   startCount: number;
   remainingCount: number;
+  completedCount: number;
   status: "completed" | "processing" | "pending" | "failed";
   createdAt: string;
   amount: number;

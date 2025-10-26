@@ -52,7 +52,12 @@ export const MyOrdersPage = () => {
       };
 
       const response = await orderApi.getOrders(token, filters);
-      setOrders(response.orders);
+      // Ensure completedCount exists (backend may not return it for old orders)
+      const ordersWithProgress = response.orders.map((order: any) => ({
+        ...order,
+        completedCount: order.completedCount || 0,
+      }));
+      setOrders(ordersWithProgress);
       setTotalPages(response.pagination.totalPages);
     } catch (error) {
       toast.error(t("errorFetchingOrders"));
@@ -129,6 +134,23 @@ export const MyOrdersPage = () => {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Poll for order progress updates every 20 seconds for active orders
+  useEffect(() => {
+    const hasActiveOrders = orders.some(
+      (order) => order.status === "processing" || order.status === "pending"
+    );
+
+    if (!hasActiveOrders) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 20000); // Poll every 20 seconds
+
+    return () => clearInterval(intervalId);
+  }, [orders, currentPage, selectedStatus]);
 
   const handleReport = (orderId: string) => {
     setSelectedOrderId(orderId);
