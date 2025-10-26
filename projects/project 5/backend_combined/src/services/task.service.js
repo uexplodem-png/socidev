@@ -63,6 +63,7 @@ export class TaskService {
         },
         {
           model: Order,
+          as: "order", // Use the alias defined in the association
           attributes: ["id", "status"],
           required: false, // LEFT JOIN - include tasks without orders too
         },
@@ -81,8 +82,8 @@ export class TaskService {
       .filter((task) => {
         const taskData = task.toJSON();
         // If task has an order, only show if order status is NOT pending
-        if (taskData.Order) {
-          return taskData.Order.status !== "pending";
+        if (taskData.order) {
+          return taskData.order.status !== "pending";
         }
         // If task has no order, show it (standalone tasks)
         return true;
@@ -106,6 +107,7 @@ export class TaskService {
         include: [
           {
             model: Order,
+            as: "order", // Use the alias defined in the association
             attributes: ["id", "status"],
           },
         ],
@@ -122,7 +124,7 @@ export class TaskService {
       }
 
       // Check if task is from a pending order - prevent claiming
-      if (task.Order && task.Order.status === "pending") {
+      if (task.order && task.order.status === "pending") {
         throw new ApiError(400, "Cannot claim task from pending order. Order must be approved first.");
       }
 
