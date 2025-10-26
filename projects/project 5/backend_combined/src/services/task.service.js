@@ -351,6 +351,7 @@ export class TaskService {
       });
 
       if (!task) {
+        await dbTransaction.rollback();
         throw new ApiError(404, "Task not found");
       }
 
@@ -362,16 +363,19 @@ export class TaskService {
 
       // Verify screenshot is pending approval
       if (task.screenshotStatus !== "pending") {
+        await dbTransaction.rollback();
         throw new ApiError(400, "Task screenshot is not pending approval");
       }
 
       // Verify task has a doer
       if (!task.userId) {
+        await dbTransaction.rollback();
         throw new ApiError(400, "Task has no assigned user");
       }
 
       // Calculate payout amount
       const payoutAmount = Number(task.rate);
+      const orderId = task.orderId;
 
       // Update task status
       await task.update(
@@ -412,39 +416,40 @@ export class TaskService {
         transaction: dbTransaction,
       });
 
-      // If task is linked to an order, update order counters atomically
-      if (task.orderId) {
-        // Lock order row to prevent lost updates
-        const order = await Order.findByPk(task.orderId, {
-          lock: dbTransaction.LOCK.UPDATE,
+      // If task is linked to an order, update order counters atomically WITHOUT locking
+      // This reduces lock contention when multiple tasks are approved simultaneously
+      if (orderId) {
+        // Use atomic increment/decrement operations - no explicit lock needed
+        await Order.increment("completedCount", {
+          by: 1,
+          where: { id: orderId },
           transaction: dbTransaction,
         });
 
-        if (order) {
-          // Atomically increment completedCount and decrement remainingCount
-          await order.increment("completedCount", {
-            by: 1,
-            transaction: dbTransaction,
-          });
+        await Order.decrement("remainingCount", {
+          by: 1,
+          where: { id: orderId },
+          transaction: dbTransaction,
+        });
 
-          await order.decrement("remainingCount", {
-            by: 1,
-            transaction: dbTransaction,
-          });
+        // Check if order is complete in a separate query (may have slight delay but avoids deadlock)
+        const updatedOrder = await Order.findByPk(orderId, {
+          attributes: ["id", "remainingCount", "status"],
+          transaction: dbTransaction,
+        });
 
-          // Reload to get updated values
-          await order.reload({ transaction: dbTransaction });
-
-          // Update order status if fully completed
-          if (order.remainingCount <= 0) {
-            await order.update(
-              {
-                status: "completed",
-                completedAt: new Date(),
-              },
-              { transaction: dbTransaction }
-            );
-          }
+        // Update order status if fully completed
+        if (updatedOrder && updatedOrder.remainingCount <= 0 && updatedOrder.status !== "completed") {
+          await Order.update(
+            {
+              status: "completed",
+              completedAt: new Date(),
+            },
+            {
+              where: { id: orderId },
+              transaction: dbTransaction,
+            }
+          );
         }
       }
 
