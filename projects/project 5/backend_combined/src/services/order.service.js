@@ -151,44 +151,8 @@ export class OrderService {
         { transaction: dbTransaction }
       );
 
-      // Create N individual tasks (one per required action)
-      // For quantity = 100, create 100 tasks that can be claimed by different task doers
-      const taskRate = this.calculateTaskRate(orderData);
-      const taskType = this.mapServiceToTaskType(service.name);
-      const batchSize = 500; // Batch size for bulk inserts
-      const tasksToCreate = [];
-
-      for (let i = 0; i < orderData.quantity; i++) {
-        tasksToCreate.push({
-          orderId: order.id,
-          userId: null, // Available for any task doer to claim
-          title: `${service.name} - ${orderData.targetUrl}`,
-          description: `Complete ${service.name} task for ${orderData.targetUrl}`,
-          type: taskType,
-          platform: orderData.platform,
-          targetUrl: orderData.targetUrl,
-          quantity: 1, // Each task is for 1 action
-          remainingQuantity: 1,
-          completedQuantity: 0,
-          rate: taskRate,
-          status: "pending",
-          adminStatus: "approved", // Auto-approve tasks from orders
-          lastUpdatedAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-
-        // Insert in batches to avoid overwhelming the database
-        if (tasksToCreate.length === batchSize) {
-          await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
-          tasksToCreate.length = 0; // Clear array
-        }
-      }
-
-      // Insert remaining tasks
-      if (tasksToCreate.length > 0) {
-        await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
-      }
+      // Tasks will be created when admin approves the order (changes status to 'processing')
+      // No need to create tasks here anymore
 
       // Create transaction record
       await Transaction.create(
@@ -313,37 +277,8 @@ export class OrderService {
           const taskRate = this.calculateTaskRate(orderData);
           const taskType = this.mapServiceToTaskType(serviceName);
           const batchSize = 500;
-          const tasksToCreate = [];
-
-          for (let i = 0; i < orderData.quantity; i++) {
-            tasksToCreate.push({
-              orderId: order.id,
-              userId: null,
-              title: `${serviceName} - ${orderData.targetUrl}`,
-              description: `Complete ${serviceName} task for ${orderData.targetUrl}`,
-              type: taskType,
-              platform: orderData.platform,
-              targetUrl: orderData.targetUrl,
-              quantity: 1,
-              remainingQuantity: 1,
-              completedQuantity: 0,
-              rate: taskRate,
-              status: "pending",
-              adminStatus: "approved",
-              lastUpdatedAt: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-
-            if (tasksToCreate.length === batchSize) {
-              await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
-              tasksToCreate.length = 0;
-            }
-          }
-
-          if (tasksToCreate.length > 0) {
-            await Task.bulkCreate(tasksToCreate, { transaction: dbTransaction });
-          }
+          // Tasks will be created when admin approves the order (changes status to 'processing')
+          // No need to create tasks here anymore
 
           // Add audit log for each order
           await AuditLog.log(
