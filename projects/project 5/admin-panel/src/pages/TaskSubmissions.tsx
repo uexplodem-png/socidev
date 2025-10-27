@@ -421,9 +421,15 @@ export const TaskSubmissions: React.FC = () => {
                 // Backend returns array directly, not wrapped in object
                 const tasksArray = Array.isArray(response) ? response : [];
 
+                // Debug: Log first task to see structure
+                if (tasksArray.length > 0) {
+                    console.log('Backend task data:', tasksArray[0]);
+                }
+
                 // Transform backend response to match frontend interface
                 const transformedTasks = tasksArray.map((task: any) => ({
-                    id: task.id,
+                    id: task.executionId || task.id, // Use executionId as primary ID for submissions
+                    executionId: task.executionId, // Include executionId for approval/rejection
                     userId: task.userId,
                     userName: task.user?.username || 'Unknown',
                     userEmail: task.user?.email || '',
@@ -466,7 +472,17 @@ export const TaskSubmissions: React.FC = () => {
 
     const handleApproveSubmission = async (submissionId: string) => {
         try {
-            await tasksAPI.approveTaskScreenshot(submissionId);
+            // submissionId is actually the executionId now
+            const submission = submissions.find(sub => sub.id === submissionId);
+            if (!submission) {
+                toast.error('Submission not found');
+                return;
+            }
+
+            console.log('Approving submission:', { submissionId, executionId: submission.executionId, submission });
+
+            // submissionId is the executionId, pass it as the executionId parameter
+            await tasksAPI.approveTaskScreenshot(submission.taskId, submission.executionId);
             setSubmissions(submissions.map(sub =>
                 sub.id === submissionId ? { ...sub, status: 'approved', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin' } : sub
             ));
@@ -488,17 +504,23 @@ export const TaskSubmissions: React.FC = () => {
                 // Handle bulk rejection
                 const selectedSubmissionIds = Object.keys(rowSelection).filter(id => rowSelection[id as keyof typeof rowSelection]);
                 for (const id of selectedSubmissionIds) {
-                    await tasksAPI.rejectTaskScreenshot(id, rejectionReason);
+                    const submission = submissions.find(sub => sub.id === id);
+                    if (submission) {
+                        await tasksAPI.rejectTaskScreenshot(submission.taskId, rejectionReason, submission.executionId);
+                    }
                 }
                 toast.success(`Successfully rejected ${selectedSubmissionIds.length} submission(s)`);
                 setRowSelection({});
             } else {
                 // Handle single rejection
-                await tasksAPI.rejectTaskScreenshot(rejectingSubmissionId, rejectionReason);
-                setSubmissions(submissions.map(sub =>
-                    sub.id === rejectingSubmissionId ?
-                        { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
-                ));
+                const submission = submissions.find(sub => sub.id === rejectingSubmissionId);
+                if (submission) {
+                    await tasksAPI.rejectTaskScreenshot(submission.taskId, rejectionReason, submission.executionId);
+                    setSubmissions(submissions.map(sub =>
+                        sub.id === rejectingSubmissionId ?
+                            { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
+                    ));
+                }
                 toast.success('Submission rejected successfully');
             }
             setRejectingSubmissionId(null);
@@ -520,7 +542,10 @@ export const TaskSubmissions: React.FC = () => {
 
         try {
             for (const id of selectedSubmissionIds) {
-                await tasksAPI.approveTaskScreenshot(id);
+                const submission = submissions.find(sub => sub.id === id);
+                if (submission) {
+                    await tasksAPI.approveTaskScreenshot(submission.taskId, submission.executionId);
+                }
             }
             setSubmissions(submissions.map(sub =>
                 selectedSubmissionIds.includes(sub.id) ?
