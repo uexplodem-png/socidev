@@ -126,8 +126,13 @@ export class TaskController {
 
     const adminId = req.user.id;
     const taskId = req.params.id;
+    const { executionId } = req.body;
 
-    const task = await taskService.approveTask(adminId, taskId);
+    if (!executionId) {
+      throw new ApiError(400, "executionId is required");
+    }
+
+    const task = await taskService.approveTask(adminId, taskId, executionId);
     res.json({
       success: true,
       message: "Task approved and payout processed",
@@ -144,13 +149,17 @@ export class TaskController {
 
     const adminId = req.user.id;
     const taskId = req.params.id;
-    const { reason } = req.body;
+    const { reason, executionId } = req.body;
 
     if (!reason) {
       throw new ApiError(400, "Rejection reason is required");
     }
 
-    const task = await taskService.rejectTask(adminId, taskId, reason);
+    if (!executionId) {
+      throw new ApiError(400, "executionId is required");
+    }
+
+    const task = await taskService.rejectTask(adminId, taskId, executionId, reason);
     res.json({
       success: true,
       message: "Task rejected",

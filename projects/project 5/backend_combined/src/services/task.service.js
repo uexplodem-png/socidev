@@ -306,6 +306,7 @@ export class TaskService {
             taskId,
             status: "pending",
             executedAt: new Date(),
+            startedAt: new Date(),
           },
           { transaction: dbTransaction }
         );
@@ -513,21 +514,25 @@ export class TaskService {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task and verify ownership
+      // Get task
       const task = await Task.findByPk(taskId, { transaction: dbTransaction });
       
       if (!task) {
         throw new ApiError(404, "Task not found");
       }
 
-      // Verify user owns this task
-      if (task.userId !== userId) {
-        throw new ApiError(403, "You can only submit screenshots for your own tasks");
-      }
+      // Get user's TaskExecution
+      const execution = await TaskExecution.findOne({
+        where: {
+          userId,
+          taskId,
+          status: "pending",
+        },
+        transaction: dbTransaction,
+      });
 
-      // Verify task is in correct status
-      if (!["in_progress", "rejected_by_admin"].includes(task.status)) {
-        throw new ApiError(400, "Task must be in progress to submit screenshot");
+      if (!execution) {
+        throw new ApiError(404, "You haven't started this task or it's already completed");
       }
 
       // Check if task has an order creator that can't claim their own tasks
@@ -539,20 +544,19 @@ export class TaskService {
       }
 
       // Delete old screenshot if exists and was rejected
-      if (task.screenshotUrl && task.screenshotStatus === 'rejected') {
-        await fileService.deleteFile(task.screenshotUrl);
+      if (execution.screenshotUrl && execution.screenshotStatus === 'rejected') {
+        await fileService.deleteFile(execution.screenshotUrl);
       }
 
       // Save screenshot file
       const fileData = await fileService.saveTaskScreenshot(file, taskId);
 
-      // Update task with screenshot info
-      await task.update(
+      // Update TaskExecution with screenshot info
+      await execution.update(
         {
           screenshotUrl: fileData.url,
           screenshotStatus: "pending",
           screenshotSubmittedAt: new Date(),
-          status: "submitted_for_approval",
         },
         { transaction: dbTransaction }
       );
@@ -561,14 +565,15 @@ export class TaskService {
       await AuditLog.log(
         userId,
         "update",
-        "Task",
-        taskId,
+        "TaskExecution",
+        execution.id,
         null,
         `Submitted screenshot for task: ${task.title}`,
         {
           screenshotUrl: fileData.url,
           comment,
           fileSize: fileData.size,
+          taskId,
         },
         null
       );
@@ -587,72 +592,79 @@ export class TaskService {
     }
   }
 
-  async approveTask(adminId, taskId) {
+  async approveTask(adminId, taskId, executionId) {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task with row-level lock to prevent concurrent approvals
-      const task = await Task.findByPk(taskId, {
+      // Get TaskExecution with row-level lock to prevent concurrent approvals
+      const execution = await TaskExecution.findByPk(executionId, {
         include: [
           {
             model: User,
+            as: "User",
             attributes: ["id", "username", "balance"],
+          },
+          {
+            model: Task,
+            as: "task",
+            include: [
+              {
+                model: Order,
+                as: "order",
+              },
+            ],
           },
         ],
         lock: dbTransaction.LOCK.UPDATE,
         transaction: dbTransaction,
       });
 
-      if (!task) {
+      if (!execution) {
         await dbTransaction.rollback();
-        throw new ApiError(404, "Task not found");
+        throw new ApiError(404, "Task execution not found");
       }
 
-      // Idempotency check: if already processed, return success without double-paying
-      if (task.payoutProcessed) {
-        await dbTransaction.commit();
-        return task;
-      }
+      const task = execution.task;
+      const userId = execution.userId;
 
       // Verify screenshot is pending approval
-      if (task.screenshotStatus !== "pending") {
+      if (execution.screenshotStatus !== "pending") {
         await dbTransaction.rollback();
         throw new ApiError(400, "Task screenshot is not pending approval");
-      }
-
-      // Verify task has a doer
-      if (!task.userId) {
-        await dbTransaction.rollback();
-        throw new ApiError(400, "Task has no assigned user");
       }
 
       // Calculate payout amount
       const payoutAmount = Number(task.rate);
       const orderId = task.orderId;
 
-      // Update task status
-      await task.update(
+      // Update execution status
+      await execution.update(
         {
           screenshotStatus: "approved",
           status: "completed",
           completedAt: new Date(),
-          payoutProcessed: true,
-          adminReviewedBy: adminId,
-          adminReviewedAt: new Date(),
+          earnings: payoutAmount,
         },
         { transaction: dbTransaction }
       );
 
+      // Decrement task remainingQuantity
+      if (task.remainingQuantity > 0) {
+        await task.decrement('remainingQuantity', { by: 1, transaction: dbTransaction });
+        await task.increment('completedQuantity', { by: 1, transaction: dbTransaction });
+      }
+
       // Create payout transaction
       await Transaction.create(
         {
-          userId: task.userId,
+          userId,
           type: "task_earning",
           amount: payoutAmount,
           status: "completed",
           method: "balance",
           details: {
             taskId: task.id,
+            executionId: execution.id,
             taskTitle: task.title,
             platform: task.platform,
             type: task.type,
@@ -665,14 +677,12 @@ export class TaskService {
       // Credit user balance
       await User.increment("balance", {
         by: payoutAmount,
-        where: { id: task.userId },
+        where: { id: userId },
         transaction: dbTransaction,
       });
 
-      // If task is linked to an order, update order counters atomically WITHOUT locking
-      // This reduces lock contention when multiple tasks are approved simultaneously
+      // If task is linked to an order, update order counters atomically
       if (orderId) {
-        // Use atomic increment/decrement operations - no explicit lock needed
         await Order.increment("completedCount", {
           by: 1,
           where: { id: orderId },
@@ -685,7 +695,7 @@ export class TaskService {
           transaction: dbTransaction,
         });
 
-        // Check if order is complete in a separate query (may have slight delay but avoids deadlock)
+        // Check if order is complete
         const updatedOrder = await Order.findByPk(orderId, {
           attributes: ["id", "remainingCount", "status"],
           transaction: dbTransaction,
@@ -706,18 +716,19 @@ export class TaskService {
         }
       }
 
-      // Log approval with order details
+      // Log approval
       await AuditLog.log(
         adminId,
         "approve",
-        "Task",
-        taskId,
+        "TaskExecution",
+        execution.id,
         null,
-        `Approved task screenshot and processed payout of ${payoutAmount} for user ${task.User?.username || task.userId}`,
+        `Approved task screenshot and processed payout of ${payoutAmount} for user ${execution.User?.username || userId}`,
         {
           payoutAmount,
-          userId: task.userId,
-          orderId: task.orderId,
+          userId,
+          taskId,
+          orderId,
         },
         null
       );
@@ -731,30 +742,35 @@ export class TaskService {
     }
   }
 
-  async rejectTask(adminId, taskId, reason) {
+  async rejectTask(adminId, taskId, executionId, reason) {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task
-      const task = await Task.findByPk(taskId, { transaction: dbTransaction });
+      // Get TaskExecution
+      const execution = await TaskExecution.findByPk(executionId, {
+        include: [
+          {
+            model: Task,
+            as: "task",
+          },
+        ],
+        transaction: dbTransaction,
+      });
 
-      if (!task) {
-        throw new ApiError(404, "Task not found");
+      if (!execution) {
+        throw new ApiError(404, "Task execution not found");
       }
 
       // Verify screenshot is pending approval
-      if (task.screenshotStatus !== "pending") {
+      if (execution.screenshotStatus !== "pending") {
         throw new ApiError(400, "Task screenshot is not pending approval");
       }
 
-      // Update task status
-      await task.update(
+      // Update execution status (set back to pending so user can re-upload)
+      await execution.update(
         {
           screenshotStatus: "rejected",
-          status: "rejected_by_admin",
           rejectionReason: reason,
-          adminReviewedBy: adminId,
-          adminReviewedAt: new Date(),
         },
         { transaction: dbTransaction }
       );
@@ -763,20 +779,21 @@ export class TaskService {
       await AuditLog.log(
         adminId,
         "reject",
-        "Task",
-        taskId,
+        "TaskExecution",
+        execution.id,
         null,
         `Rejected task screenshot: ${reason}`,
         {
           reason,
-          userId: task.userId,
+          userId: execution.userId,
+          taskId,
         },
         null
       );
 
       await dbTransaction.commit();
 
-      return task;
+      return execution;
     } catch (error) {
       await dbTransaction.rollback();
       throw error;
@@ -784,45 +801,56 @@ export class TaskService {
   }
 
   async getTasksByStatus(userId, status, filters = {}) {
-    const where = { userId };
+    // Handle available tasks
+    if (status === "available") {
+      return this.getAvailableTasks(userId, filters);
+    }
 
-    // Map status to task statuses
+    // Build TaskExecution query based on status
+    const executionWhere = { userId };
+    const taskWhere = {};
+
     switch (status) {
-      case "available":
-        // This is handled by getAvailableTasks
-        return this.getAvailableTasks(userId, filters);
-      
       case "in_progress":
-        where.status = {
-          [Op.in]: ["in_progress", "submitted_for_approval", "rejected_by_admin"],
-        };
+        // In progress means user has started but not yet completed (pending status in TaskExecution)
+        executionWhere.status = "pending";
         break;
       
       case "completed":
-        where.status = "completed";
-        where.screenshotStatus = "approved";
+        // Completed means user's execution is marked as completed and approved by admin
+        executionWhere.status = "completed";
+        executionWhere.screenshotStatus = "approved";
         break;
       
       default:
-        where.status = status;
+        executionWhere.status = status;
     }
 
-    // Add platform filter
+    // Add platform filter to task
     if (filters.platform) {
-      where.platform = filters.platform;
+      taskWhere.platform = filters.platform;
     }
 
-    // Add type filter
+    // Add type filter to task
     if (filters.type) {
-      where.type = filters.type;
+      taskWhere.type = filters.type;
     }
 
-    const tasks = await Task.findAll({
-      where,
+    // Query TaskExecutions with associated Tasks
+    const executions = await TaskExecution.findAll({
+      where: executionWhere,
       include: [
         {
-          model: User,
-          attributes: ["username"],
+          model: Task,
+          as: "task",
+          where: taskWhere,
+          include: [
+            {
+              model: Order,
+              as: "order",
+              attributes: ["id", "userId"],
+            },
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -832,37 +860,64 @@ export class TaskService {
         : undefined,
     });
 
-    return tasks.map((task) => {
-      const taskData = task.toJSON();
+    // Transform executions into task format that frontend expects
+    return executions.map((execution) => {
+      const executionData = execution.toJSON();
+      const task = executionData.task;
+      
       return {
-        ...taskData,
-        rate: Number(taskData.rate),
+        ...task,
+        // Add execution-specific fields
+        userStatus: executionData.status,
+        userScreenshotUrl: executionData.screenshotUrl,
+        userScreenshotStatus: executionData.screenshotStatus,
+        screenshotSubmittedAt: executionData.screenshotSubmittedAt,
+        startedAt: executionData.startedAt,
+        completedAt: executionData.completedAt,
+        earnings: executionData.earnings,
+        proof: executionData.proof,
+        rejectionReason: executionData.rejectionReason,
+        // Keep task fields
+        rate: Number(task.rate),
       };
     });
   }
 
   async getSubmittedTasksForAdmin(filters = {}) {
-    const where = {
+    const executionWhere = {
       screenshotStatus: "pending",
-      status: "submitted_for_approval",
     };
 
-    // Add platform filter
+    const taskWhere = {};
+
+    // Add platform filter to task
     if (filters.platform) {
-      where.platform = filters.platform;
+      taskWhere.platform = filters.platform;
     }
 
-    // Add type filter
+    // Add type filter to task
     if (filters.type) {
-      where.type = filters.type;
+      taskWhere.type = filters.type;
     }
 
-    const tasks = await Task.findAll({
-      where,
+    const executions = await TaskExecution.findAll({
+      where: executionWhere,
       include: [
         {
+          model: Task,
+          as: "task",
+          where: taskWhere,
+          include: [
+            {
+              model: Order,
+              as: "order",
+              attributes: ["id", "userId"],
+            },
+          ],
+        },
+        {
           model: User,
-          as: "user",
+          as: "User",
           attributes: ["id", "username", "email"],
         },
       ],
@@ -873,11 +928,21 @@ export class TaskService {
         : undefined,
     });
 
-    return tasks.map((task) => {
-      const taskData = task.toJSON();
+    return executions.map((execution) => {
+      const executionData = execution.toJSON();
+      const task = executionData.task;
+      
       return {
-        ...taskData,
-        rate: Number(taskData.rate),
+        ...task,
+        executionId: executionData.id,
+        userId: executionData.userId,
+        user: executionData.User,
+        screenshotUrl: executionData.screenshotUrl,
+        screenshotStatus: executionData.screenshotStatus,
+        screenshotSubmittedAt: executionData.screenshotSubmittedAt,
+        startedAt: executionData.startedAt,
+        proof: executionData.proof,
+        rate: Number(task.rate),
       };
     });
   }

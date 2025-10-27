@@ -57,7 +57,13 @@ export const instagramApi = {
     fetchApi("/social-accounts", {
       method: "POST",
       token,
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        platform: "instagram",
+        username: data.username,
+        credentials: {
+          password: data.password,
+        },
+      }),
     }),
 
   // Get user's Instagram accounts

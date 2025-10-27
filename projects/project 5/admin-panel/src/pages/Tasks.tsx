@@ -133,13 +133,17 @@ export const Tasks: React.FC = () => {
           processing: { bg: 'bg-blue-100', text: 'text-blue-800', icon: AlertTriangle },
           completed: { bg: 'bg-gray-100', text: 'text-gray-800', icon: CheckCircle }
         };
-        const config = statusConfig[status];
+        const config = statusConfig[status as keyof typeof statusConfig] || {
+          bg: 'bg-gray-100',
+          text: 'text-gray-800',
+          icon: AlertTriangle
+        };
         const Icon = config.icon;
 
         return (
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
             <Icon className="w-3 h-3 mr-1" />
-            {status}
+            {status || 'N/A'}
           </span>
         );
       },

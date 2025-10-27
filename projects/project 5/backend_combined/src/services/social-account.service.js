@@ -2,26 +2,32 @@ import { SocialAccount } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export class SocialAccountService {
-  async addAccount(userId, platform, username, accessToken, refreshToken) {
+  async addAccount(userId, { platform, username, credentials }) {
     try {
       const account = await SocialAccount.create({
         user_id: userId,
         platform,
         username,
-        access_token: accessToken,
-        refresh_token: refreshToken
+        access_token: credentials?.accessToken,
+        refresh_token: credentials?.refreshToken
       });
       
       return account;
     } catch (error) {
-      throw new ApiError(500, 'Failed to add social account');
+      console.error('Error adding social account:', error);
+      throw new ApiError(500, `Failed to add social account: ${error.message}`);
     }
   }
 
-  async getAccounts(userId) {
+  async getAccounts(userId, { platform } = {}) {
     try {
+      const whereClause = { user_id: userId };
+      if (platform) {
+        whereClause.platform = platform;
+      }
+      
       const accounts = await SocialAccount.findAll({
-        where: { user_id: userId },
+        where: whereClause,
         order: [['createdAt', 'DESC']]
       });
       

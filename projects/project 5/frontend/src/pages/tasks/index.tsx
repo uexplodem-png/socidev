@@ -55,7 +55,7 @@ export const TasksPage = () => {
     queryFn: async () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
-      
+
       if (activeTab === "available") {
         return taskApi.getAvailableTasks(token, filters);
       } else {
@@ -120,7 +120,7 @@ export const TasksPage = () => {
     }
 
     setScreenshotFile(file);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -156,16 +156,20 @@ export const TasksPage = () => {
 
   // Get status badge
   const getStatusBadge = (task: Task) => {
-    if (task.status === "in_progress") {
+    // Check for userStatus if available (new per-user system)
+    const status = (task as any).userStatus || task.status;
+    const screenshotStatus = (task as any).userScreenshotStatus || task.screenshotStatus;
+    
+    if (status === "pending" && !screenshotStatus) {
       return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">In Progress</span>;
     }
-    if (task.status === "submitted_for_approval") {
+    if (screenshotStatus === "pending") {
       return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Pending Review</span>;
     }
-    if (task.status === "rejected_by_admin") {
-      return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected</span>;
+    if (screenshotStatus === "rejected") {
+      return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected - Re-upload Required</span>;
     }
-    if (task.status === "completed" && task.screenshotStatus === "approved") {
+    if (status === "completed" && screenshotStatus === "approved") {
       return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Completed</span>;
     }
     return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Available</span>;
@@ -183,31 +187,28 @@ export const TasksPage = () => {
         <div className='flex gap-8'>
           <button
             onClick={() => setActiveTab("available")}
-            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${
-              activeTab === "available"
+            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "available"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Available Tasks
           </button>
           <button
             onClick={() => setActiveTab("in_progress")}
-            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${
-              activeTab === "in_progress"
+            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "in_progress"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             My In Progress
           </button>
           <button
             onClick={() => setActiveTab("completed")}
-            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${
-              activeTab === "completed"
+            className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "completed"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             My Completed
           </button>
@@ -301,25 +302,23 @@ export const TasksPage = () => {
                 <div className='flex-1'>
                   <div className='flex items-start gap-4'>
                     <div
-                      className={`p-2 rounded-lg ${
-                        task.platform === "instagram"
+                      className={`p-2 rounded-lg ${task.platform === "instagram"
                           ? "bg-pink-50"
                           : task.platform === "youtube"
-                          ? "bg-red-50"
-                          : task.platform === "twitter"
-                          ? "bg-blue-50"
-                          : "bg-purple-50"
-                      }`}>
+                            ? "bg-red-50"
+                            : task.platform === "twitter"
+                              ? "bg-blue-50"
+                              : "bg-purple-50"
+                        }`}>
                       <TaskIcon
-                        className={`w-5 h-5 ${
-                          task.platform === "instagram"
+                        className={`w-5 h-5 ${task.platform === "instagram"
                             ? "text-pink-600"
                             : task.platform === "youtube"
-                            ? "text-red-600"
-                            : task.platform === "twitter"
-                            ? "text-blue-600"
-                            : "text-purple-600"
-                        }`}
+                              ? "text-red-600"
+                              : task.platform === "twitter"
+                                ? "text-blue-600"
+                                : "text-purple-600"
+                          }`}
                       />
                     </div>
                     <div className="flex-1">
@@ -338,12 +337,16 @@ export const TasksPage = () => {
                         {task.targetUrl.length > 60 ? task.targetUrl.substring(0, 60) + "..." : task.targetUrl}
                         <ExternalLink className='w-3 h-3' />
                       </a>
-                      {task.rejectionReason && (
-                        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-sm font-medium text-red-800">Rejection Reason:</p>
-                          <p className="text-sm text-red-600">{task.rejectionReason}</p>
-                        </div>
-                      )}
+                      {(() => {
+                        const rejectionReason = (task as any).rejectionReason;
+                        const screenshotStatus = (task as any).userScreenshotStatus || task.screenshotStatus;
+                        return rejectionReason && screenshotStatus === "rejected" ? (
+                          <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm font-medium text-red-800">Rejection Reason:</p>
+                            <p className="text-sm text-red-600">{rejectionReason}</p>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -378,42 +381,56 @@ export const TasksPage = () => {
                       )}
                     </Button>
                   )}
-                  
+
                   {activeTab === "in_progress" && (
                     <>
-                      {task.status === "in_progress" || task.status === "rejected_by_admin" ? (
-                        <Button
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowUploadModal(true);
-                          }}
-                          className="w-full bg-green-600 hover:bg-green-700">
-                          <Upload className="w-4 h-4 mr-2" />
-                          {task.status === "rejected_by_admin" ? "Re-upload" : "Upload"} Screenshot
-                        </Button>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-sm text-blue-600 font-medium">Awaiting Review</p>
-                          {task.screenshotSubmittedAt && (
-                            <p className="text-xs text-gray-500">
-                              Submitted {formatDistanceToNow(new Date(task.screenshotSubmittedAt))} ago
-                            </p>
-                          )}
-                        </div>
-                      )}
+                      {(() => {
+                        const screenshotStatus = (task as any).userScreenshotStatus || task.screenshotStatus;
+                        
+                        // If screenshot was rejected or no screenshot submitted yet
+                        if (!screenshotStatus || screenshotStatus === "rejected") {
+                          return (
+                            <Button
+                              onClick={() => {
+                                setSelectedTask(task);
+                                setShowUploadModal(true);
+                              }}
+                              className="w-full bg-green-600 hover:bg-green-700">
+                              <Upload className="w-4 h-4 mr-2" />
+                              {screenshotStatus === "rejected" ? "Re-upload" : "Upload"} Screenshot
+                            </Button>
+                          );
+                        } else if (screenshotStatus === "pending") {
+                          // Screenshot submitted, awaiting review
+                          return (
+                            <div className="text-center">
+                              <p className="text-sm text-blue-600 font-medium">Awaiting Review</p>
+                              {task.screenshotSubmittedAt && (
+                                <p className="text-xs text-gray-500">
+                                  Submitted {formatDistanceToNow(new Date(task.screenshotSubmittedAt))} ago
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </>
                   )}
 
-                  {activeTab === "completed" && task.screenshotUrl && (
-                    <a
-                      href={`http://localhost:3000${task.screenshotUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 justify-center">
-                      <ImageIcon className="w-4 h-4" />
-                      View Screenshot
-                    </a>
-                  )}
+                  {activeTab === "completed" && (() => {
+                    const screenshotUrl = (task as any).userScreenshotUrl || task.screenshotUrl;
+                    return screenshotUrl ? (
+                      <a
+                        href={`http://localhost:3000${screenshotUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 justify-center">
+                        <ImageIcon className="w-4 h-4" />
+                        View Screenshot
+                      </a>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -436,13 +453,13 @@ export const TasksPage = () => {
             <AlertCircle className='w-12 h-12 text-gray-400 mx-auto mb-4' />
             <h3 className='text-lg font-medium text-gray-900 mb-2'>
               {activeTab === "available" ? "No tasks available" :
-               activeTab === "in_progress" ? "No tasks in progress" :
-               "No completed tasks"}
+                activeTab === "in_progress" ? "No tasks in progress" :
+                  "No completed tasks"}
             </h3>
             <p className='text-gray-500'>
               {activeTab === "available" ? "Check back later for new tasks" :
-               activeTab === "in_progress" ? "Start a task to see it here" :
-               "Complete tasks to build your history"}
+                activeTab === "in_progress" ? "Start a task to see it here" :
+                  "Complete tasks to build your history"}
             </p>
           </Card>
         )}

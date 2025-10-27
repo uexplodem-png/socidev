@@ -39,6 +39,10 @@ const TaskExecution = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "executed_at",
     },
+    startedAt: {
+      type: DataTypes.DATE,
+      field: "started_at",
+    },
     completedAt: {
       type: DataTypes.DATE,
       field: "completed_at",
@@ -54,6 +58,22 @@ const TaskExecution = sequelize.define(
     proof: {
       type: DataTypes.JSON,
       defaultValue: {},
+    },
+    screenshotUrl: {
+      type: DataTypes.STRING,
+      field: "screenshot_url",
+    },
+    screenshotStatus: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      field: "screenshot_status",
+    },
+    screenshotSubmittedAt: {
+      type: DataTypes.DATE,
+      field: "screenshot_submitted_at",
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      field: "rejection_reason",
     },
   },
   {

@@ -129,13 +129,12 @@ export const OrderList: React.FC<OrderListProps> = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      order.speed === "express"
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.speed === "express"
                         ? "bg-purple-100 text-purple-800"
                         : order.speed === "fast"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}>
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}>
                     {t(order.speed)}
                   </span>
                 </td>

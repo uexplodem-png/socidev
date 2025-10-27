@@ -3,6 +3,7 @@ import { authRouter } from "./auth.js";
 import { orderRouter } from "./order.js";
 import { balanceRouter } from "./balance.js";
 import { instagramAccountRouter } from "./instagram-account.js";
+import { socialAccountRouter } from "./social-account.js";
 import { userRouter } from "./user.js";
 import { taskRouter } from "./tasks.js";
 import { adminRouter } from "./admin/index.js";
@@ -20,6 +21,7 @@ router.use(authenticateToken);
 router.use("/orders", orderRouter);
 router.use("/balance", balanceRouter);
 router.use("/instagram-accounts", instagramAccountRouter);
+router.use("/social-accounts", socialAccountRouter);
 router.use("/user", userRouter);
 router.use("/tasks", taskRouter);
 

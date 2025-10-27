@@ -10,6 +10,8 @@ export class SocialAccountController {
     const userId = req.user.id;
     const { platform, username, credentials } = req.body;
 
+    console.log('Received social account data:', { platform, username, credentials, body: req.body });
+
     const account = await socialAccountService.addAccount(userId, {
       platform,
       username,

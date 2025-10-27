@@ -9,14 +9,10 @@ export const validateSocialAccount = [
     .isString()
     .notEmpty()
     .withMessage('Username is required'),
-  body('accessToken')
-    .isString()
-    .notEmpty()
-    .withMessage('Access token is required'),
-  body('refreshToken')
+  body('credentials')
     .optional()
-    .isString()
-    .withMessage('Refresh token must be a string')
+    .isObject()
+    .withMessage('Credentials must be an object')
 ];
 
 export const validateAccountSettings = [

@@ -417,10 +417,10 @@ export const TaskSubmissions: React.FC = () => {
                     search: globalFilter,
                     status: statusFilter,
                 });
-                
+
                 // Backend returns array directly, not wrapped in object
                 const tasksArray = Array.isArray(response) ? response : [];
-                
+
                 // Transform backend response to match frontend interface
                 const transformedTasks = tasksArray.map((task: any) => ({
                     id: task.id,
@@ -443,7 +443,7 @@ export const TaskSubmissions: React.FC = () => {
                     platform: task.platform,
                     type: task.type,
                 }));
-                
+
                 setSubmissions(transformedTasks);
                 // Backend returns array without pagination, so calculate total from array length
                 setTotalPages(Math.ceil(transformedTasks.length / pagination.pageSize));
@@ -1017,11 +1017,10 @@ export const TaskSubmissions: React.FC = () => {
                                                 #{proof.submissionNumber}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    proof.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    proof.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                                    'bg-red-100 text-red-800'
-                                                }`}>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${proof.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                        proof.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                                            'bg-red-100 text-red-800'
+                                                    }`}>
                                                     {proof.status}
                                                 </span>
                                             </td>

@@ -187,11 +187,10 @@ export const MyOrdersPage = () => {
                 <BarChart2 className='w-5 h-5 text-purple-600' />
               </div>
               <span
-                className={`flex items-center text-sm font-medium ${
-                  stats.totalOrders.growth >= 0
+                className={`flex items-center text-sm font-medium ${stats.totalOrders.growth >= 0
                     ? "text-green-600"
                     : "text-red-600"
-                }`}>
+                  }`}>
                 {stats.totalOrders.growth >= 0 ? (
                   <ArrowUpRight className='w-4 h-4 mr-1' />
                 ) : (
@@ -214,11 +213,10 @@ export const MyOrdersPage = () => {
                 <Clock className='w-5 h-5 text-blue-600' />
               </div>
               <span
-                className={`flex items-center text-sm font-medium ${
-                  stats.activeOrders.growth >= 0
+                className={`flex items-center text-sm font-medium ${stats.activeOrders.growth >= 0
                     ? "text-green-600"
                     : "text-red-600"
-                }`}>
+                  }`}>
                 {stats.activeOrders.growth >= 0 ? (
                   <ArrowUpRight className='w-4 h-4 mr-1' />
                 ) : (
@@ -241,11 +239,10 @@ export const MyOrdersPage = () => {
                 <CheckCircle className='w-5 h-5 text-green-600' />
               </div>
               <span
-                className={`flex items-center text-sm font-medium ${
-                  stats.completedOrders.growth >= 0
+                className={`flex items-center text-sm font-medium ${stats.completedOrders.growth >= 0
                     ? "text-green-600"
                     : "text-red-600"
-                }`}>
+                  }`}>
                 {stats.completedOrders.growth >= 0 ? (
                   <ArrowUpRight className='w-4 h-4 mr-1' />
                 ) : (
@@ -268,11 +265,10 @@ export const MyOrdersPage = () => {
                 <DollarSign className='w-5 h-5 text-amber-600' />
               </div>
               <span
-                className={`flex items-center text-sm font-medium ${
-                  stats.totalSpent.growth >= 0
+                className={`flex items-center text-sm font-medium ${stats.totalSpent.growth >= 0
                     ? "text-green-600"
                     : "text-red-600"
-                }`}>
+                  }`}>
                 {stats.totalSpent.growth >= 0 ? (
                   <ArrowUpRight className='w-4 h-4 mr-1' />
                 ) : (
