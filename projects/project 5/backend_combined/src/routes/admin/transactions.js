@@ -434,21 +434,28 @@ router.post('/:id/approve',
       });
     }
 
-    // Update transaction status to completed
-    await transaction.update({
-      status: 'completed',
-      processed_by: req.user.id,
-      processed_at: new Date(),
-      description: notes ? `${transaction.description} - Approved: ${notes}` : transaction.description,
-      notes: notes,
-    });
+    // Get user's balance before processing
+    const balanceBefore = transaction.user ? Number(transaction.user.balance) : null;
+    let balanceAfter = balanceBefore;
 
     // If it's a deposit, add the amount to user balance
     if (transaction.type === 'deposit' && transaction.user) {
       const user = transaction.user;
-      const newBalance = parseFloat(user.balance) + Math.abs(transaction.amount);
-      await user.update({ balance: newBalance });
+      const depositAmount = Math.abs(transaction.amount);
+      balanceAfter = balanceBefore + depositAmount;
+      await user.update({ balance: balanceAfter });
     }
+
+    // Update transaction status to completed with balance tracking
+    await transaction.update({
+      status: 'completed',
+      processed_by: req.user.id,
+      processed_at: new Date(),
+      balance_before: balanceBefore,
+      balance_after: balanceAfter,
+      description: notes ? `${transaction.description} - Approved: ${notes}` : transaction.description,
+      notes: notes,
+    });
 
     // Log the approval action
     try {
@@ -532,14 +539,9 @@ router.post('/:id/reject',
       });
     }
 
-    // Update transaction status to failed
-    await transaction.update({
-      status: 'failed',
-      processed_by: req.user.id,
-      processed_at: new Date(),
-      description: notes ? `${transaction.description} - Rejected: ${notes}` : transaction.description,
-      notes: notes,
-    });
+    // Get user's balance before processing
+    const balanceBefore = transaction.user ? Number(transaction.user.balance) : null;
+    let balanceAfter = balanceBefore;
 
     // If it's a withdrawal or deposit, handle refund/cancellation
     if (transaction.user) {
@@ -547,13 +549,24 @@ router.post('/:id/reject',
       if (transaction.type === 'withdrawal') {
         // Refund withdrawal amount to balance
         const refundAmount = Math.abs(transaction.amount);
-        const newBalance = parseFloat(user.balance) + refundAmount;
-        await user.update({ balance: newBalance });
+        balanceAfter = balanceBefore + refundAmount;
+        await user.update({ balance: balanceAfter });
       } else if (transaction.type === 'deposit') {
         // Deposit was rejected - no balance change needed (was never added)
-        // Just log the rejection
+        balanceAfter = balanceBefore;
       }
     }
+
+    // Update transaction status to failed with balance tracking
+    await transaction.update({
+      status: 'failed',
+      processed_by: req.user.id,
+      processed_at: new Date(),
+      balance_before: balanceBefore,
+      balance_after: balanceAfter,
+      description: notes ? `${transaction.description} - Rejected: ${notes}` : transaction.description,
+      notes: notes,
+    });
 
     // Log the rejection action
     try {

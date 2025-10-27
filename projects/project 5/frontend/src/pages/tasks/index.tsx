@@ -159,7 +159,7 @@ export const TasksPage = () => {
     // Check for userStatus if available (new per-user system)
     const status = (task as any).userStatus || task.status;
     const screenshotStatus = (task as any).userScreenshotStatus || task.screenshotStatus;
-    
+
     if (status === "pending" && !screenshotStatus) {
       return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">In Progress</span>;
     }
@@ -188,8 +188,8 @@ export const TasksPage = () => {
           <button
             onClick={() => setActiveTab("available")}
             className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "available"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
           >
             Available Tasks
@@ -197,8 +197,8 @@ export const TasksPage = () => {
           <button
             onClick={() => setActiveTab("in_progress")}
             className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "in_progress"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
           >
             My In Progress
@@ -206,8 +206,8 @@ export const TasksPage = () => {
           <button
             onClick={() => setActiveTab("completed")}
             className={`pb-4 px-2 font-medium transition-colors border-b-2 ${activeTab === "completed"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
           >
             My Completed
@@ -303,21 +303,21 @@ export const TasksPage = () => {
                   <div className='flex items-start gap-4'>
                     <div
                       className={`p-2 rounded-lg ${task.platform === "instagram"
-                          ? "bg-pink-50"
-                          : task.platform === "youtube"
-                            ? "bg-red-50"
-                            : task.platform === "twitter"
-                              ? "bg-blue-50"
-                              : "bg-purple-50"
+                        ? "bg-pink-50"
+                        : task.platform === "youtube"
+                          ? "bg-red-50"
+                          : task.platform === "twitter"
+                            ? "bg-blue-50"
+                            : "bg-purple-50"
                         }`}>
                       <TaskIcon
                         className={`w-5 h-5 ${task.platform === "instagram"
-                            ? "text-pink-600"
-                            : task.platform === "youtube"
-                              ? "text-red-600"
-                              : task.platform === "twitter"
-                                ? "text-blue-600"
-                                : "text-purple-600"
+                          ? "text-pink-600"
+                          : task.platform === "youtube"
+                            ? "text-red-600"
+                            : task.platform === "twitter"
+                              ? "text-blue-600"
+                              : "text-purple-600"
                           }`}
                       />
                     </div>
@@ -386,7 +386,7 @@ export const TasksPage = () => {
                     <>
                       {(() => {
                         const screenshotStatus = (task as any).userScreenshotStatus || task.screenshotStatus;
-                        
+
                         // If screenshot was rejected or no screenshot submitted yet
                         if (!screenshotStatus || screenshotStatus === "rejected") {
                           return (

@@ -154,6 +154,10 @@ export class OrderService {
       // Tasks will be created when admin approves the order (changes status to 'processing')
       // No need to create tasks here anymore
 
+      // Get user's balance before transaction
+      const balanceBefore = Number(user.balance);
+      const balanceAfter = balanceBefore - totalCost;
+
       // Create transaction record
       await Transaction.create(
         {
@@ -163,10 +167,17 @@ export class OrderService {
           amount: -totalCost,
           status: "completed",
           method: "balance",
+          reference: `ORDER-${order.id.substring(0, 8).toUpperCase()}`,
+          description: `Payment for ${service.name} order - ${orderData.quantity} ${orderData.platform} ${service.name}`,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          processed_at: new Date(),
+          processed_by: userId, // User processed their own order
           details: {
             platform: orderData.platform,
             service: service.name,
             quantity: orderData.quantity,
+            targetUrl: orderData.targetUrl,
           },
         },
         { transaction: dbTransaction }
@@ -304,6 +315,10 @@ export class OrderService {
         })
       );
 
+      // Get user's balance before transaction
+      const balanceBefore = Number(user.balance);
+      const balanceAfter = balanceBefore - totalCost;
+
       // Create transaction record for bulk order
       await Transaction.create(
         {
@@ -312,9 +327,16 @@ export class OrderService {
           amount: -totalCost,
           status: "completed",
           method: "balance",
+          reference: `BULK-${createdOrders[0].id.substring(0, 8).toUpperCase()}`,
+          description: `Bulk payment for ${orders.length} orders across ${[...new Set(orders.map((o) => o.platform))].join(', ')} platforms`,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          processed_at: new Date(),
+          processed_by: userId, // User processed their own bulk order
           details: {
             orderCount: orders.length,
             platforms: [...new Set(orders.map((o) => o.platform))],
+            orderIds: createdOrders.map(o => o.id),
           },
         },
         { transaction: dbTransaction }

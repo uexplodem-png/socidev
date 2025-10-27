@@ -654,6 +654,11 @@ export class TaskService {
         await task.increment('completedQuantity', { by: 1, transaction: dbTransaction });
       }
 
+      // Get user's current balance before crediting
+      const user = execution.User;
+      const balanceBefore = Number(user.balance);
+      const balanceAfter = balanceBefore + payoutAmount;
+
       // Create payout transaction
       await Transaction.create(
         {
@@ -662,6 +667,12 @@ export class TaskService {
           amount: payoutAmount,
           status: "completed",
           method: "balance",
+          reference: `TASK-${task.id.substring(0, 8).toUpperCase()}-${execution.id.substring(0, 8).toUpperCase()}`,
+          description: `Earned from ${task.platform} ${task.type} task - ${task.title || task.targetUrl}`,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          processed_at: new Date(),
+          processed_by: adminId, // Admin approved the task
           details: {
             taskId: task.id,
             executionId: execution.id,

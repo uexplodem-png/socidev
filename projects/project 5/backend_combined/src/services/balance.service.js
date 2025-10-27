@@ -47,13 +47,27 @@ export class BalanceService {
         email: user.email || '',
       };
 
+      // Get user's balance before deposit
+      const balanceBefore = Number(user.balance);
+      let balanceAfter = balanceBefore;
+      
+      // If instant deposit (method === "balance"), update balance_after
+      if (method === "balance") {
+        balanceAfter = balanceBefore + amount;
+      }
+
       const depositTransaction = await Transaction.create(
         {
           userId,
           type: "deposit",
           amount,
           method,
-          description: `Deposit via ${method}`,
+          reference: `DEP-${Date.now()}-${userId.substring(0, 8).toUpperCase()}`,
+          description: `Deposit request via ${method} - Amount: $${amount}`,
+          balance_before: balanceBefore,
+          balance_after: method === "balance" ? balanceAfter : null, // Will be set when admin approves
+          processed_at: method === "balance" ? new Date() : null, // Instant if balance method
+          processed_by: method === "balance" ? userId : null, // Self-processed if instant
           status: method === "balance" ? "completed" : "pending",
         },
         { transaction: dbTransaction }
@@ -135,6 +149,10 @@ export class BalanceService {
         email: user.email || '',
       };
 
+      // Get user's balance before withdrawal
+      const balanceBefore = Number(user.balance);
+      const balanceAfter = balanceBefore - amount;
+
       // Create withdrawal transaction with negative amount
       const withdrawalTransaction = await Transaction.create(
         {
@@ -142,7 +160,12 @@ export class BalanceService {
           type: "withdrawal",
           amount: -amount, // Store as negative to represent money leaving the account
           method,
-          description: `Withdrawal via ${method}`,
+          reference: `WD-${Date.now()}-${userId.substring(0, 8).toUpperCase()}`,
+          description: `Withdrawal request via ${method} - Amount: $${amount}`,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          processed_at: null, // Will be set when admin approves
+          processed_by: null, // Will be set when admin approves
           status: "pending",
         },
         { transaction: dbTransaction }
@@ -202,7 +225,7 @@ export class BalanceService {
     }
   }
 
-  async approveWithdrawal(transactionId) {
+  async approveWithdrawal(transactionId, adminId = null) {
     const dbTransaction = await sequelize.transaction();
     let userData = null;
 
@@ -230,10 +253,12 @@ export class BalanceService {
         email: transaction.user.email || '',
       };
 
-      // Update transaction status
+      // Update transaction status with processed info
       await transaction.update(
         {
           status: "completed",
+          processed_at: new Date(),
+          processed_by: adminId,
         },
         { transaction: dbTransaction }
       );
@@ -282,7 +307,7 @@ export class BalanceService {
     }
   }
 
-  async rejectWithdrawal(transactionId) {
+  async rejectWithdrawal(transactionId, adminId = null) {
     const dbTransaction = await sequelize.transaction();
     let userData = null;
 
@@ -311,16 +336,25 @@ export class BalanceService {
         email: transaction.user.email || '',
       };
 
+      // Get current balance before refund
+      const balanceBefore = Number(transaction.user.balance);
+      const refundAmount = Math.abs(transaction.amount);
+      const balanceAfter = balanceBefore + refundAmount;
+
       // Refund the amount back to user's balance
       await transaction.user.increment("balance", {
-        by: Math.abs(transaction.amount), // Convert negative amount back to positive
+        by: refundAmount, // Convert negative amount back to positive
         transaction: dbTransaction,
       });
 
-      // Update transaction status
+      // Update transaction status with new balance info
       await transaction.update(
         {
-          status: "rejected",
+          status: "failed",
+          processed_at: new Date(),
+          processed_by: adminId,
+          description: `${transaction.description} - Rejected and refunded`,
+          balance_after: balanceAfter, // Update to show refund
         },
         { transaction: dbTransaction }
       );
