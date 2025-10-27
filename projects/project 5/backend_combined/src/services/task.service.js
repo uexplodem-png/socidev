@@ -11,6 +11,102 @@ import { addHours } from "date-fns";
 import fileService from "./file.service.js";
 
 export class TaskService {
+  /**
+   * Normalize target URL to prevent duplicate task executions
+   * Examples:
+   * - https://instagram.com/socidev -> socidev
+   * - instagram.com/socidev -> socidev
+   * - @socidev -> socidev
+   * - socidev -> socidev
+   */
+  normalizeTargetUrl(url, platform) {
+    if (!url) return null;
+
+    let normalized = url.trim().toLowerCase();
+
+    // Remove protocol
+    normalized = normalized.replace(/^https?:\/\//, '');
+    normalized = normalized.replace(/^www\./, '');
+
+    // Platform-specific normalization
+    switch (platform?.toLowerCase()) {
+      case 'instagram':
+        normalized = normalized.replace(/^(instagram\.com\/|ig\.me\/)/, '');
+        normalized = normalized.replace(/^@/, '');
+        normalized = normalized.replace(/\/$/, ''); // Remove trailing slash
+        break;
+      case 'youtube':
+        normalized = normalized.replace(/^(youtube\.com\/(user\/|c\/|channel\/|@)?|youtu\.be\/)/, '');
+        normalized = normalized.replace(/^@/, '');
+        normalized = normalized.replace(/\/$/, '');
+        break;
+      case 'twitter':
+      case 'x':
+        normalized = normalized.replace(/^(twitter\.com\/|x\.com\/)/, '');
+        normalized = normalized.replace(/^@/, '');
+        normalized = normalized.replace(/\/$/, '');
+        break;
+      case 'tiktok':
+        normalized = normalized.replace(/^tiktok\.com\/@?/, '');
+        normalized = normalized.replace(/^@/, '');
+        normalized = normalized.replace(/\/$/, '');
+        break;
+      case 'facebook':
+        normalized = normalized.replace(/^(facebook\.com\/|fb\.com\/)/, '');
+        normalized = normalized.replace(/\/$/, '');
+        break;
+      default:
+        // Generic normalization
+        normalized = normalized.split('/')[0]; // Take first part after domain
+        normalized = normalized.replace(/^@/, '');
+    }
+
+    // Remove query parameters and fragments
+    normalized = normalized.split('?')[0];
+    normalized = normalized.split('#')[0];
+
+    return normalized;
+  }
+
+  async hasUserCompletedSimilarTask(userId, taskType, platform, targetUrl) {
+    const normalizedUrl = this.normalizeTargetUrl(targetUrl, platform);
+
+    if (!normalizedUrl) return false;
+
+    // Get all completed tasks by this user for the same platform and task type
+    const completedTasks = await TaskExecution.findAll({
+      where: {
+        userId,
+        status: 'completed',
+      },
+      include: [
+        {
+          model: Task,
+          as: 'task',
+          where: {
+            type: taskType,
+            platform,
+          },
+          attributes: ['id', 'targetUrl', 'type', 'platform'],
+        },
+      ],
+    });
+
+    // Check if any completed task has the same normalized URL
+    for (const execution of completedTasks) {
+      const completedNormalizedUrl = this.normalizeTargetUrl(
+        execution.task.targetUrl,
+        execution.task.platform
+      );
+
+      if (completedNormalizedUrl === normalizedUrl) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   async getAvailableTasks(userId, filters = {}) {
     // First, get all task IDs that the user has already executed
     const userExecutions = await TaskExecution.findAll({
@@ -18,10 +114,25 @@ export class TaskService {
         userId,
         [Op.or]: [{ status: "completed" }, { status: "pending" }],
       },
-      attributes: ["taskId"],
+      include: [
+        {
+          model: Task,
+          as: 'task',
+          attributes: ['id', 'targetUrl', 'type', 'platform'],
+        },
+      ],
     });
 
     const executedTaskIds = userExecutions.map(execution => execution.taskId);
+
+    // Get all completed task target URLs for duplicate detection
+    const completedTaskUrls = userExecutions
+      .filter(exec => exec.status === 'completed' && exec.task)
+      .map(exec => ({
+        url: this.normalizeTargetUrl(exec.task.targetUrl, exec.task.platform),
+        type: exec.task.type,
+        platform: exec.task.platform,
+      }));
 
     const where = {
       // Show tasks that are either:
@@ -75,17 +186,29 @@ export class TaskService {
         : undefined,
     });
 
-    // Transform tasks to available status (since we've already filtered out executed tasks)
-    // Ensure rate is converted to number
-    // Filter out tasks from pending orders (only show tasks from processing/completed orders or tasks without orders)
+    // Filter out tasks from pending orders and tasks with duplicate URLs
     return tasks
       .filter((task) => {
         const taskData = task.toJSON();
+        
         // If task has an order, only show if order status is NOT pending
-        if (taskData.order) {
-          return taskData.order.status !== "pending";
+        if (taskData.order && taskData.order.status === "pending") {
+          return false;
         }
-        // If task has no order, show it (standalone tasks)
+
+        // Check if user has already completed a task for the same normalized URL
+        const normalizedTaskUrl = this.normalizeTargetUrl(taskData.targetUrl, taskData.platform);
+        const hasDuplicate = completedTaskUrls.some(
+          completed => 
+            completed.url === normalizedTaskUrl &&
+            completed.type === taskData.type &&
+            completed.platform === taskData.platform
+        );
+
+        if (hasDuplicate) {
+          return false; // Don't show this task
+        }
+
         return true;
       })
       .map((task) => {
@@ -128,6 +251,22 @@ export class TaskService {
         throw new ApiError(400, "Cannot claim task from pending order. Order must be approved first.");
       }
 
+      // Check if user has already completed a similar task (same target URL)
+      // This prevents users from doing duplicate tasks like following the same account twice
+      const hasCompletedSimilar = await this.hasUserCompletedSimilarTask(
+        userId,
+        task.type,
+        task.platform,
+        task.targetUrl
+      );
+
+      if (hasCompletedSimilar) {
+        throw new ApiError(
+          400,
+          `You have already completed a ${task.type} task for this ${task.platform} account. You cannot do this task again.`
+        );
+      }
+
       // For tasks from orders (userId is null), claim the task
       if (task.userId === null) {
         // Check if task is still available for claiming
@@ -135,12 +274,19 @@ export class TaskService {
           throw new ApiError(400, "Task is no longer available");
         }
 
-        // Claim the task
-        await task.update(
+        // Check if there's remaining quantity
+        if (task.remainingQuantity <= 0) {
+          throw new ApiError(400, "This task has been fully completed");
+        }
+
+        // Claim the task by creating a task execution
+        // Don't change task.userId - keep it null so others can claim it too
+        const execution = await TaskExecution.create(
           {
             userId,
-            status: "in_progress",
-            startedAt: new Date(),
+            taskId,
+            status: "pending",
+            executedAt: new Date(),
           },
           { transaction: dbTransaction }
         );
@@ -157,7 +303,12 @@ export class TaskService {
         );
 
         await dbTransaction.commit();
-        return task;
+        
+        // Return task with execution info
+        return {
+          ...task.toJSON(),
+          execution,
+        };
       }
 
       // For tasks with assigned userId (old flow)
