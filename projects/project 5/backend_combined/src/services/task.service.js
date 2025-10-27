@@ -108,12 +108,10 @@ export class TaskService {
   }
 
   async getAvailableTasks(userId, filters = {}) {
-    // Get all task IDs that the user has already COMPLETED
-    // Don't exclude pending executions - user should still see tasks they're working on
+    // Get all user's task executions to determine their status for each task
     const userExecutions = await TaskExecution.findAll({
       where: {
         userId,
-        status: 'completed', // Only exclude completed tasks
       },
       include: [
         {
@@ -124,7 +122,21 @@ export class TaskService {
       ],
     });
 
-    const executedTaskIds = userExecutions.map(execution => execution.taskId);
+    // Map of taskId -> user's execution status
+    const userExecutionMap = new Map();
+    userExecutions.forEach(exec => {
+      userExecutionMap.set(exec.taskId, {
+        status: exec.status,
+        executionId: exec.id,
+        executedAt: exec.executedAt,
+        completedAt: exec.completedAt,
+      });
+    });
+
+    // Get completed task IDs to exclude from available list
+    const completedTaskIds = userExecutions
+      .filter(exec => exec.status === 'completed')
+      .map(exec => exec.taskId);
 
     // Get all completed task target URLs for duplicate detection
     const completedTaskUrls = userExecutions
@@ -143,9 +155,9 @@ export class TaskService {
         { userId: null }, // Tasks from orders
         { userId: { [Op.ne]: userId } } // Other users' tasks
       ],
-      status: { [Op.in]: ["pending", "processing"] },
       adminStatus: "approved", // Only show admin-approved tasks
-      id: { [Op.notIn]: executedTaskIds }, // Exclude tasks user has already executed
+      id: { [Op.notIn]: completedTaskIds }, // Exclude completed tasks
+      remainingQuantity: { [Op.gt]: 0 }, // Only show tasks with remaining quantity
     };
 
     // Add platform filter
@@ -214,10 +226,16 @@ export class TaskService {
       })
       .map((task) => {
         const taskData = task.toJSON();
+        const userExecution = userExecutionMap.get(taskData.id);
+        
         return {
           ...taskData,
           rate: Number(taskData.rate),
-          status: "available",
+          // User-specific status: if user has an execution, use that status, otherwise "available"
+          userStatus: userExecution ? userExecution.status : "available",
+          userExecution: userExecution || null,
+          // Keep original task status for reference
+          taskStatus: taskData.status,
         };
       });
   }
@@ -372,18 +390,30 @@ export class TaskService {
           taskId,
           status: "pending",
         },
-        include: [Task],
+        include: [
+          {
+            model: Task,
+            as: 'Task',
+          }
+        ],
         transaction: dbTransaction,
       });
 
       if (!execution) {
-        throw new ApiError(404, "Task execution not found");
+        throw new ApiError(404, "Task execution not found or already completed");
+      }
+
+      const task = execution.Task;
+
+      // Check if task still has remaining quantity
+      if (task.remainingQuantity <= 0) {
+        throw new ApiError(400, "Task has been fully completed");
       }
 
       // Calculate earnings based on task type and rate
-      const earnings = execution.Task.rate;
+      const earnings = parseFloat(task.rate);
 
-      // Update execution
+      // Update execution to completed
       await execution.update(
         {
           status: "completed",
@@ -395,6 +425,18 @@ export class TaskService {
         { transaction: dbTransaction }
       );
 
+      // Decrement task's remaining quantity
+      await task.decrement('remainingQuantity', {
+        by: 1,
+        transaction: dbTransaction,
+      });
+
+      // Increment completed quantity
+      await task.increment('completedQuantity', {
+        by: 1,
+        transaction: dbTransaction,
+      });
+
       // Update user balance
       await User.increment("balance", {
         by: earnings,
@@ -402,11 +444,38 @@ export class TaskService {
         transaction: dbTransaction,
       });
 
-      // Update task progress
-      await execution.Task.increment("completedCount", {
-        by: 1,
-        transaction: dbTransaction,
-      });
+      // Create transaction record
+      await Transaction.create(
+        {
+          userId,
+          type: "task_completion",
+          amount: earnings,
+          status: "completed",
+          method: "task",
+          details: {
+            taskId: task.id,
+            taskType: task.type,
+            platform: task.platform,
+          },
+        },
+        { transaction: dbTransaction }
+      );
+
+      // Log the completion
+      await AuditLog.log(
+        userId,
+        "complete",
+        "Task",
+        taskId,
+        null,
+        `Completed task: ${task.title}`,
+        {
+          taskType: task.type,
+          platform: task.platform,
+          earnings,
+        },
+        null
+      );
 
       await dbTransaction.commit();
       return execution;
