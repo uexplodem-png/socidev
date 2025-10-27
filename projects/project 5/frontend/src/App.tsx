@@ -14,6 +14,8 @@ import { InstagramAccountsPage } from "./pages/my-accounts/instagram/accounts/in
 import { InstagramAccountDetailsPage } from "./pages/my-accounts/instagram/accounts/[id]";
 import { YoutubeAccountsPage } from "./pages/my-accounts/youtube";
 import { YoutubeAccountDetailsPage } from "./pages/my-accounts/youtube/[id]";
+import ProfilePage from "./pages/profile/index";
+import SettingsPage from "./pages/settings/index";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { UserModeProvider } from "./context/UserModeContext";
@@ -201,6 +203,28 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <TasksPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Profile & Settings Routes */}
+      <Route
+        path='/profile'
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ProfilePage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/settings'
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <SettingsPage />
             </Layout>
           </ProtectedRoute>
         }
