@@ -108,11 +108,12 @@ export class TaskService {
   }
 
   async getAvailableTasks(userId, filters = {}) {
-    // First, get all task IDs that the user has already executed
+    // Get all task IDs that the user has already COMPLETED
+    // Don't exclude pending executions - user should still see tasks they're working on
     const userExecutions = await TaskExecution.findAll({
       where: {
         userId,
-        [Op.or]: [{ status: "completed" }, { status: "pending" }],
+        status: 'completed', // Only exclude completed tasks
       },
       include: [
         {
