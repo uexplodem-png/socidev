@@ -903,10 +903,10 @@ class RealApiService {
         return this.request<any>(`/admin/rbac/roles/${roleId}/permissions`);
     }
 
-    async updateRolePermission(roleId: number, permissionId: number, mode: string, allow: boolean): Promise<any> {
+    async updateRolePermission(roleId: number, permissionKey: string, mode: string, allow: boolean): Promise<any> {
         return this.request<any>(`/admin/rbac/roles/${roleId}/permissions`, {
             method: 'POST',
-            body: JSON.stringify({ permission_id: permissionId, mode, allow }),
+            body: JSON.stringify({ permissionKey, mode, allow }),
         });
     }
 

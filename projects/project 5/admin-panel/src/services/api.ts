@@ -86,8 +86,8 @@ export const rbacAPI = {
   getRolePermissions: async (roleId: number) => {
     return realApiService.getRolePermissions(roleId);
   },
-  updateRolePermission: async (roleId: number, permissionId: number, mode: string, allow: boolean) => {
-    return realApiService.updateRolePermission(roleId, permissionId, mode, allow);
+  updateRolePermission: async (roleId: number, permissionKey: string, mode: string, allow: boolean) => {
+    return realApiService.updateRolePermission(roleId, permissionKey, mode, allow);
   },
   deleteRolePermission: async (roleId: number, permissionId: number) => {
     return realApiService.deleteRolePermission(roleId, permissionId);
