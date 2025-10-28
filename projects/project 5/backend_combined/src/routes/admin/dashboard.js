@@ -62,7 +62,7 @@ router.get('/stats',
       };
     }
 
-    // Get statistics
+    // Get statistics (using raw queries for aggregations)
     const [
       totalUsers,
       activeUsers,
@@ -84,15 +84,17 @@ router.get('/stats',
       Task.count(),
       Task.count({ where: { admin_status: 'pending' } }),
       Task.count({ where: { admin_status: 'approved' } }),
-      Transaction.sum('amount', {
-        where: {
-          type: 'order_payment',
-          status: 'completed',
-          ...dateFilter,
-        },
-      }),
+      Transaction.findOne({
+        where: { type: 'order_payment', status: 'completed', ...dateFilter },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
       Withdrawal.count({ where: { status: 'pending' } }),
-      Withdrawal.sum('amount', { where: { status: 'pending' } }),
+      Withdrawal.findOne({
+        where: { status: 'pending' },
+        attributes: [[Withdrawal.sequelize.fn('SUM', Withdrawal.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
     ]);
 
     // Calculate period statistics for comparison
@@ -123,7 +125,7 @@ router.get('/stats',
           },
         },
       }),
-      Transaction.sum('amount', {
+      Transaction.findOne({
         where: {
           type: 'order_payment',
           status: 'completed',
@@ -131,7 +133,9 @@ router.get('/stats',
             [Op.between]: [previousPeriodStart, previousPeriodEnd],
           },
         },
-      }),
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
     ]);
 
     // Calculate percentage changes
@@ -142,18 +146,16 @@ router.get('/stats',
 
     const currentPeriodUsers = await User.count({ where: dateFilter });
     const currentPeriodOrders = await Order.count({ where: dateFilter });
-    const currentPeriodRevenue = await Transaction.sum('amount', {
-      where: {
-        type: 'order_payment',
-        status: 'completed',
-        ...dateFilter,
-      },
-    }) || 0;
+    const currentPeriodRevenue = await Transaction.findOne({
+      where: { type: 'order_payment', status: 'completed', ...dateFilter },
+      attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+      raw: true,
+    }).then(result => parseFloat(result?.total) || 0);
 
     res.json({
       revenue: {
-        total: parseFloat(totalRevenue) || 0,
-        change: calculateChange(currentPeriodRevenue, previousRevenue || 0),
+        total: totalRevenue,
+        change: calculateChange(currentPeriodRevenue, previousRevenue),
         period: timeRange,
       },
       users: {
@@ -175,7 +177,7 @@ router.get('/stats',
       },
       withdrawals: {
         pending: pendingWithdrawals,
-        amount: parseFloat(withdrawalAmount) || 0,
+        amount: withdrawalAmount,
         change: -5.2, // Mock change for now
       },
     });
@@ -231,7 +233,7 @@ router.get('/chart',
             },
           },
         }),
-        Transaction.sum('amount', {
+        Transaction.findOne({
           where: {
             type: 'order_payment',
             status: 'completed',
@@ -239,7 +241,9 @@ router.get('/chart',
               [Op.between]: [date, nextDate],
             },
           },
-        }),
+          attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+          raw: true,
+        }).then(result => parseFloat(result?.total) || 0),
         User.count({
           where: {
             created_at: {
@@ -254,7 +258,7 @@ router.get('/chart',
         dateFormatted: date.toLocaleDateString(),
         orders: dayOrders,
         tasks: dayTasks,
-        revenue: parseFloat(dayRevenue) || 0,
+        revenue: dayRevenue,
         users: dayUsers,
       });
     }
@@ -280,19 +284,21 @@ router.get('/recent-activity',
   asyncHandler(async (req, res) => {
     const [recentOrders, recentTasks, recentUsers] = await Promise.all([
       Order.findAll({
+        attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'createdAt'],
         limit: 5,
         order: [['created_at', 'DESC']],
-        include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }],
+        include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       }),
       Task.findAll({
+        attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'targetUrl', 'quantity', 'rate', 'status', 'adminStatus', 'createdAt'],
         limit: 5,
         order: [['created_at', 'DESC']],
-        include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }],
+        include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       }),
       User.findAll({
         limit: 5,
         order: [['created_at', 'DESC']],
-        attributes: ['id', 'first_name', 'last_name', 'email', 'created_at'],
+        attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'role', 'status', 'createdAt'],
       }),
     ]);
 

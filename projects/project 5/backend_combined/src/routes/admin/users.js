@@ -164,7 +164,7 @@ router.get('/',
       limit,
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
-      attributes: { exclude: ['password', 'refresh_token'] },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'role', 'status', 'balance', 'emailVerified', 'createdAt', 'updatedAt', 'lastLogin'],
     });
 
     res.json({
@@ -206,11 +206,12 @@ router.get('/:id',
     const { id } = req.params;
 
     const user = await User.findByPk(id, {
-      attributes: { exclude: ['password', 'refresh_token'] },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'role', 'status', 'balance', 'emailVerified', 'createdAt', 'updatedAt', 'lastLogin'],
       include: [
         {
           model: Order,
           as: 'orders',
+          attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'remainingCount', 'completedCount', 'createdAt'],
           limit: 10,
           order: [['created_at', 'DESC']],
           separate: true,
@@ -218,6 +219,7 @@ router.get('/:id',
         {
           model: Task,
           as: 'tasks',
+          attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'targetUrl', 'quantity', 'remainingQuantity', 'rate', 'status', 'adminStatus', 'createdAt'],
           limit: 10,
           order: [['created_at', 'DESC']],
           separate: true,
@@ -225,6 +227,7 @@ router.get('/:id',
         {
           model: Transaction,
           as: 'transactions',
+          attributes: ['id', 'userId', 'orderId', 'type', 'amount', 'status', 'method', 'description', 'createdAt'],
           limit: 10,
           order: [['created_at', 'DESC']],
           separate: true,
@@ -232,6 +235,7 @@ router.get('/:id',
         {
           model: Device,
           as: 'devices',
+          attributes: ['id', 'userId', 'deviceName', 'deviceType', 'ipAddress', 'status', 'lastActive', 'tasksCompleted', 'createdAt'],
           limit: 10,
           order: [['created_at', 'DESC']],
           separate: true,
@@ -240,6 +244,7 @@ router.get('/:id',
         {
           model: SocialAccount,
           as: 'socialAccounts',
+          attributes: ['id', 'userId', 'platform', 'accountId', 'username', 'profileUrl', 'status', 'healthScore', 'createdAt', 'lastActivity'],
           limit: 10,
           order: [['created_at', 'DESC']],
           separate: true,
@@ -257,6 +262,7 @@ router.get('/:id',
         user_id: id,
         type: 'withdrawal',
       },
+      attributes: ['id', 'userId', 'type', 'amount', 'status', 'method', 'description', 'createdAt', 'processedAt'],
       limit: 10,
       order: [['created_at', 'DESC']],
     });
@@ -264,43 +270,26 @@ router.get('/:id',
     // Separate balance history (all transactions, not withdrawals)
     const balanceHistory = user.transactions || [];
 
-    // Get user statistics and analytics
+    // Get user statistics and analytics (using raw queries for better performance)
     const [totalOrders, totalSpent, totalEarned, completedTasks, totalWithdrawals, pendingWithdrawals] = await Promise.all([
       Order.count({ where: { user_id: id } }),
-      Transaction.sum('amount', {
-        where: {
-          user_id: id,
-          type: 'order_payment',
-          status: 'completed',
-        },
-      }),
-      Transaction.sum('amount', {
-        where: {
-          user_id: id,
-          type: 'task_earning',
-          status: 'completed',
-        },
-      }),
-      Task.count({
-        where: {
-          user_id: id,
-          status: 'completed',
-        },
-      }),
-      Transaction.sum('amount', {
-        where: {
-          user_id: id,
-          type: 'withdrawal',
-          status: 'completed',
-        },
-      }),
-      Transaction.count({
-        where: {
-          user_id: id,
-          type: 'withdrawal',
-          status: 'pending',
-        },
-      }),
+      Transaction.findOne({
+        where: { user_id: id, type: 'order_payment', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
+      Transaction.findOne({
+        where: { user_id: id, type: 'task_earning', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
+      Task.count({ where: { user_id: id, status: 'completed' } }),
+      Transaction.findOne({
+        where: { user_id: id, type: 'withdrawal', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
+      Transaction.count({ where: { user_id: id, type: 'withdrawal', status: 'pending' } }),
     ]);
 
     // Get analytics data
@@ -308,10 +297,10 @@ router.get('/:id',
       totalOrders,
       completedOrders: await Order.count({ where: { user_id: id, status: 'completed' } }),
       failedOrders: await Order.count({ where: { user_id: id, status: 'failed' } }),
-      totalSpent: parseFloat(totalSpent) || 0,
-      totalEarned: parseFloat(totalEarned) || 0,
+      totalSpent,
+      totalEarned,
       completedTasks,
-      totalWithdrawals: parseFloat(totalWithdrawals) || 0,
+      totalWithdrawals,
       pendingWithdrawals,
     };
 
@@ -325,10 +314,10 @@ router.get('/:id',
           user: userWithDetails,
           statistics: {
             totalOrders,
-            totalSpent: parseFloat(totalSpent) || 0,
-            totalEarned: parseFloat(totalEarned) || 0,
+            totalSpent,
+            totalEarned,
             completedTasks,
-            totalWithdrawals: parseFloat(totalWithdrawals) || 0,
+            totalWithdrawals,
             pendingWithdrawals,
           },
         },
@@ -669,6 +658,7 @@ router.post('/bulk-action',
 
     const users = await User.findAll({
       where: { id: { [Op.in]: user_ids } },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'role', 'status', 'balance'],
     });
 
     if (users.length === 0) {
@@ -732,7 +722,7 @@ router.post('/bulk-action',
     // Fetch updated users
     const updatedUsers = await User.findAll({
       where: { id: { [Op.in]: user_ids } },
-      attributes: { exclude: ['password', 'refresh_token'] },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'role', 'status', 'balance', 'emailVerified', 'createdAt', 'updatedAt', 'lastLogin'],
     });
 
     res.json({
@@ -793,7 +783,9 @@ router.post('/:id/balance',
     const { id } = req.params;
     const { amount, type, reason } = req.body;
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'balance'],
+    });
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -908,7 +900,9 @@ router.get('/:id/transactions',
     const { page, limit } = req.query;
 
     // Verify user exists
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      attributes: ['id'],
+    });
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -917,6 +911,7 @@ router.get('/:id/transactions',
 
     const { count, rows: transactions } = await Transaction.findAndCountAll({
       where: { user_id: id },
+      attributes: ['id', 'userId', 'orderId', 'type', 'amount', 'status', 'method', 'description', 'createdAt', 'processedAt'],
       limit,
       offset,
       order: [['created_at', 'DESC']],
@@ -924,7 +919,7 @@ router.get('/:id/transactions',
         {
           model: Order,
           as: 'order',
-          attributes: ['id', 'service', 'target_url'],
+          attributes: ['id', 'service', 'targetUrl'],
         },
       ],
     });

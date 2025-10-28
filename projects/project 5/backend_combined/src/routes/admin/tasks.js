@@ -97,6 +97,7 @@ router.get('/',
     // Fetch tasks with pagination
     const { count, rows: tasks } = await Task.findAndCountAll({
       where,
+      attributes: ['id', 'userId', 'orderId', 'title', 'description', 'type', 'platform', 'targetUrl', 'quantity', 'remainingQuantity', 'rate', 'priority', 'status', 'adminStatus', 'adminReviewedBy', 'adminReviewedAt', 'createdAt', 'updatedAt'],
       limit,
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -104,12 +105,12 @@ router.get('/',
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
         {
           model: User,
           as: 'reviewer',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          attributes: ['id', 'firstName', 'lastName', 'email'],
           required: false,
         },
       ],
@@ -162,6 +163,7 @@ router.get('/pending',
 
     const { count, rows: tasks } = await Task.findAndCountAll({
       where: { admin_status: 'pending' },
+      attributes: ['id', 'userId', 'orderId', 'title', 'description', 'type', 'platform', 'targetUrl', 'quantity', 'remainingQuantity', 'rate', 'priority', 'status', 'adminStatus', 'createdAt'],
       limit,
       offset,
       order: [['created_at', 'ASC']], // Oldest first for FIFO processing
@@ -169,7 +171,7 @@ router.get('/pending',
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
       ],
     });
@@ -213,16 +215,17 @@ router.get('/:id',
     const { id } = req.params;
 
     const task = await Task.findByPk(id, {
+      attributes: ['id', 'userId', 'orderId', 'title', 'description', 'type', 'platform', 'targetUrl', 'quantity', 'remainingQuantity', 'rate', 'priority', 'status', 'adminStatus', 'adminReviewedBy', 'adminReviewedAt', 'requirements', 'createdAt', 'updatedAt'],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
         {
           model: User,
           as: 'reviewer',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          attributes: ['id', 'firstName', 'lastName', 'email'],
           required: false,
         },
       ],
@@ -277,7 +280,9 @@ router.post('/:id/approve',
     const { id } = req.params;
     const { notes } = req.body;
 
-    const task = await Task.findByPk(id);
+    const task = await Task.findByPk(id, {
+      attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'quantity', 'rate', 'adminStatus'],
+    });
     if (!task) {
       throw new NotFoundError('Task');
     }
@@ -364,7 +369,9 @@ router.post('/:id/reject',
     const { id } = req.params;
     const { reason, notes } = req.body;
 
-    const task = await Task.findByPk(id);
+    const task = await Task.findByPk(id, {
+      attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'adminStatus', 'requirements'],
+    });
     if (!task) {
       throw new NotFoundError('Task');
     }
@@ -451,6 +458,7 @@ router.post('/bulk-approve',
         id: { [Op.in]: task_ids },
         admin_status: 'pending',
       },
+      attributes: ['id', 'userId', 'type', 'platform', 'quantity', 'rate', 'adminStatus'],
     });
 
     if (tasks.length === 0) {
@@ -537,6 +545,7 @@ router.post('/bulk-reject',
         id: { [Op.in]: task_ids },
         admin_status: 'pending',
       },
+      attributes: ['id', 'userId', 'type', 'platform', 'requirements', 'adminStatus'],
     });
 
     if (tasks.length === 0) {
@@ -683,7 +692,9 @@ router.patch('/:id/priority',
     const { id } = req.params;
     const { priority } = req.body;
 
-    const task = await Task.findByPk(id);
+    const task = await Task.findByPk(id, {
+      attributes: ['id', 'userId', 'priority'],
+    });
     if (!task) {
       throw new NotFoundError('Task');
     }

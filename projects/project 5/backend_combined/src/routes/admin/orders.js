@@ -79,6 +79,7 @@ router.get('/',
     // Fetch orders with pagination
     const { count, rows: orders } = await Order.findAndCountAll({
       where,
+      attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'remainingCount', 'completedCount', 'speed', 'createdAt', 'updatedAt', 'startedAt', 'completedAt'],
       limit,
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -86,7 +87,7 @@ router.get('/',
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
       ],
     });
@@ -130,15 +131,17 @@ router.get('/:id',
     const { id } = req.params;
 
     const order = await Order.findByPk(id, {
+      attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'remainingCount', 'completedCount', 'speed', 'notes', 'createdAt', 'updatedAt', 'startedAt', 'completedAt'],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
         {
           model: Transaction,
           as: 'transactions',
+          attributes: ['id', 'type', 'amount', 'status', 'method', 'description', 'createdAt'],
           order: [['created_at', 'DESC']],
         },
       ],
@@ -199,7 +202,9 @@ router.post('/:id/status',
 
     console.log(`[ORDER STATUS UPDATE] Received request for order ${id}, new status: ${status}`);
 
-    const order = await Order.findByPk(id);
+    const order = await Order.findByPk(id, {
+      attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'remainingCount', 'completedCount', 'speed', 'notes'],
+    });
     if (!order) {
       throw new NotFoundError('Order');
     }
@@ -366,7 +371,8 @@ router.post('/:id/refund',
     const { reason, partial = false, refundAmount } = req.body;
 
     const order = await Order.findByPk(id, {
-      include: [{ model: User, as: 'user' }],
+      attributes: ['id', 'userId', 'amount', 'status', 'service', 'platform', 'targetUrl', 'quantity'],
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'balance'] }],
     });
 
     if (!order) {
@@ -469,7 +475,9 @@ router.post('/',
     const orderData = req.body;
 
     // Verify user exists
-    const user = await User.findByPk(orderData.user_id);
+    const user = await User.findByPk(orderData.user_id, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'balance'],
+    });
     if (!user) {
       throw new NotFoundError('User');
     }

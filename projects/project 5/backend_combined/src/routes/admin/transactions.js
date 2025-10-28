@@ -98,6 +98,7 @@ router.get('/',
     // Fetch transactions with pagination
     const { count, rows: transactions } = await Transaction.findAndCountAll({
       where,
+      attributes: ['id', 'userId', 'orderId', 'type', 'amount', 'status', 'method', 'description', 'reference', 'balanceBefore', 'balanceAfter', 'createdAt', 'processedAt', 'processedBy'],
       limit,
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -105,12 +106,12 @@ router.get('/',
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
         {
           model: Order,
           as: 'order',
-          attributes: ['id', 'service', 'target_url', 'platform'],
+          attributes: ['id', 'service', 'targetUrl', 'platform'],
           required: false,
         },
       ],
@@ -155,16 +156,17 @@ router.get('/:id',
     const { id } = req.params;
 
     const transaction = await Transaction.findByPk(id, {
+      attributes: ['id', 'userId', 'orderId', 'type', 'amount', 'status', 'method', 'description', 'reference', 'balanceBefore', 'balanceAfter', 'notes', 'createdAt', 'processedAt', 'processedBy'],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'username'],
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
         },
         {
           model: Order,
           as: 'order',
-          attributes: ['id', 'service', 'target_url', 'platform', 'quantity', 'status'],
+          attributes: ['id', 'service', 'targetUrl', 'platform', 'quantity', 'status'],
           required: false,
         },
       ],
@@ -209,7 +211,9 @@ router.post('/',
     const transactionData = req.body;
 
     // Verify user exists
-    const user = await User.findByPk(transactionData.user_id);
+    const user = await User.findByPk(transactionData.user_id, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'balance'],
+    });
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -314,7 +318,7 @@ router.get('/stats',
       },
     };
 
-    // Get transaction statistics
+    // Get transaction statistics (using raw queries)
     const [
       totalTransactions,
       completedTransactions,
@@ -329,28 +333,26 @@ router.get('/stats',
       Transaction.count({ where: { ...dateFilter, status: 'completed' } }),
       Transaction.count({ where: { ...dateFilter, status: 'pending' } }),
       Transaction.count({ where: { ...dateFilter, status: 'failed' } }),
-      Transaction.sum('amount', { where: { ...dateFilter, status: 'completed' } }),
-      Transaction.sum('amount', { 
-        where: { 
-          ...dateFilter, 
-          type: 'deposit', 
-          status: 'completed' 
-        } 
-      }),
-      Transaction.sum('amount', { 
-        where: { 
-          ...dateFilter, 
-          type: 'withdrawal', 
-          status: 'completed' 
-        } 
-      }),
-      Transaction.sum('amount', { 
-        where: { 
-          ...dateFilter, 
-          type: 'order_payment', 
-          status: 'completed' 
-        } 
-      }),
+      Transaction.findOne({
+        where: { ...dateFilter, status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
+      Transaction.findOne({
+        where: { ...dateFilter, type: 'deposit', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => parseFloat(result?.total) || 0),
+      Transaction.findOne({
+        where: { ...dateFilter, type: 'withdrawal', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => Math.abs(parseFloat(result?.total)) || 0),
+      Transaction.findOne({
+        where: { ...dateFilter, type: 'order_payment', status: 'completed' },
+        attributes: [[Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total']],
+        raw: true,
+      }).then(result => Math.abs(parseFloat(result?.total)) || 0),
     ]);
 
     // Get transaction breakdown by type
@@ -358,8 +360,8 @@ router.get('/stats',
       where: { ...dateFilter, status: 'completed' },
       attributes: [
         'type',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-        [sequelize.fn('SUM', sequelize.col('amount')), 'total_amount'],
+        [Transaction.sequelize.fn('COUNT', Transaction.sequelize.col('id')), 'count'],
+        [Transaction.sequelize.fn('SUM', Transaction.sequelize.col('amount')), 'total_amount'],
       ],
       group: ['type'],
       raw: true,
@@ -371,10 +373,10 @@ router.get('/stats',
         completedTransactions,
         pendingTransactions,
         failedTransactions,
-        totalVolume: parseFloat(totalVolume) || 0,
-        depositVolume: parseFloat(depositVolume) || 0,
-        withdrawalVolume: Math.abs(parseFloat(withdrawalVolume)) || 0,
-        orderPaymentVolume: Math.abs(parseFloat(orderPaymentVolume)) || 0,
+        totalVolume,
+        depositVolume,
+        withdrawalVolume,
+        orderPaymentVolume,
       },
       breakdown: transactionsByType,
       period: timeRange,
@@ -419,7 +421,8 @@ router.post('/:id/approve',
     const { notes } = req.body;
 
     const transaction = await Transaction.findByPk(id, {
-      include: [{ model: User, as: 'user' }],
+      attributes: ['id', 'userId', 'type', 'amount', 'status', 'method', 'description', 'balanceBefore', 'balanceAfter'],
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'balance'] }],
     });
 
     if (!transaction) {
@@ -524,7 +527,8 @@ router.post('/:id/reject',
     const { notes } = req.body;
 
     const transaction = await Transaction.findByPk(id, {
-      include: [{ model: User, as: 'user' }],
+      attributes: ['id', 'userId', 'type', 'amount', 'status', 'method', 'description', 'balanceBefore', 'balanceAfter', 'notes'],
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'balance'] }],
     });
 
     if (!transaction) {
