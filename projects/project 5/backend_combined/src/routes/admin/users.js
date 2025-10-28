@@ -179,7 +179,7 @@ router.get('/',
       limit,
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
-      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'role', 'status', 'balance', 'emailVerified', 'createdAt', 'updatedAt', 'lastLogin'],
+      attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'phone', 'role', 'status', 'balance', 'createdAt', 'updatedAt', 'lastLogin'],
     });
 
     res.json({

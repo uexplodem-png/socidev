@@ -59,6 +59,30 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_login'
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  emailVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'email_verified'
+  },
+  twoFactorEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'two_factor_enabled'
+  },
+  userMode: {
+    type: DataTypes.ENUM('task_doer', 'task_giver', 'both'),
+    defaultValue: 'task_doer',
+    field: 'user_mode'
+  },
+  refreshToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'refresh_token'
   }
 }, {
   tableName: 'users',
