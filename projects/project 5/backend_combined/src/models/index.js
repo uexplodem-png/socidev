@@ -18,6 +18,11 @@ import Refund from './Refund.js';
 import Session from './Session.js';
 import TaskExecution from './TaskExecution.js';
 import UserSettings from './UserSettings.js';
+import SystemSettings from './SystemSettings.js';
+import Role from './Role.js';
+import Permission from './Permission.js';
+import UserRole from './UserRole.js';
+import RolePermission from './RolePermission.js';
 
 // Define associations
 const defineAssociations = () => {
@@ -84,6 +89,19 @@ const defineAssociations = () => {
 
   // Task Execution associations
   TaskExecution.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
+
+  // RBAC associations
+  User.hasMany(UserRole, { foreignKey: 'user_id', as: 'userRoles' });
+  UserRole.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  UserRole.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+  
+  Role.hasMany(UserRole, { foreignKey: 'role_id', as: 'userRoles' });
+  Role.hasMany(RolePermission, { foreignKey: 'role_id', as: 'rolePermissions' });
+  
+  Permission.hasMany(RolePermission, { foreignKey: 'permission_id', as: 'rolePermissions' });
+  
+  RolePermission.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+  RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
 };
 
 // Initialize associations
@@ -110,4 +128,9 @@ export {
   Session,
   TaskExecution,
   UserSettings,
+  SystemSettings,
+  Role,
+  Permission,
+  UserRole,
+  RolePermission,
 };

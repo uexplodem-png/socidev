@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 import logger from '../config/logger.js';
+import { permissionsService } from '../services/permissionsService.js';
 
 // Verify JWT token
 export const authenticateToken = async (req, res, next) => {
@@ -124,9 +125,9 @@ export const requireSuperAdmin = (req, res, next) => {
   next();
 };
 
-// Check specific permissions
-export const requirePermission = (permission) => {
-  return (req, res, next) => {
+// Check specific permissions using RBAC
+export const requirePermission = (permissionKey) => {
+  return async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         error: 'Authentication required',
@@ -134,35 +135,44 @@ export const requirePermission = (permission) => {
       });
     }
 
-    // Super admin has all permissions
-    if (req.user.role === 'super_admin') {
-      return next();
-    }
+    try {
+      // Super admin has all permissions
+      if (req.user.role === 'super_admin') {
+        return next();
+      }
 
-    // Define role permissions
-    const rolePermissions = {
-      admin: [
-        'users.view', 'users.edit', 'users.create', 'users.suspend',
-        'orders.view', 'orders.edit', 'orders.refund',
-        'tasks.view', 'tasks.approve', 'tasks.reject',
-        'transactions.view', 'transactions.create', 'transactions.approve', 'transactions.reject',
-        'withdrawals.view', 'withdrawals.process',
-        'audit.view',
-        'settings.view', 'settings.edit',
-      ],
-      user: ['profile.view', 'profile.edit'],
-    };
+      // Determine user mode from request or user object
+      const mode = req.user.user_mode || req.user.userMode || 'all';
 
-    const userPermissions = rolePermissions[req.user.role] || [];
+      // Check permission via PermissionsService
+      const hasPermission = await permissionsService.userHasPermission(
+        req.user.id,
+        permissionKey,
+        mode
+      );
 
-    if (!userPermissions.includes(permission)) {
-      return res.status(403).json({
-        error: `Permission '${permission}' required`,
-        code: 'INSUFFICIENT_PERMISSIONS',
+      if (!hasPermission) {
+        logger.warn('Permission denied', {
+          userId: req.user.id,
+          permission: permissionKey,
+          mode,
+          url: req.url
+        });
+
+        return res.status(403).json({
+          error: `Permission '${permissionKey}' required`,
+          code: 'INSUFFICIENT_PERMISSIONS',
+        });
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Permission check error:', error);
+      return res.status(500).json({
+        error: 'Permission check failed',
+        code: 'PERMISSION_CHECK_ERROR',
       });
     }
-
-    next();
   };
 };
 
