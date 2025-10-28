@@ -113,6 +113,7 @@ export class TaskService {
       where: {
         userId,
       },
+      attributes: ['id', 'taskId', 'status', 'executedAt', 'completedAt'],
       include: [
         {
           model: Task,
@@ -180,16 +181,17 @@ export class TaskService {
 
     const tasks = await Task.findAll({
       where,
+      attributes: ['id', 'platform', 'type', 'targetUrl', 'rate', 'quantity', 'remainingQuantity', 'adminStatus', 'description', 'createdAt'],
       include: [
         {
           model: User,
-          attributes: ["username"],
+          attributes: ["id", "username"],
         },
         {
           model: Order,
-          as: "order", // Use the alias defined in the association
+          as: "order",
           attributes: ["id", "status"],
-          required: false, // LEFT JOIN - include tasks without orders too
+          required: false,
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -246,10 +248,11 @@ export class TaskService {
     try {
       // Get task and check if it exists (include Order to check status)
       const task = await Task.findByPk(taskId, { 
+        attributes: ['id', 'userId', 'platform', 'type', 'targetUrl', 'rate', 'quantity', 'remainingQuantity', 'status', 'adminStatus', 'title', 'description'],
         include: [
           {
             model: Order,
-            as: "order", // Use the alias defined in the association
+            as: "order",
             attributes: ["id", "status"],
           },
         ],
@@ -344,6 +347,7 @@ export class TaskService {
           taskId,
           status: "completed",
         },
+        attributes: ['id', 'status'],
         transaction: dbTransaction,
       });
 

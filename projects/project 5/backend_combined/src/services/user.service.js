@@ -11,44 +11,52 @@ import sequelize from '../config/database.js';
 
 export class UserService {
   async getProfile(userId) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'email', 'firstName', 'lastName', 'username', 'phone', 'balance', 'userMode', 'createdAt', 'lastLogin']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
 
+    return user;
+  }
+
+  async updateProfile(userId, updateData) {
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'email', 'firstName', 'lastName', 'username', 'phone']
+    });
+    
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // Only allow updating specific fields
+    const allowedFields = ['firstName', 'lastName', 'phone'];
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        updates[field] = updateData[field];
+      }
+    });
+
+    await user.update(updates);
+    
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
-      phone: user.phone,
-      balance: user.balance,
-      userMode: user.userMode,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin
-    };
-  }
-
-  async updateProfile(userId, updateData) {
-    const user = await User.findByPk(userId);
-    if (!user) {
-      throw new ApiError(404, 'User not found');
-    }
-
-    const updatedUser = await user.update(updateData);
-    return {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      username: updatedUser.username,
-      phone: updatedUser.phone
+      phone: user.phone
     };
   }
 
   async updatePassword(userId, currentPassword, newPassword) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'password']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
@@ -64,20 +72,27 @@ export class UserService {
   }
 
   async updateUserMode(userId, userMode) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'userMode']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
 
-    const updatedUser = await user.update({ userMode });
+    await user.update({ userMode });
+    
     return {
-      id: updatedUser.id,
-      userMode: updatedUser.userMode
+      id: user.id,
+      userMode: user.userMode
     };
   }
 
   async getSettings(userId) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'settings']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
@@ -99,7 +114,10 @@ export class UserService {
   }
 
   async updateSettings(userId, settings) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'settings']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
@@ -115,7 +133,10 @@ export class UserService {
   }
 
   async getDashboardStats(userId, timeframe = '30d') {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'balance', 'userMode']
+    });
+    
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
@@ -194,36 +215,40 @@ export class UserService {
       // Platform-specific stats
       const platformStats = await Promise.all(
         ['instagram', 'youtube'].map(async (platform) => {
-          // Get tasks by platform with completed executions
-          const platformTasks = await Task.findAll({
-            where: { platform },
+          // Optimize: Single query for completed tasks count by platform
+          const platformCompletedTasks = await TaskExecution.count({
+            where: {
+              userId: userId,
+              status: 'completed',
+              createdAt: { [Op.gte]: startDate }
+            },
             include: [{
-              model: TaskExecution,
-              as: 'executions',
-              where: {
-                userId: userId,
-                status: 'completed',
-                createdAt: { [Op.gte]: startDate }
-              },
+              model: Task,
+              as: 'task',
+              where: { platform },
+              attributes: [],
               required: true
             }]
           });
 
-          const platformCompletedTasks = platformTasks.length;
-
-          const platformEarnings = await Transaction.sum('amount', {
+          // Optimize: Single aggregate query for earnings by platform  
+          const platformEarningsResult = await Transaction.findOne({
             where: {
               userId: userId,
               type: 'task_earning',
               status: 'completed',
               createdAt: { [Op.gte]: startDate }
-            }
+            },
+            attributes: [
+              [sequelize.fn('SUM', sequelize.col('amount')), 'earnings']
+            ],
+            raw: true
           });
 
           return {
             platform,
             completedTasks: platformCompletedTasks,
-            earnings: parseFloat(platformEarnings) || 0
+            earnings: parseFloat(platformEarningsResult?.earnings) || 0
           };
         })
       );
@@ -294,6 +319,7 @@ export class UserService {
       // Platform-specific stats
       const platformStats = await Promise.all(
         ['instagram', 'youtube'].map(async (platform) => {
+          // Optimize: Count queries with where conditions
           const platformActiveOrders = await Order.count({
             where: {
               userId: userId,
@@ -311,7 +337,8 @@ export class UserService {
             }
           });
 
-          const platformSpent = await Order.findOne({
+          // Optimize: Single aggregate query
+          const platformSpentResult = await Order.findOne({
             where: {
               userId: userId,
               platform,
@@ -320,14 +347,15 @@ export class UserService {
             },
             attributes: [
               [sequelize.fn('SUM', sequelize.col('amount')), 'spent']
-            ]
+            ],
+            raw: true
           });
 
           return {
             platform,
             activeOrders: platformActiveOrders,
             completedOrders: platformCompletedOrders,
-            totalSpent: parseFloat(platformSpent?.dataValues?.spent) || 0
+            totalSpent: parseFloat(platformSpentResult?.spent) || 0
           };
         })
       );

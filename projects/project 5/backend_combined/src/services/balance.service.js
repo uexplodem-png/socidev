@@ -34,7 +34,11 @@ export class BalanceService {
     let userData = null;
 
     try {
-      const user = await User.findByPk(userId, { transaction: dbTransaction });
+      const user = await User.findByPk(userId, { 
+        attributes: ['id', 'balance', 'firstName', 'lastName', 'email'],
+        transaction: dbTransaction 
+      });
+      
       if (!user) {
         throw new ApiError(404, "User not found");
       }
@@ -133,7 +137,11 @@ export class BalanceService {
     let userData = null;
 
     try {
-      const user = await User.findByPk(userId, { transaction: dbTransaction });
+      const user = await User.findByPk(userId, { 
+        attributes: ['id', 'balance', 'firstName', 'lastName', 'email'],
+        transaction: dbTransaction 
+      });
+      
       if (!user) {
         throw new ApiError(404, "User not found");
       }
@@ -231,9 +239,15 @@ export class BalanceService {
 
     try {
       const transaction = await Transaction.findByPk(transactionId, {
-        include: [{ model: User, as: 'user' }],
+        attributes: ['id', 'type', 'status', 'amount', 'method', 'userId', 'description'],
+        include: [{ 
+          model: User, 
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'balance']
+        }],
         transaction: dbTransaction,
       });
+      
       if (!transaction) {
         throw new ApiError(404, "Transaction not found");
       }
@@ -313,7 +327,12 @@ export class BalanceService {
 
     try {
       const transaction = await Transaction.findByPk(transactionId, {
-        include: [{ model: User, as: 'user' }],
+        attributes: ['id', 'type', 'status', 'amount', 'method', 'userId', 'description'],
+        include: [{ 
+          model: User, 
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'balance']
+        }],
         transaction: dbTransaction,
       });
 
@@ -413,6 +432,7 @@ export class BalanceService {
 
     const { rows: transactions, count } = await Transaction.findAndCountAll({
       where,
+      attributes: ['id', 'type', 'amount', 'method', 'status', 'reference', 'description', 'createdAt', 'balance_before', 'balance_after', 'processed_at'],
       limit,
       offset,
       order: [["createdAt", "DESC"]],
@@ -429,10 +449,14 @@ export class BalanceService {
   }
 
   async getBalance(userId) {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'balance']
+    });
+    
     if (!user) {
       throw new ApiError(404, "User not found");
     }
+    
     return user.balance;
   }
 }

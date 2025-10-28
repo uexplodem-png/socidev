@@ -40,6 +40,7 @@ export class OrderService {
 
     const { rows: orders, count } = await Order.findAndCountAll({
       where,
+      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt'],
       limit,
       offset: (page - 1) * limit,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -73,11 +74,12 @@ export class OrderService {
   async getOrderDetails(userId, orderId) {
     const order = await Order.findOne({
       where: { id: orderId, userId },
+      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'speed', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt', 'completedAt'],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ["id", "username"],
+          attributes: ["id", "username", "email"],
         },
       ],
     });
@@ -115,13 +117,21 @@ export class OrderService {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      const user = await User.findByPk(userId, { transaction: dbTransaction });
+      const user = await User.findByPk(userId, { 
+        attributes: ['id', 'balance'],
+        transaction: dbTransaction 
+      });
+      
       if (!user) {
         throw new ApiError(404, "User not found");
       }
 
       // Fetch service to get service name
-      const service = await Service.findByPk(orderData.service, { transaction: dbTransaction });
+      const service = await Service.findByPk(orderData.service, { 
+        attributes: ['id', 'name', 'basePrice', 'pricePerUnit'],
+        transaction: dbTransaction 
+      });
+      
       if (!service) {
         throw new ApiError(400, "Invalid service");
       }
@@ -226,7 +236,11 @@ export class OrderService {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      const user = await User.findByPk(userId, { transaction: dbTransaction });
+      const user = await User.findByPk(userId, { 
+        attributes: ['id', 'balance'],
+        transaction: dbTransaction 
+      });
+      
       if (!user) {
         throw new ApiError(404, "User not found");
       }
@@ -236,6 +250,7 @@ export class OrderService {
         where: {
           id: orders.map((o) => o.service),
         },
+        attributes: ['id', 'name', 'basePrice', 'pricePerUnit'],
         transaction: dbTransaction,
       });
 
