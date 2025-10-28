@@ -3,49 +3,11 @@ import { ActivityLog } from '../../models/index.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validation.js';
+import { settingsService } from '../../services/settingsService.js';
+import { logAudit } from '../../utils/logging.js';
 import Joi from 'joi';
 
 const router = express.Router();
-
-// In-memory settings store (in production, this would be in database)
-let systemSettings = {
-  siteName: 'Social Developer Platform',
-  maintenanceMode: false,
-  registrationEnabled: true,
-  emailNotifications: true,
-  taskAutoApproval: false,
-  maxTasksPerUser: 100,
-  minWithdrawalAmount: 10,
-  withdrawalFee: 0.05,
-  currencies: ['USD', 'EUR', 'GBP'],
-  supportedPlatforms: ['instagram', 'youtube', 'twitter', 'tiktok'],
-  taskApprovalTimeoutHours: 24,
-  orderTimeoutHours: 72,
-  // Security settings
-  twoFactorAuth: false,
-  passwordMinLength: 8,
-  sessionTimeout: 30,
-  maxLoginAttempts: 5,
-  lockoutDuration: 30,
-  // Notification settings
-  smsNotifications: false,
-  pushNotifications: false,
-  adminNotifications: true,
-  userActivityNotifications: false,
-  // Analytics settings
-  enableAnalytics: true,
-  analyticsRetentionDays: 90,
-  trackUserBehavior: true,
-  // Performance settings
-  cacheEnabled: true,
-  cacheTTL: 300,
-  apiRateLimit: 1000,
-  // Advanced settings
-  debugMode: false,
-  logLevel: 'info',
-  autoBackup: true,
-  backupFrequency: 'daily',
-};
 
 /**
  * @swagger
@@ -62,7 +24,35 @@ let systemSettings = {
 router.get('/',
   requirePermission('settings.view'),
   asyncHandler(async (req, res) => {
-    res.json(systemSettings);
+    // Get all settings from DB
+    const allSettings = await settingsService.list();
+    
+    // Transform to key-value pairs
+    const settings = {};
+    for (const setting of allSettings) {
+      settings[setting.key] = setting.value;
+    }
+    
+    // Also fetch individual settings for backward compatibility
+    const general = await settingsService.get('general', {});
+    const features = {
+      transactions: await settingsService.get('features.transactions', {}),
+      users: await settingsService.get('features.users', {}),
+      orders: await settingsService.get('features.orders', {}),
+      tasks: await settingsService.get('features.tasks', {})
+    };
+    const limits = await settingsService.get('limits', {});
+    const modes = await settingsService.get('modes', {});
+    const security = await settingsService.get('security', {});
+    
+    res.json({
+      ...general,
+      features,
+      limits,
+      modes,
+      security,
+      _all: settings // Raw settings for advanced use
+    });
   })
 );
 
@@ -80,98 +70,82 @@ router.get('/',
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *               siteName:
- *                 type: string
- *               maintenanceMode:
- *                 type: boolean
- *               registrationEnabled:
- *                 type: boolean
- *               emailNotifications:
- *                 type: boolean
- *               taskAutoApproval:
- *                 type: boolean
- *               maxTasksPerUser:
- *                 type: integer
- *                 minimum: 1
- *               minWithdrawalAmount:
- *                 type: number
- *                 minimum: 0.01
- *               withdrawalFee:
- *                 type: number
- *                 minimum: 0
- *                 maximum: 1
  *     responses:
  *       200:
  *         description: Settings updated successfully
  */
 router.put('/',
   requirePermission('settings.edit'),
-  validate(Joi.object({
-    siteName: Joi.string().min(1).max(100).optional(),
-    maintenanceMode: Joi.boolean().optional(),
-    registrationEnabled: Joi.boolean().optional(),
-    emailNotifications: Joi.boolean().optional(),
-    taskAutoApproval: Joi.boolean().optional(),
-    maxTasksPerUser: Joi.number().integer().min(1).max(1000).optional(),
-    minWithdrawalAmount: Joi.number().min(0.01).max(1000).optional(),
-    withdrawalFee: Joi.number().min(0).max(1).optional(),
-    currencies: Joi.array().items(Joi.string().length(3)).optional(),
-    supportedPlatforms: Joi.array().items(Joi.string()).optional(),
-    taskApprovalTimeoutHours: Joi.number().integer().min(1).max(168).optional(),
-    orderTimeoutHours: Joi.number().integer().min(1).max(720).optional(),
-    // Security settings
-    twoFactorAuth: Joi.boolean().optional(),
-    passwordMinLength: Joi.number().integer().min(6).max(128).optional(),
-    sessionTimeout: Joi.number().integer().min(1).max(1440).optional(),
-    maxLoginAttempts: Joi.number().integer().min(1).max(20).optional(),
-    lockoutDuration: Joi.number().integer().min(1).max(1440).optional(),
-    // Notification settings
-    smsNotifications: Joi.boolean().optional(),
-    pushNotifications: Joi.boolean().optional(),
-    adminNotifications: Joi.boolean().optional(),
-    userActivityNotifications: Joi.boolean().optional(),
-    // Analytics settings
-    enableAnalytics: Joi.boolean().optional(),
-    analyticsRetentionDays: Joi.number().integer().min(1).max(3650).optional(),
-    trackUserBehavior: Joi.boolean().optional(),
-    // Performance settings
-    cacheEnabled: Joi.boolean().optional(),
-    cacheTTL: Joi.number().integer().min(1).max(86400).optional(),
-    apiRateLimit: Joi.number().integer().min(1).max(10000).optional(),
-    // Advanced settings
-    debugMode: Joi.boolean().optional(),
-    logLevel: Joi.string().valid('error', 'warn', 'info', 'debug').optional(),
-    autoBackup: Joi.boolean().optional(),
-    backupFrequency: Joi.string().valid('daily', 'weekly', 'monthly').optional(),
-  })),
   asyncHandler(async (req, res) => {
     const updates = req.body;
-    const originalSettings = { ...systemSettings };
 
-    // Update settings
-    systemSettings = { ...systemSettings, ...updates };
+    // Update individual settings
+    const updatedSettings = {};
+    
+    // Handle general settings
+    if (updates.siteName !== undefined || updates.maintenanceMode !== undefined || 
+        updates.registrationEnabled !== undefined || updates.emailNotifications !== undefined ||
+        updates.taskAutoApproval !== undefined || updates.maxTasksPerUser !== undefined ||
+        updates.minWithdrawalAmount !== undefined || updates.withdrawalFee !== undefined ||
+        updates.currencies !== undefined || updates.supportedPlatforms !== undefined ||
+        updates.taskApprovalTimeoutHours !== undefined || updates.orderTimeoutHours !== undefined) {
+      
+      const currentGeneral = await settingsService.get('general', {});
+      const newGeneral = { ...currentGeneral, ...updates };
+      await settingsService.set('general', newGeneral, req.user.id, 'General system settings');
+      updatedSettings.general = newGeneral;
+    }
+
+    // Handle feature flags
+    if (updates.features) {
+      if (updates.features.transactions) {
+        await settingsService.set('features.transactions', updates.features.transactions, req.user.id);
+        updatedSettings['features.transactions'] = updates.features.transactions;
+      }
+      if (updates.features.users) {
+        await settingsService.set('features.users', updates.features.users, req.user.id);
+        updatedSettings['features.users'] = updates.features.users;
+      }
+      if (updates.features.orders) {
+        await settingsService.set('features.orders', updates.features.orders, req.user.id);
+        updatedSettings['features.orders'] = updates.features.orders;
+      }
+      if (updates.features.tasks) {
+        await settingsService.set('features.tasks', updates.features.tasks, req.user.id);
+        updatedSettings['features.tasks'] = updates.features.tasks;
+      }
+    }
+
+    // Handle limits
+    if (updates.limits) {
+      await settingsService.set('limits', updates.limits, req.user.id);
+      updatedSettings.limits = updates.limits;
+    }
+
+    // Handle modes
+    if (updates.modes) {
+      await settingsService.set('modes', updates.modes, req.user.id);
+      updatedSettings.modes = updates.modes;
+    }
+
+    // Handle security settings
+    if (updates.security) {
+      await settingsService.set('security', updates.security, req.user.id);
+      updatedSettings.security = updates.security;
+    }
 
     // Log settings update
-    await ActivityLog.log(
-      req.user.id,
-      'SETTINGS_UPDATED',
-      'settings',
-      'system',
-      null,
-      'System settings updated',
-      {
-        changes: {
-          before: originalSettings,
-          after: updates,
-        },
-      },
-      req
-    );
+    await logAudit(req, {
+      action: 'SETTINGS_UPDATED',
+      resource: 'settings',
+      resourceId: 'system',
+      description: 'System settings updated',
+      metadata: { changes: updatedSettings }
+    });
 
     res.json({
-      settings: systemSettings,
       message: 'Settings updated successfully',
+      settings: updatedSettings
     });
   })
 );
@@ -200,20 +174,14 @@ router.post('/reset-data',
       });
     }
 
-    // In a real implementation, this would reset database to seed data
-    // For now, we'll just log the action
-    await ActivityLog.log(
-      req.user.id,
-      'DATA_RESET',
-      'system',
-      'all',
-      null,
-      'System data reset to seed data',
-      {
-        environment: process.env.NODE_ENV,
-      },
-      req
-    );
+    // Log data reset action
+    await logAudit(req, {
+      action: 'DATA_RESET',
+      resource: 'system',
+      resourceId: 'all',
+      description: 'System data reset to seed data',
+      metadata: { environment: process.env.NODE_ENV }
+    });
 
     res.json({
       message: 'Data reset successfully',

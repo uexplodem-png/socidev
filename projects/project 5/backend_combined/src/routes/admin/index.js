@@ -9,6 +9,7 @@ import withdrawalsRoutes from './withdrawals.js';
 import auditLogsRoutes from './auditLogs.js';
 import settingsRoutes from './settings.js';
 import platformsServicesRoutes from './platformsServices.js';
+import rbacRoutes from './rbac.js';
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.use('/transactions', transactionsRoutes);
 router.use('/withdrawals', withdrawalsRoutes);
 router.use('/audit-logs', auditLogsRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/rbac', rbacRoutes);
 router.use('/', platformsServicesRoutes);
 
 // Admin root endpoint
@@ -42,6 +44,7 @@ router.get('/', (req, res) => {
       withdrawals: '/api/admin/withdrawals',
       auditLogs: '/api/admin/audit-logs',
       settings: '/api/admin/settings',
+      rbac: '/api/admin/rbac',
     },
   });
 });
