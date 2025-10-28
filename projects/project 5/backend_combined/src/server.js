@@ -16,6 +16,11 @@ import logger from './config/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { 
+  helmetMiddleware, 
+  maintenanceMode, 
+  sanitizeInput 
+} from './middleware/security.js';
 
 // Import routes
 import { apiRouter } from './routes/index.js';
@@ -38,17 +43,7 @@ const limiter = rateLimit({
 });
 
 // Security middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
+app.use(helmetMiddleware);
 
 // CORS configuration
 app.use(cors({
@@ -60,6 +55,8 @@ app.use(cors({
 
 // General middleware
 app.use(compression());
+app.use(sanitizeInput); // Sanitize all inputs
+app.use(maintenanceMode); // Check maintenance mode
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

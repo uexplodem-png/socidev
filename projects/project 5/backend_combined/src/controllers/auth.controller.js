@@ -5,6 +5,7 @@ import { ApiError } from '../utils/ApiError.js';
 import logger from '../config/logger.js';
 import { Op } from 'sequelize'; // Import Sequelize operators
 import { ActivityService } from '../services/activity.service.js';
+import { loginAttemptTracker } from '../middleware/loginAttemptTracker.js';
 
 const authService = new AuthService();
 const activityService = new ActivityService();
@@ -113,6 +114,8 @@ export class AuthController {
       const user = await User.findOne({ where: { email } });
       if (!user) {
         logger.warn('Login failed: User not found', { email });
+        // Record failed attempt
+        await loginAttemptTracker.recordFailedAttempt(req, email);
         // Log failed login attempt
         try {
           await activityService.logActivity(
@@ -137,6 +140,8 @@ export class AuthController {
       
       if (!isValidPassword) {
         logger.warn('Login failed: Invalid password', { email, userId: user.id });
+        // Record failed attempt
+        await loginAttemptTracker.recordFailedAttempt(req, email);
         // Log failed login attempt
         try {
           await activityService.logActivity(
@@ -154,6 +159,9 @@ export class AuthController {
         }
         throw new ApiError(401, 'Invalid credentials');
       }
+
+      // Clear login attempts on successful login
+      await loginAttemptTracker.clearAttempts(email, req.ip || req.connection?.remoteAddress);
 
       // Update last login timestamp
       await user.update({
