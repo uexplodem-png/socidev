@@ -18,7 +18,7 @@ export const login = createAsyncThunk(
       // Clear all storage before login to ensure fresh state
       localStorage.clear();
       sessionStorage.clear();
-      
+
       const response = await authAPI.login(credentials);
       localStorage.setItem('token', response.token);
       return response;

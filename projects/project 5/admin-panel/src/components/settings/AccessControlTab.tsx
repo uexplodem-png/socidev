@@ -180,8 +180,8 @@ const AccessControlTab: React.FC = () => {
                                     key={role.id}
                                     onClick={() => handleRoleSelect(role.id)}
                                     className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedRole === role.id
-                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                                         }`}
                                 >
                                     <div className="font-medium">{role.label}</div>
@@ -242,8 +242,8 @@ const AccessControlTab: React.FC = () => {
                                                                 onClick={() => togglePermission(permission.id, 'all')}
                                                                 disabled={isSaving}
                                                                 className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${hasAll?.allow
-                                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                                                                     } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
                                                                 title="All users"
                                                             >
@@ -260,8 +260,8 @@ const AccessControlTab: React.FC = () => {
                                                                 onClick={() => togglePermission(permission.id, 'taskDoer')}
                                                                 disabled={isSaving}
                                                                 className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${hasTaskDoer?.allow || hasAll?.allow
-                                                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                                                                     } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
                                                                 title="Task Doer mode"
                                                             >
@@ -278,8 +278,8 @@ const AccessControlTab: React.FC = () => {
                                                                 onClick={() => togglePermission(permission.id, 'taskGiver')}
                                                                 disabled={isSaving}
                                                                 className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${hasTaskGiver?.allow || hasAll?.allow
-                                                                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                                                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                                                                     } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
                                                                 title="Task Giver mode"
                                                             >

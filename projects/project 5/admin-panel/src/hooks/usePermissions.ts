@@ -132,12 +132,12 @@ export const usePermissions = () => {
   const hasPermission = useCallback(
     (permissionKey: string): boolean => {
       if (!user) return false;
-      
+
       // Super admin has all permissions
       if (roles.some((role) => role.key === 'super_admin')) {
         return true;
       }
-      
+
       return permissions.includes(permissionKey);
     },
     [permissions, roles, user]
@@ -156,11 +156,11 @@ export const usePermissions = () => {
   const hasAnyPermission = useCallback(
     (permissionKeys: string[]): boolean => {
       if (!user) return false;
-      
+
       if (roles.some((role) => role.key === 'super_admin')) {
         return true;
       }
-      
+
       return permissionKeys.some((key) => permissions.includes(key));
     },
     [permissions, roles, user]
@@ -170,11 +170,11 @@ export const usePermissions = () => {
   const hasAllPermissions = useCallback(
     (permissionKeys: string[]): boolean => {
       if (!user) return false;
-      
+
       if (roles.some((role) => role.key === 'super_admin')) {
         return true;
       }
-      
+
       return permissionKeys.every((key) => permissions.includes(key));
     },
     [permissions, roles, user]

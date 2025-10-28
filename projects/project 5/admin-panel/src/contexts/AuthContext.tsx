@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('auth-token');
-      
+
       if (storedToken) {
         try {
           const response = await fetch('/api/auth/validate', {
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               'Authorization': `Bearer ${storedToken}`
             }
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             setUser(data.user);
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem('auth-token');
         }
       }
-      
+
       setIsLoading(false);
     };
 
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -81,11 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const data = await response.json();
-      
+
       // Clear all storage first to ensure fresh state
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // Set new auth data
       setUser(data.user);
       setToken(data.token);
