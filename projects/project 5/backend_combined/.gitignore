@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.test
+
+# Database files (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Test files
+test-*.js
+check-*.js
+*test*.js
+*.test.js
+*.spec.js
+
+# Development scripts
+insert-*.js
+update-*.js
+set-*.js
+migrate-*.js
+add-*.js
+*.sh
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+
+# Config files with sensitive data
+config.json
+.sequelize.cjs
+
+# Documentation (development only)
+DESKTOP_API_SECURITY.md
+SETTINGS_TABS_STATUS.md
+DEBUG_*.md
