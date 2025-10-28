@@ -27,81 +27,81 @@ import RolePermission from './RolePermission.js';
 // Define associations
 const defineAssociations = () => {
   // User associations
-  User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' });
-  User.hasMany(Task, { foreignKey: 'user_id', as: 'tasks' });
-  User.hasMany(Transaction, { foreignKey: 'user_id', as: 'transactions' });
-  User.hasMany(Withdrawal, { foreignKey: 'user_id', as: 'withdrawals' });
-  User.hasMany(Device, { foreignKey: 'user_id', as: 'devices' });
-  User.hasMany(SocialAccount, { foreignKey: 'user_id', as: 'socialAccounts' });
-  User.hasMany(ActivityLog, { foreignKey: 'user_id', as: 'activityLogs' });
-  User.hasMany(Session, { foreignKey: 'user_id', as: 'sessions' });
-  User.hasOne(UserSettings, { foreignKey: 'user_id', as: 'settings' });
+  User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
+  User.hasMany(Task, { foreignKey: 'userId', as: 'tasks' });
+  User.hasMany(Transaction, { foreignKey: 'userId', as: 'transactions' });
+  User.hasMany(Withdrawal, { foreignKey: 'userId', as: 'withdrawals' });
+  User.hasMany(Device, { foreignKey: 'userId', as: 'devices' });
+  User.hasMany(SocialAccount, { foreignKey: 'userId', as: 'socialAccounts' });
+  User.hasMany(ActivityLog, { foreignKey: 'userId', as: 'activityLogs' });
+  User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
+  User.hasOne(UserSettings, { foreignKey: 'userId', as: 'settings' });
 
   // Order associations
   Order.belongsTo(User, { 
-    foreignKey: 'user_id', 
+    foreignKey: 'userId', 
     as: 'user',
     onDelete: 'CASCADE', // Match the migration file
     onUpdate: 'CASCADE'
   });
-  Order.hasMany(Transaction, { foreignKey: 'order_id', as: 'transactions' });
-  Order.hasMany(Dispute, { foreignKey: 'order_id', as: 'disputes' });
-  Order.hasMany(Refund, { foreignKey: 'order_id', as: 'refunds' });
-  Order.hasMany(Task, { foreignKey: 'order_id', as: 'tasks' });
+  Order.hasMany(Transaction, { foreignKey: 'orderId', as: 'transactions' });
+  Order.hasMany(Dispute, { foreignKey: 'orderId', as: 'disputes' });
+  Order.hasMany(Refund, { foreignKey: 'orderId', as: 'refunds' });
+  Order.hasMany(Task, { foreignKey: 'orderId', as: 'tasks' });
 
   // Task associations
-  Task.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  Task.belongsTo(User, { foreignKey: 'admin_reviewed_by', as: 'reviewer' });
-  Task.belongsTo(Order, { foreignKey: 'order_id', as: 'order' }); // Task belongs to an order
-  Task.hasMany(TaskExecution, { foreignKey: 'task_id', as: 'executions' });
-  Task.hasMany(Dispute, { foreignKey: 'task_id', as: 'disputes' });
+  Task.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  Task.belongsTo(User, { foreignKey: 'adminReviewedBy', as: 'reviewer' });
+  Task.belongsTo(Order, { foreignKey: 'orderId', as: 'order' }); // Task belongs to an order
+  Task.hasMany(TaskExecution, { foreignKey: 'taskId', as: 'executions' });
+  Task.hasMany(Dispute, { foreignKey: 'taskId', as: 'disputes' });
 
   // Transaction associations
-  Transaction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  Transaction.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+  Transaction.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  Transaction.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 
   // Withdrawal associations
-  Withdrawal.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  Withdrawal.belongsTo(User, { foreignKey: 'processed_by', as: 'processor' });
-  Withdrawal.hasMany(Refund, { foreignKey: 'withdrawal_id', as: 'refunds' });
+  Withdrawal.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  Withdrawal.belongsTo(User, { foreignKey: 'processedBy', as: 'processor' });
+  Withdrawal.hasMany(Refund, { foreignKey: 'withdrawalId', as: 'refunds' });
 
   // Device associations
-  Device.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  Device.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
   // Social Account associations
-  SocialAccount.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  SocialAccount.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
   // Audit Log associations
-  AuditLog.belongsTo(User, { foreignKey: 'actor_id', as: 'actor' });
-  AuditLog.belongsTo(User, { foreignKey: 'target_user_id', as: 'targetUser' });
+  AuditLog.belongsTo(User, { foreignKey: 'actorId', as: 'actor' });
+  AuditLog.belongsTo(User, { foreignKey: 'targetUserId', as: 'targetUser' });
 
   // Session associations
-  Session.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  Session.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
   // Dispute associations
-  Dispute.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
-  Dispute.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
-  Dispute.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  Dispute.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
+  Dispute.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+  Dispute.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
   // Refund associations
-  Refund.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
-  Refund.belongsTo(Withdrawal, { foreignKey: 'withdrawal_id', as: 'withdrawal' });
+  Refund.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
+  Refund.belongsTo(Withdrawal, { foreignKey: 'withdrawalId', as: 'withdrawal' });
 
   // Task Execution associations
-  TaskExecution.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
+  TaskExecution.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
 
   // RBAC associations
-  User.hasMany(UserRole, { foreignKey: 'user_id', as: 'userRoles' });
-  UserRole.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  UserRole.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
+  User.hasMany(UserRole, { foreignKey: 'userId', as: 'userRoles' });
+  UserRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  UserRole.belongsTo(Role, { foreignKey: 'roleId', as: 'role' });
   
-  Role.hasMany(UserRole, { foreignKey: 'role_id', as: 'userRoles' });
-  Role.hasMany(RolePermission, { foreignKey: 'role_id', as: 'rolePermissions' });
+  Role.hasMany(UserRole, { foreignKey: 'roleId', as: 'userRoles' });
+  Role.hasMany(RolePermission, { foreignKey: 'roleId', as: 'rolePermissions' });
   
-  Permission.hasMany(RolePermission, { foreignKey: 'permission_id', as: 'rolePermissions' });
+  Permission.hasMany(RolePermission, { foreignKey: 'permissionId', as: 'rolePermissions' });
   
-  RolePermission.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
-  RolePermission.belongsTo(Permission, { foreignKey: 'permission_id', as: 'permission' });
+  RolePermission.belongsTo(Role, { foreignKey: 'roleId', as: 'role' });
+  RolePermission.belongsTo(Permission, { foreignKey: 'permissionId', as: 'permission' });
 };
 
 // Initialize associations
