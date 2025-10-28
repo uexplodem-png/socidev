@@ -67,11 +67,42 @@ export const settingsAPI = {
   get: async () => {
     return realApiService.getSettings();
   },
-  update: async (data: any) => {
-    return realApiService.updateSettings(data);
+  update: async (key: string, value: any) => {
+    return realApiService.updateSetting(key, value);
   },
   resetData: async () => {
     return realApiService.resetData();
+  }
+};
+
+// RBAC API
+export const rbacAPI = {
+  getRoles: async () => {
+    return realApiService.getRoles();
+  },
+  getPermissions: async () => {
+    return realApiService.getPermissions();
+  },
+  getRolePermissions: async (roleId: number) => {
+    return realApiService.getRolePermissions(roleId);
+  },
+  updateRolePermission: async (roleId: number, permissionId: number, mode: string, allow: boolean) => {
+    return realApiService.updateRolePermission(roleId, permissionId, mode, allow);
+  },
+  deleteRolePermission: async (roleId: number, permissionId: number) => {
+    return realApiService.deleteRolePermission(roleId, permissionId);
+  },
+  getUserRoles: async (userId: string) => {
+    return realApiService.getUserRoles(userId);
+  },
+  assignUserRole: async (userId: string, roleId: number) => {
+    return realApiService.assignUserRole(userId, roleId);
+  },
+  removeUserRole: async (userId: string, roleId: number) => {
+    return realApiService.removeUserRole(userId, roleId);
+  },
+  clearCache: async () => {
+    return realApiService.clearRBACCache();
   }
 };
 

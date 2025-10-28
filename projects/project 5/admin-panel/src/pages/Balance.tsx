@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal';
 import { usersAPI, withdrawalsAPI } from '../services/api';
 import { User } from '../types';
 import toast from 'react-hot-toast';
-import { 
+import {
     Search, FileText, Download, Filter, DollarSign, TrendingUp, TrendingDown,
     Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Calendar,
     User as UserIcon, ChevronLeft, ChevronRight
@@ -76,33 +76,33 @@ const Balance: React.FC = () => {
     const [requestNotes, setRequestNotes] = useState('');
 
     // Single useEffect to fetch data on mount only
-    useEffect(() => { 
-        fetchData(); 
+    useEffect(() => {
+        fetchData();
     }, []); // Empty dependency array - runs once on mount
 
     // Separate useEffect for filters/pagination (doesn't refetch from server)
-    useEffect(() => { 
-        applyFiltersAndPagination(); 
+    useEffect(() => {
+        applyFiltersAndPagination();
     }, [allEntries, filters, currentPage, itemsPerPage]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            
+
             // Fetch all users and transactions with proper pagination
             // Using page=1, limit=100 (max allowed) to get recent data
             const [usersResponse, transactionsResponse] = await Promise.all([
-                usersAPI.getUsers({ 
-                    page: 1, 
-                    limit: 100, 
-                    sortBy: 'created_at', 
-                    sortOrder: 'desc' 
+                usersAPI.getUsers({
+                    page: 1,
+                    limit: 100,
+                    sortBy: 'created_at',
+                    sortOrder: 'desc'
                 }),
-                withdrawalsAPI.getTransactions({ 
-                    page: 1, 
-                    limit: 100, 
-                    sortBy: 'created_at', 
-                    sortOrder: 'desc' 
+                withdrawalsAPI.getTransactions({
+                    page: 1,
+                    limit: 100,
+                    sortBy: 'created_at',
+                    sortOrder: 'desc'
                 })
             ]);
 

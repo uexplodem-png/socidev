@@ -12,7 +12,7 @@ import {
   Bell,
   BarChart3,
   Zap,
-  
+
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
@@ -71,10 +71,10 @@ const Settings: React.FC = () => {
         maintenanceMode: data.maintenanceMode ?? false,
         registrationEnabled: data.registrationEnabled ?? true,
         emailNotifications: data.emailNotifications ?? true,
-  taskAutoApproval: data.taskAutoApproval ?? false,
-  maxTasksPerUser: data.maxTasksPerUser ?? 10,
-  taskApprovalTimeoutHours: data.taskApprovalTimeoutHours ?? 24,
-  orderTimeoutHours: data.orderTimeoutHours ?? 48,
+        taskAutoApproval: data.taskAutoApproval ?? false,
+        maxTasksPerUser: data.maxTasksPerUser ?? 10,
+        taskApprovalTimeoutHours: data.taskApprovalTimeoutHours ?? 24,
+        orderTimeoutHours: data.orderTimeoutHours ?? 48,
         minWithdrawalAmount: data.minWithdrawalAmount ?? 10,
         withdrawalFee: data.withdrawalFee ?? 0,
         currencies: data.currencies ?? ['USD'],

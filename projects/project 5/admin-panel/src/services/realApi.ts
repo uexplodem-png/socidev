@@ -881,6 +881,63 @@ class RealApiService {
             body: JSON.stringify({ reason }),
         });
     }
+
+    // Settings API
+    async updateSetting(key: string, value: any): Promise<any> {
+        return this.request<any>('/admin/settings', {
+            method: 'PUT',
+            body: JSON.stringify({ key, value }),
+        });
+    }
+
+    // RBAC API
+    async getRoles(): Promise<any> {
+        return this.request<any>('/admin/rbac/roles');
+    }
+
+    async getPermissions(): Promise<any> {
+        return this.request<any>('/admin/rbac/permissions');
+    }
+
+    async getRolePermissions(roleId: number): Promise<any> {
+        return this.request<any>(`/admin/rbac/roles/${roleId}/permissions`);
+    }
+
+    async updateRolePermission(roleId: number, permissionId: number, mode: string, allow: boolean): Promise<any> {
+        return this.request<any>(`/admin/rbac/roles/${roleId}/permissions`, {
+            method: 'POST',
+            body: JSON.stringify({ permission_id: permissionId, mode, allow }),
+        });
+    }
+
+    async deleteRolePermission(roleId: number, permissionId: number): Promise<any> {
+        return this.request<any>(`/admin/rbac/roles/${roleId}/permissions/${permissionId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async getUserRoles(userId: string): Promise<any> {
+        return this.request<any>(`/admin/rbac/users/${userId}/roles`);
+    }
+
+    async assignUserRole(userId: string, roleId: number): Promise<any> {
+        return this.request<any>(`/admin/rbac/users/${userId}/roles`, {
+            method: 'POST',
+            body: JSON.stringify({ role_id: roleId }),
+        });
+    }
+
+    async removeUserRole(userId: string, roleId: number): Promise<any> {
+        return this.request<any>(`/admin/rbac/users/${userId}/roles/${roleId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async clearRBACCache(): Promise<any> {
+        return this.request<any>('/admin/rbac/cache/clear', {
+            method: 'POST',
+        });
+    }
 }
 
 
