@@ -68,4 +68,13 @@ export class UserController {
 
     res.json(updatedSettings);
   });
+
+  // Get dashboard statistics
+  getDashboardStats = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const { timeframe = "30d" } = req.query;
+
+    const stats = await userService.getDashboardStats(userId, timeframe);
+    res.json(stats);
+  });
 }

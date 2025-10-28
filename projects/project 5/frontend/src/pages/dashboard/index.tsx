@@ -1,25 +1,18 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { useUserMode } from "../../context/UserModeContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { orderApi } from "../../lib/api/order";
+import { userApi, type DashboardStats } from "../../lib/api/user";
 import {
-  TrendingUp,
   DollarSign,
-  Clock,
-  Users,
   CheckCircle,
   Activity,
-  BarChart2,
   ArrowUpRight,
-  ArrowDownRight,
   Wallet,
-  Calendar,
   Target,
-  Award,
   Zap,
   Youtube,
   Instagram,
@@ -27,7 +20,6 @@ import {
   Star,
   Settings,
   ArrowRight,
-  Plus,
   RefreshCw,
   Laptop,
 } from "lucide-react";
@@ -39,9 +31,9 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const isTaskDoer = userMode === "taskDoer";
 
-  const [instagramStats, setInstagramStats] = useState<any>(null);
-  const [youtubeStats, setYoutubeStats] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -49,54 +41,52 @@ export default function DashboardPage() {
       if (!token) return;
 
       try {
-        const [instagramResponse, youtubeResponse] = await Promise.all([
-          orderApi.getOrderStats(token, "instagram"),
-          orderApi.getOrderStats(token, "youtube"),
-        ]);
-
-        setInstagramStats(instagramResponse);
-        setYoutubeStats(youtubeResponse);
+        const stats = (await userApi.getDashboardStats(token, "30d")) as DashboardStats;
+        setDashboardStats(stats);
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        console.error("Error fetching dashboard stats:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [userMode, refreshKey]);
 
-  // Calculate combined stats
-  const combinedStats = {
-    activeOrders:
-      (instagramStats?.activeOrders?.value || 0) +
-      (youtubeStats?.activeOrders?.value || 0),
-    completedOrders:
-      (instagramStats?.completedOrders?.value || 0) +
-      (youtubeStats?.completedOrders?.value || 0),
-    totalOrders:
-      (instagramStats?.totalOrders?.value || 0) +
-      (youtubeStats?.totalOrders?.value || 0),
-    totalSpent:
-      (instagramStats?.totalSpent?.value || 0) +
-      (youtubeStats?.totalSpent?.value || 0),
-    activeOrdersGrowth: Math.max(
-      instagramStats?.activeOrders?.growth || 0,
-      youtubeStats?.activeOrders?.growth || 0
-    ),
-    completedOrdersGrowth: Math.max(
-      instagramStats?.completedOrders?.growth || 0,
-      youtubeStats?.completedOrders?.growth || 0
-    ),
-    totalOrdersGrowth: Math.max(
-      instagramStats?.totalOrders?.growth || 0,
-      youtubeStats?.totalOrders?.growth || 0
-    ),
-    totalSpentGrowth: Math.max(
-      instagramStats?.totalSpent?.growth || 0,
-      youtubeStats?.totalSpent?.growth || 0
-    ),
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setRefreshKey((prev) => prev + 1);
   };
+
+  // Get platform-specific stats
+  const instagramStats = dashboardStats?.platformStats?.find(
+    (p) => p.platform === "instagram"
+  );
+  const youtubeStats = dashboardStats?.platformStats?.find(
+    (p) => p.platform === "youtube"
+  );
+
+  // Calculate combined stats based on user mode
+  const combinedStats = isTaskDoer
+    ? {
+        activeDevices: dashboardStats?.activeDevices?.value || 0,
+        completedTasks: dashboardStats?.completedTasks?.value || 0,
+        totalEarned: dashboardStats?.totalEarned?.value || 0,
+        totalTasks: dashboardStats?.completedTasks?.total || 0,
+        activeDevicesGrowth: dashboardStats?.activeDevices?.growth || 0,
+        completedTasksGrowth: dashboardStats?.completedTasks?.growth || 0,
+        totalEarnedGrowth: dashboardStats?.totalEarned?.growth || 0,
+      }
+    : {
+        activeOrders: dashboardStats?.activeOrders?.value || 0,
+        completedOrders: dashboardStats?.completedOrders?.value || 0,
+        totalOrders: dashboardStats?.totalOrders?.value || 0,
+        totalSpent: dashboardStats?.totalSpent?.value || 0,
+        activeOrdersGrowth: dashboardStats?.activeOrders?.growth || 0,
+        completedOrdersGrowth: dashboardStats?.completedOrders?.growth || 0,
+        totalOrdersGrowth: dashboardStats?.totalOrders?.growth || 0,
+        totalSpentGrowth: dashboardStats?.totalSpent?.growth || 0,
+      };
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-50 to-gray-100'>
@@ -117,8 +107,12 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className='flex items-center gap-4'>
-              <Button variant='outline' className='flex items-center gap-2'>
-                <RefreshCw className='w-4 h-4' />
+              <Button 
+                variant='outline' 
+                className='flex items-center gap-2'
+                onClick={handleRefresh}
+                disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 {t("refresh")}
               </Button>
             </div>
@@ -134,14 +128,18 @@ export default function DashboardPage() {
               </div>
               <span className='flex items-center text-sm font-medium text-green-600'>
                 <ArrowUpRight className='w-4 h-4 mr-1' />
-                {combinedStats.activeOrdersGrowth.toFixed(1)}%
+                {isTaskDoer
+                  ? (combinedStats.activeDevicesGrowth || 0).toFixed(1)
+                  : (combinedStats.activeOrdersGrowth || 0).toFixed(1)}%
               </span>
             </div>
             <h3 className='text-sm font-medium text-gray-500'>
               {isTaskDoer ? t("activeDevices") : t("activeOrders")}
             </h3>
             <p className='text-2xl font-bold text-gray-900 mt-1'>
-              {combinedStats.activeOrders}
+              {isTaskDoer
+                ? combinedStats.activeDevices || 0
+                : combinedStats.activeOrders || 0}
             </p>
           </Card>
 
@@ -152,14 +150,18 @@ export default function DashboardPage() {
               </div>
               <span className='flex items-center text-sm font-medium text-green-600'>
                 <ArrowUpRight className='w-4 h-4 mr-1' />
-                {combinedStats.totalSpentGrowth.toFixed(1)}%
+                {isTaskDoer
+                  ? (combinedStats.totalEarnedGrowth || 0).toFixed(1)
+                  : (combinedStats.totalSpentGrowth || 0).toFixed(1)}%
               </span>
             </div>
             <h3 className='text-sm font-medium text-gray-500'>
               {isTaskDoer ? t("totalEarned") : t("totalSpent")}
             </h3>
             <p className='text-2xl font-bold text-gray-900 mt-1'>
-              ₺{combinedStats.totalSpent.toFixed(2)}
+              ₺{isTaskDoer
+                ? (combinedStats.totalEarned || 0).toFixed(2)
+                : (combinedStats.totalSpent || 0).toFixed(2)}
             </p>
           </Card>
 
@@ -170,14 +172,18 @@ export default function DashboardPage() {
               </div>
               <span className='flex items-center text-sm font-medium text-green-600'>
                 <ArrowUpRight className='w-4 h-4 mr-1' />
-                {combinedStats.completedOrdersGrowth.toFixed(1)}%
+                {isTaskDoer
+                  ? (combinedStats.completedTasksGrowth || 0).toFixed(1)
+                  : (combinedStats.completedOrdersGrowth || 0).toFixed(1)}%
               </span>
             </div>
             <h3 className='text-sm font-medium text-gray-500'>
               {isTaskDoer ? t("completedTasks") : t("completedOrders")}
             </h3>
             <p className='text-2xl font-bold text-gray-900 mt-1'>
-              {combinedStats.completedOrders}
+              {isTaskDoer
+                ? combinedStats.completedTasks || 0
+                : combinedStats.completedOrders || 0}
             </p>
           </Card>
 
@@ -188,14 +194,18 @@ export default function DashboardPage() {
               </div>
               <span className='flex items-center text-sm font-medium text-green-600'>
                 <ArrowUpRight className='w-4 h-4 mr-1' />
-                {combinedStats.totalOrdersGrowth.toFixed(1)}%
+                {isTaskDoer
+                  ? '0.0'
+                  : (combinedStats.totalOrdersGrowth || 0).toFixed(1)}%
               </span>
             </div>
             <h3 className='text-sm font-medium text-gray-500'>
-              {t("totalOrders")}
+              {isTaskDoer ? t("successRate") : t("totalOrders")}
             </h3>
             <p className='text-2xl font-bold text-gray-900 mt-1'>
-              {combinedStats.totalOrders}
+              {isTaskDoer
+                ? '100%'
+                : combinedStats.totalOrders || 0}
             </p>
           </Card>
         </div>
@@ -240,8 +250,9 @@ export default function DashboardPage() {
                         <div>
                           <h3 className='font-semibold'>{platform.name}</h3>
                           <p className='text-white/80'>
-                            {platform.stats?.activeOrders?.value || 0}{" "}
-                            {t("activeOrders")}
+                            {isTaskDoer
+                              ? `${platform.stats?.completedTasks || 0} ${t("completedTasks")}`
+                              : `${platform.stats?.activeOrders || 0} ${t("activeOrders")}`}
                           </p>
                         </div>
                       </div>
@@ -261,61 +272,63 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            {/* System Performance */}
-            <Card className='p-6'>
-              <h2 className='text-lg font-semibold text-gray-900 mb-6'>
-                {t("systemPerformance")}
-              </h2>
-              <div className='space-y-6'>
-                {/* CPU Usage */}
-                <div>
-                  <div className='flex justify-between text-sm mb-2'>
-                    <span className='text-gray-600'>
-                      {t("averageCpuUsage")}
-                    </span>
-                    <span className='font-medium text-gray-900'>45%</span>
+            {/* System Performance - Only for Task Givers */}
+            {!isTaskDoer && (
+              <Card className='p-6'>
+                <h2 className='text-lg font-semibold text-gray-900 mb-6'>
+                  {t("systemPerformance")}
+                </h2>
+                <div className='space-y-6'>
+                  {/* CPU Usage */}
+                  <div>
+                    <div className='flex justify-between text-sm mb-2'>
+                      <span className='text-gray-600'>
+                        {t("averageCpuUsage")}
+                      </span>
+                      <span className='font-medium text-gray-900'>45%</span>
+                    </div>
+                    <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
+                      <div
+                        className='h-full bg-blue-500 rounded-full'
+                        style={{ width: "45%" }}
+                      />
+                    </div>
                   </div>
-                  <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
-                    <div
-                      className='h-full bg-blue-500 rounded-full'
-                      style={{ width: "45%" }}
-                    />
-                  </div>
-                </div>
 
-                {/* Memory Usage */}
-                <div>
-                  <div className='flex justify-between text-sm mb-2'>
-                    <span className='text-gray-600'>
-                      {t("averageMemoryUsage")}
-                    </span>
-                    <span className='font-medium text-gray-900'>60%</span>
+                  {/* Memory Usage */}
+                  <div>
+                    <div className='flex justify-between text-sm mb-2'>
+                      <span className='text-gray-600'>
+                        {t("averageMemoryUsage")}
+                      </span>
+                      <span className='font-medium text-gray-900'>60%</span>
+                    </div>
+                    <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
+                      <div
+                        className='h-full bg-green-500 rounded-full'
+                        style={{ width: "60%" }}
+                      />
+                    </div>
                   </div>
-                  <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
-                    <div
-                      className='h-full bg-green-500 rounded-full'
-                      style={{ width: "60%" }}
-                    />
-                  </div>
-                </div>
 
-                {/* Network Usage */}
-                <div>
-                  <div className='flex justify-between text-sm mb-2'>
-                    <span className='text-gray-600'>
-                      {t("averageNetworkUsage")}
-                    </span>
-                    <span className='font-medium text-gray-900'>25%</span>
-                  </div>
-                  <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
-                    <div
-                      className='h-full bg-purple-500 rounded-full'
-                      style={{ width: "25%" }}
-                    />
+                  {/* Network Usage */}
+                  <div>
+                    <div className='flex justify-between text-sm mb-2'>
+                      <span className='text-gray-600'>
+                        {t("averageNetworkUsage")}
+                      </span>
+                      <span className='font-medium text-gray-900'>25%</span>
+                    </div>
+                    <div className='h-2 bg-gray-100 rounded-full overflow-hidden'>
+                      <div
+                        className='h-full bg-purple-500 rounded-full'
+                        style={{ width: "25%" }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
           </div>
 
           {/* Side Panel */}
@@ -390,57 +403,59 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            {/* System Status */}
-            <Card className='p-6'>
-              <div className='flex items-center gap-3 mb-6'>
-                <div className='w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center'>
-                  <Activity className='w-5 h-5 text-blue-600' />
+            {/* System Status - Only for Task Givers */}
+            {!isTaskDoer && (
+              <Card className='p-6'>
+                <div className='flex items-center gap-3 mb-6'>
+                  <div className='w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center'>
+                    <Activity className='w-5 h-5 text-blue-600' />
+                  </div>
+                  <div>
+                    <h2 className='text-lg font-semibold text-gray-900'>
+                      {t("systemStatus")}
+                    </h2>
+                    <p className='text-sm text-gray-500'>
+                      {t("allSystemsOperating")}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className='text-lg font-semibold text-gray-900'>
-                    {t("systemStatus")}
-                  </h2>
-                  <p className='text-sm text-gray-500'>
-                    {t("allSystemsOperating")}
-                  </p>
-                </div>
-              </div>
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
-                  <div className='flex items-center gap-2'>
-                    <Laptop className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-700'>
-                      {t("devices")}
+                <div className='space-y-4'>
+                  <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
+                    <div className='flex items-center gap-2'>
+                      <Laptop className='w-4 h-4 text-gray-500' />
+                      <span className='text-sm font-medium text-gray-700'>
+                        {t("devices")}
+                      </span>
+                    </div>
+                    <span className='text-sm font-medium text-green-600'>
+                      {t("operational")}
                     </span>
                   </div>
-                  <span className='text-sm font-medium text-green-600'>
-                    {t("operational")}
-                  </span>
-                </div>
-                <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
-                  <div className='flex items-center gap-2'>
-                    <Target className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-700'>
-                      {t("tasks")}
+                  <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
+                    <div className='flex items-center gap-2'>
+                      <Target className='w-4 h-4 text-gray-500' />
+                      <span className='text-sm font-medium text-gray-700'>
+                        {t("tasks")}
+                      </span>
+                    </div>
+                    <span className='text-sm font-medium text-green-600'>
+                      {t("operational")}
                     </span>
                   </div>
-                  <span className='text-sm font-medium text-green-600'>
-                    {t("operational")}
-                  </span>
-                </div>
-                <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
-                  <div className='flex items-center gap-2'>
-                    <Zap className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-700'>
-                      {t("automation")}
+                  <div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
+                    <div className='flex items-center gap-2'>
+                      <Zap className='w-4 h-4 text-gray-500' />
+                      <span className='text-sm font-medium text-gray-700'>
+                        {t("automation")}
+                      </span>
+                    </div>
+                    <span className='text-sm font-medium text-green-600'>
+                      {t("operational")}
                     </span>
                   </div>
-                  <span className='text-sm font-medium text-green-600'>
-                    {t("operational")}
-                  </span>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
           </div>
         </div>
       </div>

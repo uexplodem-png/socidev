@@ -23,6 +23,51 @@ export interface UserSettings {
   language?: "en" | "tr";
 }
 
+export interface DashboardStats {
+  userMode: "taskDoer" | "taskGiver";
+  balance: number;
+  activeDevices?: {
+    value: number;
+    growth: number;
+  };
+  activeOrders?: {
+    value: number;
+    growth: number;
+  };
+  completedTasks?: {
+    value: number;
+    total: number;
+    growth: number;
+  };
+  completedOrders?: {
+    value: number;
+    growth: number;
+  };
+  totalOrders?: {
+    value: number;
+    growth: number;
+  };
+  totalEarned?: {
+    value: number;
+    growth: number;
+  };
+  totalSpent?: {
+    value: number;
+    growth: number;
+  };
+  inProgressTasks?: {
+    value: number;
+  };
+  platformStats: Array<{
+    platform: string;
+    completedTasks?: number;
+    earnings?: number;
+    activeOrders?: number;
+    completedOrders?: number;
+    totalSpent?: number;
+  }>;
+}
+
 export const userApi = {
   getProfile: (token: string) => fetchApi("/user/profile", { token }),
 
@@ -55,4 +100,7 @@ export const userApi = {
       token,
       body: JSON.stringify(settings),
     }),
+
+  getDashboardStats: (token: string, timeframe: string = "30d") =>
+    fetchApi(`/user/dashboard-stats?timeframe=${timeframe}`, { token }),
 };

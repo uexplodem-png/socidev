@@ -49,13 +49,11 @@ export const Topbar = () => {
               )}>
               <div className='relative'>
                 <div
-                  className={`w-8 h-4 bg-gray-200 rounded-full transition-colors ${
-                    userMode === "taskGiver" ? "bg-blue-500" : ""
-                  }`}>
+                  className={`w-8 h-4 bg-gray-200 rounded-full transition-colors ${userMode === "taskGiver" ? "bg-blue-500" : ""
+                    }`}>
                   <div
-                    className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${
-                      userMode === "taskGiver" ? "translate-x-4" : ""
-                    }`}
+                    className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${userMode === "taskGiver" ? "translate-x-4" : ""
+                      }`}
                   />
                 </div>
               </div>
@@ -79,13 +77,11 @@ export const Topbar = () => {
                 )}>
                 <div className='relative'>
                   <div
-                    className={`w-12 h-6 bg-gray-200 rounded-full transition-colors ${
-                      userMode === "taskGiver" ? "bg-blue-500" : ""
-                    }`}>
+                    className={`w-12 h-6 bg-gray-200 rounded-full transition-colors ${userMode === "taskGiver" ? "bg-blue-500" : ""
+                      }`}>
                     <div
-                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        userMode === "taskGiver" ? "translate-x-6" : ""
-                      }`}
+                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${userMode === "taskGiver" ? "translate-x-6" : ""
+                        }`}
                     />
                   </div>
                 </div>

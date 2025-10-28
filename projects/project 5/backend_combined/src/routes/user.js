@@ -45,4 +45,10 @@ router.put('/settings',
   userController.updateSettings
 );
 
+// Get dashboard statistics
+router.get('/dashboard-stats',
+  auth,
+  userController.getDashboardStats
+);
+
 export { router as userRouter };
