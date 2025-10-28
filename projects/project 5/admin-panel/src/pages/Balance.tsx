@@ -382,15 +382,70 @@ const Balance: React.FC = () => {
                 </Card>
             </div>
 
-            {/* Quick Search */}
+            {/* Pending Approvals Alert */}
+            {(overview.pendingDeposits > 0 || overview.pendingWithdrawals > 0) && hasPermission('transactions.approve') && (
+                <Card className="border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20">
+                    <CardContent className="p-4">
+                        <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                                <AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                            </div>
+                            <div className="ml-3 flex-1">
+                                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                    Pending Transactions Require Action
+                                </h3>
+                                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>
+                                        You have {overview.pendingDeposits > 0 && `${formatCurrency(overview.pendingDeposits)} in pending deposits`}
+                                        {overview.pendingDeposits > 0 && overview.pendingWithdrawals > 0 && ' and '}
+                                        {overview.pendingWithdrawals > 0 && `${formatCurrency(overview.pendingWithdrawals)} in pending withdrawals`}
+                                        {' '}awaiting approval.
+                                    </p>
+                                </div>
+                                <div className="mt-3">
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleFilterChange('status', 'pending')}
+                                        className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                    >
+                                        View Pending Transactions
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Quick Search and Status Filter */}
             <Card>
                 <CardContent className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input type="text" placeholder="Search by user, email, description, or reference..." value={filters.search}
-                            onChange={(e) => handleFilterChange('search', e.target.value)}
-                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input type="text" placeholder="Search by user, email, description, or reference..." value={filters.search}
+                                onChange={(e) => handleFilterChange('search', e.target.value)}
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="all">All Status</option>
+                                <option value="pending">⏳ Pending</option>
+                                <option value="completed">✅ Completed</option>
+                                <option value="approved">✅ Approved</option>
+                                <option value="rejected">❌ Rejected</option>
+                                <option value="failed">❌ Failed</option>
+                            </select>
+                            <select value={filters.type} onChange={(e) => handleFilterChange('type', e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="all">All Types</option>
+                                <option value="deposit">💰 Deposits</option>
+                                <option value="withdrawal">💸 Withdrawals</option>
+                                <option value="adjustment">⚙️ Adjustments</option>
+                            </select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -399,8 +454,19 @@ const Balance: React.FC = () => {
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
-                        <CardTitle>Balance Transactions</CardTitle>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Showing {balanceEntries.length} of {allEntries.length} entries</span>
+                        <div>
+                            <CardTitle>Balance Transactions</CardTitle>
+                            {filters.status === 'pending' && (
+                                <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1 flex items-center">
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Showing transactions awaiting approval
+                                </p>
+                            )}
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Showing {balanceEntries.length} of {allEntries.length} entries
+                            {filters.status === 'pending' && ` • ${balanceEntries.length} pending`}
+                        </span>
                     </div>
                 </CardHeader>
                 <CardContent>
