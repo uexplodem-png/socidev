@@ -75,15 +75,35 @@ const Balance: React.FC = () => {
     const [requestAction, setRequestAction] = useState<'approve' | 'reject'>('approve');
     const [requestNotes, setRequestNotes] = useState('');
 
-    useEffect(() => { fetchData(); }, []);
-    useEffect(() => { applyFiltersAndPagination(); }, [allEntries, filters, currentPage, itemsPerPage]);
+    // Single useEffect to fetch data on mount only
+    useEffect(() => { 
+        fetchData(); 
+    }, []); // Empty dependency array - runs once on mount
+
+    // Separate useEffect for filters/pagination (doesn't refetch from server)
+    useEffect(() => { 
+        applyFiltersAndPagination(); 
+    }, [allEntries, filters, currentPage, itemsPerPage]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
+            
+            // Fetch all users and transactions with proper pagination
+            // Using page=1, limit=100 (max allowed) to get recent data
             const [usersResponse, transactionsResponse] = await Promise.all([
-                usersAPI.getUsers({ limit: 1000 }),
-                withdrawalsAPI.getTransactions({ limit: 1000 })
+                usersAPI.getUsers({ 
+                    page: 1, 
+                    limit: 100, 
+                    sortBy: 'created_at', 
+                    sortOrder: 'desc' 
+                }),
+                withdrawalsAPI.getTransactions({ 
+                    page: 1, 
+                    limit: 100, 
+                    sortBy: 'created_at', 
+                    sortOrder: 'desc' 
+                })
             ]);
 
             setUsers(usersResponse.data);
