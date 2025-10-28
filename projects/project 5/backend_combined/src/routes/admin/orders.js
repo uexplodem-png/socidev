@@ -4,6 +4,8 @@ import { Order, User, Transaction, ActivityLog, Task } from '../../models/index.
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
+import { settingsService } from '../../services/settingsService.js';
+import { logAudit, logAction } from '../../utils/logging.js';
 
 const router = express.Router();
 
@@ -200,6 +202,15 @@ router.post('/:id/status',
     const { id } = req.params;
     const { status, notes } = req.body;
 
+    // Check if order status updates are enabled
+    const features = await settingsService.get('features.orders', {});
+    if (features.editEnabled === false) {
+      return res.status(403).json({
+        error: 'Order status updates are currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+
     console.log(`[ORDER STATUS UPDATE] Received request for order ${id}, new status: ${status}`);
 
     const order = await Order.findByPk(id, {
@@ -304,20 +315,12 @@ router.post('/:id/status',
     }
 
     // Log the status change
-    await ActivityLog.log(
-      req.user.id,
-      'ORDER_STATUS_UPDATED',
-      'order',
-      id,
-      order.user_id,
-      `Order status changed from ${originalStatus} to ${status}`,
-      {
-        originalStatus,
-        newStatus: status,
-        notes,
-      },
-      req
-    );
+    await logAction(req, {
+      userId: order.userId || req.user.id,
+      type: 'ORDER_STATUS_UPDATED',
+      action: 'update',
+      details: `Order status changed from ${originalStatus} to ${status}${notes ? ': ' + notes : ''}`,
+    });
 
     res.json({
       order,
@@ -369,6 +372,15 @@ router.post('/:id/refund',
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { reason, partial = false, refundAmount } = req.body;
+
+    // Check if order refunds are enabled
+    const features = await settingsService.get('features.orders', {});
+    if (features.refundEnabled === false) {
+      return res.status(403).json({
+        error: 'Order refunds are currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
 
     const order = await Order.findByPk(id, {
       attributes: ['id', 'userId', 'amount', 'status', 'service', 'platform', 'targetUrl', 'quantity'],
@@ -422,21 +434,20 @@ router.post('/:id/refund',
     });
 
     // Log the refund
-    await ActivityLog.log(
-      req.user.id,
-      'ORDER_REFUNDED',
-      'order',
-      id,
-      order.user_id,
-      `Order refunded - Amount: $${finalRefundAmount}${reason ? `, Reason: ${reason}` : ''}`,
-      {
+    await logAudit(req, {
+      action: 'ORDER_REFUNDED',
+      resource: 'order',
+      resourceId: id,
+      targetUserId: order.userId,
+      targetUserName: order.user ? `${order.user.firstName} ${order.user.lastName}` : null,
+      description: `Order ${partial ? 'partially ' : ''}refunded - Amount: $${finalRefundAmount}${reason ? `, Reason: ${reason}` : ''}`,
+      metadata: {
         refundAmount: finalRefundAmount,
         originalAmount: order.amount,
         partial,
         reason,
-      },
-      req
-    );
+      }
+    });
 
     res.json({
       order,
@@ -496,21 +507,20 @@ router.post('/',
     });
 
     // Log order creation
-    await ActivityLog.log(
-      req.user.id,
-      'ORDER_CREATED',
-      'order',
-      order.id,
-      user.id,
-      `Order created by admin - ${orderData.service} for ${orderData.platform}`,
-      {
+    await logAudit(req, {
+      action: 'ORDER_CREATED',
+      resource: 'order',
+      resourceId: order.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Order created by admin - ${orderData.service} for ${orderData.platform}`,
+      metadata: {
         platform: orderData.platform,
         service: orderData.service,
         quantity: orderData.quantity,
         amount: orderData.amount,
-      },
-      req
-    );
+      }
+    });
 
     res.status(201).json({
       order,

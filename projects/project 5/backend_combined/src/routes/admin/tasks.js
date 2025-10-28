@@ -4,6 +4,8 @@ import { Task, User, ActivityLog } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
+import { settingsService } from '../../services/settingsService.js';
+import { logAction } from '../../utils/logging.js';
 import Joi from 'joi';
 
 const router = express.Router();
@@ -280,6 +282,15 @@ router.post('/:id/approve',
     const { id } = req.params;
     const { notes } = req.body;
 
+    // Check if task approvals are enabled
+    const features = await settingsService.get('features.tasks', {});
+    if (features.approveEnabled === false) {
+      return res.status(403).json({
+        error: 'Task approval is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+
     const task = await Task.findByPk(id, {
       attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'quantity', 'rate', 'adminStatus'],
     });
@@ -299,22 +310,12 @@ router.post('/:id/approve',
     await task.approve(req.user.id, notes);
 
     // Log the approval
-    await ActivityLog.log(
-      req.user.id,
-      'TASK_APPROVED',
-      'task',
-      id,
-      task.user_id,
-      `Task approved - ${task.type} on ${task.platform}${notes ? `: ${notes}` : ''}`,
-      {
-        taskType: task.type,
-        platform: task.platform,
-        quantity: task.quantity,
-        rate: task.rate,
-        notes,
-      },
-      req
-    );
+    await logAction(req, {
+      userId: task.userId || req.user.id,
+      type: 'TASK_APPROVED',
+      action: 'approve',
+      details: `Task approved - ${task.type} on ${task.platform}${notes ? `: ${notes}` : ''}`,
+    });
 
     res.json({
       task,
@@ -369,6 +370,15 @@ router.post('/:id/reject',
     const { id } = req.params;
     const { reason, notes } = req.body;
 
+    // Check if task rejections are enabled
+    const features = await settingsService.get('features.tasks', {});
+    if (features.rejectEnabled === false) {
+      return res.status(403).json({
+        error: 'Task rejection is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+
     const task = await Task.findByPk(id, {
       attributes: ['id', 'userId', 'orderId', 'type', 'platform', 'adminStatus', 'requirements'],
     });
@@ -391,21 +401,12 @@ router.post('/:id/reject',
     }
 
     // Log the rejection
-    await ActivityLog.log(
-      req.user.id,
-      'TASK_REJECTED',
-      'task',
-      id,
-      task.user_id,
-      `Task rejected - Reason: ${reason}${notes ? `, Notes: ${notes}` : ''}`,
-      {
-        taskType: task.type,
-        platform: task.platform,
-        rejectionReason: reason,
-        notes,
-      },
-      req
-    );
+    await logAction(req, {
+      userId: task.userId || req.user.id,
+      type: 'TASK_REJECTED',
+      action: 'reject',
+      details: `Task rejected - Reason: ${reason}${notes ? `, Notes: ${notes}` : ''}`,
+    });
 
     res.json({
       task,
@@ -475,21 +476,12 @@ router.post('/bulk-approve',
       approvedTasks.push(task);
 
       // Log each approval
-      await ActivityLog.log(
-        req.user.id,
-        'TASK_APPROVED',
-        'task',
-        task.id,
-        task.user_id,
-        `Task approved via bulk action - ${task.type} on ${task.platform}`,
-        {
-          bulkAction: true,
-          taskType: task.type,
-          platform: task.platform,
-          notes,
-        },
-        req
-      );
+      await logAction(req, {
+        userId: task.userId || req.user.id,
+        type: 'TASK_APPROVED',
+        action: 'approve',
+        details: `Task approved via bulk action - ${task.type} on ${task.platform}${notes ? `: ${notes}` : ''}`,
+      });
     }
 
     res.json({
@@ -565,22 +557,12 @@ router.post('/bulk-reject',
       rejectedTasks.push(task);
 
       // Log each rejection
-      await ActivityLog.log(
-        req.user.id,
-        'TASK_REJECTED',
-        'task',
-        task.id,
-        task.user_id,
-        `Task rejected via bulk action - Reason: ${reason}`,
-        {
-          bulkAction: true,
-          taskType: task.type,
-          platform: task.platform,
-          rejectionReason: reason,
-          notes,
-        },
-        req
-      );
+      await logAction(req, {
+        userId: task.userId || req.user.id,
+        type: 'TASK_REJECTED',
+        action: 'reject',
+        details: `Task rejected via bulk action - Reason: ${reason}${notes ? `, Notes: ${notes}` : ''}`,
+      });
     }
 
     res.json({
@@ -627,21 +609,12 @@ router.post('/',
     });
 
     // Log task creation
-    await ActivityLog.log(
-      req.user.id,
-      'TASK_CREATED',
-      'task',
-      task.id,
-      req.user.id,
-      `Task created by admin - ${taskData.type} on ${taskData.platform}`,
-      {
-        taskType: taskData.type,
-        platform: taskData.platform,
-        quantity: taskData.quantity,
-        rate: taskData.rate,
-      },
-      req
-    );
+    await logAction(req, {
+      userId: req.user.id,
+      type: 'TASK_CREATED',
+      action: 'create',
+      details: `Task created by admin - ${taskData.type} on ${taskData.platform}`,
+    });
 
     res.status(201).json({
       task,
@@ -703,19 +676,12 @@ router.patch('/:id/priority',
     await task.update({ priority });
 
     // Log priority change
-    await ActivityLog.log(
-      req.user.id,
-      'TASK_PRIORITY_UPDATED',
-      'task',
-      id,
-      task.user_id,
-      `Task priority changed from ${originalPriority} to ${priority}`,
-      {
-        originalPriority,
-        newPriority: priority,
-      },
-      req
-    );
+    await logAction(req, {
+      userId: task.userId || req.user.id,
+      type: 'TASK_PRIORITY_UPDATED',
+      action: 'update',
+      details: `Task priority changed from ${originalPriority} to ${priority}`,
+    });
 
     res.json({
       task,

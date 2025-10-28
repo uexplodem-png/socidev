@@ -4,6 +4,8 @@ import { Transaction, User, Order, AuditLog } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
+import { settingsService } from '../../services/settingsService.js';
+import { logAudit } from '../../utils/logging.js';
 
 const router = express.Router();
 
@@ -210,6 +212,15 @@ router.post('/',
   asyncHandler(async (req, res) => {
     const transactionData = req.body;
 
+    // Check if manual transaction creation is enabled
+    const features = await settingsService.get('features.transactions', {});
+    if (features.createEnabled === false) {
+      return res.status(403).json({
+        error: 'Manual transaction creation is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+
     // Verify user exists
     const user = await User.findByPk(transactionData.user_id, {
       attributes: ['id', 'firstName', 'lastName', 'email', 'balance'],
@@ -257,23 +268,22 @@ router.post('/',
     }
 
     // Log transaction creation
-    await AuditLog.log(
-      req.user.id,
-      'TRANSACTION_CREATED',
-      'transaction',
-      transaction.id,
-      user.id,
-      `Manual transaction created - ${transactionData.type}: $${Math.abs(transactionData.amount)}`,
-      {
+    await logAudit(req, {
+      action: 'TRANSACTION_CREATED',
+      resource: 'transaction',
+      resourceId: transaction.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Manual transaction created - ${transactionData.type}: $${Math.abs(transactionData.amount)}`,
+      metadata: {
         transactionType: transactionData.type,
         amount: transactionData.amount,
         method: transactionData.method,
         balanceBefore,
         balanceAfter,
         status,
-      },
-      req
-    );
+      }
+    });
 
     res.status(201).json({
       transaction,
@@ -420,6 +430,15 @@ router.post('/:id/approve',
     const { id } = req.params;
     const { notes } = req.body;
 
+    // Check if transaction approvals are enabled
+    const features = await settingsService.get('features.transactions', {});
+    if (features.approveEnabled === false) {
+      return res.status(403).json({
+        error: 'Transaction approval is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+
     const transaction = await Transaction.findByPk(id, {
       attributes: ['id', 'userId', 'type', 'amount', 'status', 'method', 'description', 'balanceBefore', 'balanceAfter'],
       include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'balance'] }],
@@ -461,27 +480,21 @@ router.post('/:id/approve',
     });
 
     // Log the approval action
-    try {
-      await AuditLog.log(
-        req.user.id,
-        'TRANSACTION_APPROVED',
-        'transaction',
-        transaction.id,
-        transaction.userId,
-        `Admin approved ${transaction.type} transaction for $${Math.abs(transaction.amount)} via ${transaction.method}`,
-        {
-          status: 'completed',
-          type: transaction.type,
-          amount: transaction.amount,
-          method: transaction.method,
-          approvedBy: req.user.id,
-          notes: notes || '',
-        },
-        req
-      );
-    } catch (logError) {
-      console.error('Failed to log transaction approval:', logError);
-    }
+    await logAudit(req, {
+      action: 'TRANSACTION_APPROVED',
+      resource: 'transaction',
+      resourceId: transaction.id,
+      targetUserId: transaction.userId,
+      targetUserName: transaction.user ? `${transaction.user.firstName} ${transaction.user.lastName}` : null,
+      description: `Approved ${transaction.type} transaction for $${Math.abs(transaction.amount)} via ${transaction.method}`,
+      metadata: {
+        status: 'completed',
+        type: transaction.type,
+        amount: transaction.amount,
+        method: transaction.method,
+        notes: notes || '',
+      }
+    });
 
     res.json({
       transaction,
@@ -525,6 +538,15 @@ router.post('/:id/reject',
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
+
+    // Check if transaction rejections are enabled
+    const features = await settingsService.get('features.transactions', {});
+    if (features.rejectEnabled === false) {
+      return res.status(403).json({
+        error: 'Transaction rejection is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
 
     const transaction = await Transaction.findByPk(id, {
       attributes: ['id', 'userId', 'type', 'amount', 'status', 'method', 'description', 'balanceBefore', 'balanceAfter', 'notes'],
@@ -573,28 +595,22 @@ router.post('/:id/reject',
     });
 
     // Log the rejection action
-    try {
-      await AuditLog.log(
-        req.user.id,
-        'TRANSACTION_REJECTED',
-        'transaction',
-        transaction.id,
-        transaction.userId,
-        `Admin rejected ${transaction.type} transaction for $${Math.abs(transaction.amount)} via ${transaction.method}${transaction.type === 'withdrawal' ? ' - Amount refunded to user' : ''}`,
-        {
-          status: 'failed',
-          type: transaction.type,
-          amount: transaction.amount,
-          method: transaction.method,
-          rejectedBy: req.user.id,
-          notes: notes || '',
-          refunded: transaction.type === 'withdrawal',
-        },
-        req
-      );
-    } catch (logError) {
-      console.error('Failed to log transaction rejection:', logError);
-    }
+    await logAudit(req, {
+      action: 'TRANSACTION_REJECTED',
+      resource: 'transaction',
+      resourceId: transaction.id,
+      targetUserId: transaction.userId,
+      targetUserName: transaction.user ? `${transaction.user.firstName} ${transaction.user.lastName}` : null,
+      description: `Rejected ${transaction.type} transaction for $${Math.abs(transaction.amount)} via ${transaction.method}${transaction.type === 'withdrawal' ? ' - Amount refunded to user' : ''}`,
+      metadata: {
+        status: 'failed',
+        type: transaction.type,
+        amount: transaction.amount,
+        method: transaction.method,
+        notes: notes || '',
+        refunded: transaction.type === 'withdrawal',
+      }
+    });
 
     res.json({
       transaction,

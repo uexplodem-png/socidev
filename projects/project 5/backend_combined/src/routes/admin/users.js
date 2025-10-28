@@ -5,6 +5,9 @@ import { User, Order, Task, Transaction, AuditLog, Withdrawal, Device, SocialAcc
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
+import { settingsService } from '../../services/settingsService.js';
+import { logAudit } from '../../utils/logging.js';
+import Joi from 'joi';
 
 const router = express.Router();
 
@@ -63,6 +66,15 @@ router.post('/',
   asyncHandler(async (req, res) => {
     const userData = req.body;
     
+    // Check if user creation is enabled
+    const features = await settingsService.get('features.users', {});
+    if (features.createEnabled === false) {
+      return res.status(403).json({
+        error: 'User creation is currently disabled',
+        code: 'FEATURE_DISABLED',
+      });
+    }
+    
     // Generate a random password if not provided
     if (!userData.password) {
       userData.password = Math.random().toString(36).slice(-8);
@@ -72,16 +84,19 @@ router.post('/',
     const user = await User.create(userData);
 
     // Log the creation to AuditLog
-    await AuditLog.log(
-      req.user.id,
-      'USER_CREATED',
-      'user',
-      user.id,
-      user.id,
-      `Created new user ${user.firstName} ${user.lastName}`,
-      { userData },
-      req
-    );
+    await logAudit(req, {
+      action: 'USER_CREATED',
+      resource: 'user',
+      resourceId: user.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Created new user ${user.firstName} ${user.lastName}`,
+      metadata: { 
+        role: user.role,
+        status: user.status,
+        email: user.email,
+      }
+    });
 
     res.status(201).json({
       user: user.toJSON(),
@@ -477,25 +492,21 @@ router.put('/:id',
     const changedFields = Object.keys(updateData);
 
     // Log the update to AuditLog
-    await AuditLog.log(
-      req.user.id,
-      'USER_UPDATED',
-      'user',
-      user.id,
-      user.id,
-      `Updated user ${user.firstName} ${user.lastName}`,
-      {
-        targetUserId: user.id,
-        targetUserName: `${user.firstName} ${user.lastName}`,
-        targetUserEmail: user.email,
+    await logAudit(req, {
+      action: 'USER_UPDATED',
+      resource: 'user',
+      resourceId: user.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Updated user ${user.firstName} ${user.lastName}`,
+      metadata: {
         changes: {
           before: originalValues,
           after: updatedValues,
           fields: changedFields,
         },
-      },
-      req
-    );
+      }
+    });
 
     res.json({
       user: user.toJSON(),
@@ -547,16 +558,15 @@ router.post('/:id/suspend',
     await user.update({ status: 'suspended' });
 
     // Log the suspension to AuditLog
-    await AuditLog.log(
-      req.user.id,
-      'USER_SUSPENDED',
-      'user',
-      user.id,
-      user.id,
-      `Suspended user ${user.firstName} ${user.lastName}`,
-      { reason },
-      req
-    );
+    await logAudit(req, {
+      action: 'USER_SUSPENDED',
+      resource: 'user',
+      resourceId: user.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Suspended user ${user.firstName} ${user.lastName}${reason ? ': ' + reason : ''}`,
+      metadata: { reason }
+    });
 
     res.json({
       user: user.toJSON(),
@@ -599,16 +609,15 @@ router.post('/:id/activate',
     await user.update({ status: 'active' });
 
     // Log the activation to AuditLog
-    await AuditLog.log(
-      req.user.id,
-      'USER_ACTIVATED',
-      'user',
-      user.id,
-      user.id,
-      `Activated user ${user.firstName} ${user.lastName}`,
-      {},
-      req
-    );
+    await logAudit(req, {
+      action: 'USER_ACTIVATED',
+      resource: 'user',
+      resourceId: user.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Activated user ${user.firstName} ${user.lastName}`,
+      metadata: {}
+    });
 
     res.json({
       user: user.toJSON(),
@@ -707,16 +716,15 @@ router.post('/bulk-action',
 
     // Log bulk action for each user
     for (const user of users) {
-      await AuditLog.log(
-        req.user.id,
-        auditAction,
-        'user',
-        user.id,
-        user.id,
-        `${auditAction.replace('_', ' ')} user ${user.firstName} ${user.lastName}`,
-        { reason, bulkAction: true },
-        req
-      );
+      await logAudit(req, {
+        action: auditAction,
+        resource: 'user',
+        resourceId: user.id,
+        targetUserId: user.id,
+        targetUserName: `${user.firstName} ${user.lastName}`,
+        description: `${auditAction.replace('_', ' ')} user ${user.firstName} ${user.lastName} (bulk action)${reason ? ': ' + reason : ''}`,
+        metadata: { reason, bulkAction: true }
+      });
     }
 
     // Fetch updated users
@@ -834,21 +842,20 @@ router.post('/:id/balance',
     });
 
     // Log the balance adjustment to AuditLog
-    await AuditLog.log(
-      req.user.id,
-      'BALANCE_ADJUSTED',
-      'user',
-      user.id,
-      user.id,
-      `Balance adjusted for user ${user.firstName} ${user.lastName}`,
-      {
+    await logAudit(req, {
+      action: 'BALANCE_ADJUSTED',
+      resource: 'user',
+      resourceId: user.id,
+      targetUserId: user.id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      description: `Balance adjusted for user ${user.firstName} ${user.lastName}: ${type === 'add' ? '+' : '-'}$${amount}`,
+      metadata: {
         amount: adjustmentAmount,
         balanceBefore,
         balanceAfter,
         reason,
-      },
-      req
-    );
+      }
+    });
 
     res.json({
       user: user.toJSON(),
