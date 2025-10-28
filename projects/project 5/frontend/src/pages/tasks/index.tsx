@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext";
 import { taskApi, Task } from "../../lib/api/task";
 import { toast } from "react-hot-toast";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import {
   Clock,
   Filter,
@@ -22,6 +23,7 @@ import {
   XCircle,
   Image as ImageIcon,
   Loader,
+  Ban,
 } from "lucide-react";
 
 interface TaskFilters {
@@ -43,6 +45,10 @@ export const TasksPage = () => {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [uploadComment, setUploadComment] = useState("");
+  const { isFeatureEnabled, loading: featuresLoading } = useFeatureFlags(true);
+
+  // Check if tasks module is enabled
+  const tasksEnabled = isFeatureEnabled('tasks');
 
   // Fetch tasks based on active tab
   const {
@@ -63,6 +69,7 @@ export const TasksPage = () => {
       }
     },
     refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: tasksEnabled, // Only fetch if module is enabled
   });
 
   // Start task mutation
@@ -174,6 +181,27 @@ export const TasksPage = () => {
     }
     return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Available</span>;
   };
+
+  // Show disabled message if tasks module is disabled
+  if (!tasksEnabled) {
+    return (
+      <div className="py-12">
+        <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-3">
+            <Ban className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            <div>
+              <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                Module Disabled
+              </h3>
+              <p className="text-yellow-700 dark:text-yellow-300">
+                The tasks module is currently disabled. Please contact support for more information.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className='py-8'>

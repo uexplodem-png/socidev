@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useBalance } from "../../context/BalanceContext";
 import { balanceApi } from "../../lib/api/balance";
 import { toast } from "react-hot-toast";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import {
   Building,
   Wallet,
@@ -15,6 +16,7 @@ import {
   Lock,
   Shield,
   DollarSign,
+  Ban,
 } from "lucide-react";
 
 interface BankDetails {
@@ -36,6 +38,7 @@ export const WithdrawBalancePage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const { isWithdrawalsEnabled, loading: featuresLoading } = useFeatureFlags(true);
 
   useEffect(() => {
     fetchTransactions();
@@ -149,6 +152,37 @@ export const WithdrawBalancePage = () => {
             <ArrowRight className='w-4 h-4 ml-2' />
           </Button>
         </Card>
+      </div>
+    );
+  }
+
+  // Show disabled message if withdrawals are disabled
+  if (!isWithdrawalsEnabled()) {
+    return (
+      <div className="min-h-screen py-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center gap-3">
+              <Ban className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              <div>
+                <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                  {t("featureDisabled") || "Feature Disabled"}
+                </h3>
+                <p className="text-yellow-700 dark:text-yellow-300">
+                  {t("withdrawalsCurrentlyDisabled") || "Withdrawals are currently disabled. Please try again later or contact support."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (featuresLoading) {
+    return (
+      <div className="min-h-screen py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }

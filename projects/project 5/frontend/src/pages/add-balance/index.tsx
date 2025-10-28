@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useBalance } from "../../context/BalanceContext";
 import { balanceApi } from "../../lib/api/balance";
 import { toast } from "react-hot-toast";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import {
   Building,
   Wallet,
@@ -16,6 +17,7 @@ import {
   Lock,
   Shield,
   DollarSign,
+  Ban,
 } from "lucide-react";
 
 export const AddBalancePage = () => {
@@ -26,6 +28,7 @@ export const AddBalancePage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const { isDepositsEnabled, loading: featuresLoading } = useFeatureFlags(true);
 
   useEffect(() => {
     fetchTransactions();
@@ -92,6 +95,37 @@ export const AddBalancePage = () => {
       setIsLoading(false);
     }
   };
+
+  // Show disabled message if deposits are disabled
+  if (!isDepositsEnabled()) {
+    return (
+      <div className="min-h-screen py-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center gap-3">
+              <Ban className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              <div>
+                <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                  {t("featureDisabled") || "Feature Disabled"}
+                </h3>
+                <p className="text-yellow-700 dark:text-yellow-300">
+                  {t("depositsCurrentlyDisabled") || "Deposits are currently disabled. Please try again later or contact support."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (featuresLoading) {
+    return (
+      <div className="min-h-screen py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen py-12 bg-gradient-to-br from-slate-50 to-gray-100'>

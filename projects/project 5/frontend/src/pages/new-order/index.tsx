@@ -4,10 +4,11 @@ import { YoutubeOrderForm } from "../../components/new-order/forms/YoutubeOrderF
 import { TiktokOrderForm } from "../../components/new-order/forms/TiktokOrderForm";
 import { FacebookOrderForm } from "../../components/new-order/forms/FacebookOrderForm";
 import { XOrderForm } from "../../components/new-order/forms/XOrderForm";
-import { Instagram, Youtube, AlertCircle, Music, Facebook, X } from "lucide-react";
+import { Instagram, Youtube, AlertCircle, Music, Facebook, X, Ban } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { useLanguage } from "../../context/LanguageContext";
 import { getPlatforms, Platform } from "../../lib/api/platforms";
+import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 
 const getPlatformIcon = (name: string) => {
   const lowerName = name.toLowerCase();
@@ -25,6 +26,11 @@ export const NewOrderPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
+  const { isFeatureEnabled, loading: featuresLoading } = useFeatureFlags(true);
+
+  // Check if orders module is enabled
+  const ordersEnabled = isFeatureEnabled('orders');
+  const ordersCreateEnabled = isFeatureEnabled('orders', 'createEnabled');
 
   useEffect(() => {
     const fetchPlatforms = async () => {
@@ -57,10 +63,52 @@ export const NewOrderPage = () => {
     fetchPlatforms();
   }, []);
 
-  if (loading) {
+  if (loading || featuresLoading) {
     return (
       <div className="py-12 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Show disabled message if orders module is disabled
+  if (!ordersEnabled) {
+    return (
+      <div className="py-12">
+        <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-3">
+            <Ban className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            <div>
+              <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                {t("moduleDisabled") || "Module Disabled"}
+              </h3>
+              <p className="text-yellow-700 dark:text-yellow-300">
+                {t("ordersModuleCurrentlyDisabled") || "The orders module is currently disabled. Please contact support for more information."}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show disabled message if order creation is disabled
+  if (!ordersCreateEnabled) {
+    return (
+      <div className="py-12">
+        <Card className="p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-3">
+            <Ban className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            <div>
+              <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                {t("featureDisabled") || "Feature Disabled"}
+              </h3>
+              <p className="text-yellow-700 dark:text-yellow-300">
+                {t("orderCreationCurrentlyDisabled") || "Order creation is currently disabled. Please try again later."}
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
