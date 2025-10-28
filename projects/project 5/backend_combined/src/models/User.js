@@ -74,6 +74,48 @@ const User = sequelize.define('User', {
     defaultValue: false,
     field: 'two_factor_enabled'
   },
+  twoFactorSecret: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'two_factor_secret'
+  },
+  twoFactorBackupCodes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'two_factor_backup_codes',
+    get() {
+      const value = this.getDataValue('twoFactorBackupCodes');
+      return value ? JSON.parse(value) : [];
+    },
+    set(value) {
+      this.setDataValue('twoFactorBackupCodes', JSON.stringify(value));
+    }
+  },
+  emailVerificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'email_verification_token'
+  },
+  emailVerificationExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'email_verification_expires'
+  },
+  passwordResetToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'password_reset_token'
+  },
+  passwordResetExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'password_reset_expires'
+  },
+  lockedUntil: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'locked_until'
+  },
   userMode: {
     type: DataTypes.ENUM('task_doer', 'task_giver', 'both'),
     defaultValue: 'task_doer',

@@ -6,6 +6,9 @@ import logger from '../config/logger.js';
 import { Op } from 'sequelize'; // Import Sequelize operators
 import { ActivityService } from '../services/activity.service.js';
 import { loginAttemptTracker } from '../middleware/loginAttemptTracker.js';
+import { twoFactorService } from '../services/twoFactorService.js';
+import { emailVerificationService } from '../services/emailVerificationService.js';
+import { logAudit } from '../utils/logging.js';
 
 const authService = new AuthService();
 const activityService = new ActivityService();
@@ -387,6 +390,237 @@ export class AuthController {
         message: 'Email verified successfully'
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Setup 2FA - Generate secret and QR code
+   */
+  async setup2FA(req, res, next) {
+    try {
+      const user = req.user;
+
+      if (user.twoFactorEnabled) {
+        return res.status(400).json({
+          success: false,
+          message: '2FA is already enabled. Disable it first to set up again.'
+        });
+      }
+
+      // Generate secret and QR code
+      const { secret, qrCode, backupCodes } = await twoFactorService.generateSecret(user.email);
+
+      // Store secret temporarily (not enabled yet)
+      await user.update({ twoFactorSecret: secret });
+
+      logger.info('2FA setup initiated', { userId: user.id });
+
+      res.json({
+        success: true,
+        message: '2FA setup initiated. Scan the QR code with your authenticator app.',
+        data: {
+          qrCode,
+          secret, // Show secret for manual entry
+          backupCodes // Show backup codes to save
+        }
+      });
+    } catch (error) {
+      logger.error('2FA setup error:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Enable 2FA - Verify token and activate
+   */
+  async enable2FA(req, res, next) {
+    try {
+      const { token, backupCodes } = req.body;
+      const user = req.user;
+
+      if (!user.twoFactorSecret) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please set up 2FA first using /auth/2fa/setup'
+        });
+      }
+
+      if (user.twoFactorEnabled) {
+        return res.status(400).json({
+          success: false,
+          message: '2FA is already enabled'
+        });
+      }
+
+      // Verify the token
+      const isValid = twoFactorService.verifyToken(token, user.twoFactorSecret);
+
+      if (!isValid) {
+        logger.warn('Invalid 2FA token during enable', { userId: user.id });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid verification code. Please try again.'
+        });
+      }
+
+      // Enable 2FA
+      await user.update({
+        twoFactorEnabled: true,
+        twoFactorBackupCodes: backupCodes || []
+      });
+
+      // Audit log
+      await logAudit(req, {
+        action: 'TWO_FACTOR_ENABLED',
+        resource: 'user',
+        resourceId: user.id,
+        description: `User ${user.email} enabled two-factor authentication`
+      });
+
+      logger.info('2FA enabled', { userId: user.id });
+
+      res.json({
+        success: true,
+        message: '2FA has been enabled successfully'
+      });
+    } catch (error) {
+      logger.error('2FA enable error:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Disable 2FA
+   */
+  async disable2FA(req, res, next) {
+    try {
+      const { password } = req.body;
+      const user = req.user;
+
+      if (!user.twoFactorEnabled) {
+        return res.status(400).json({
+          success: false,
+          message: '2FA is not enabled'
+        });
+      }
+
+      // Verify password
+      const isValidPassword = await user.validatePassword(password);
+      if (!isValidPassword) {
+        logger.warn('Invalid password during 2FA disable', { userId: user.id });
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid password'
+        });
+      }
+
+      // Disable 2FA
+      await user.update({
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorBackupCodes: null
+      });
+
+      // Audit log
+      await logAudit(req, {
+        action: 'TWO_FACTOR_DISABLED',
+        resource: 'user',
+        resourceId: user.id,
+        description: `User ${user.email} disabled two-factor authentication`
+      });
+
+      logger.info('2FA disabled', { userId: user.id });
+
+      res.json({
+        success: true,
+        message: '2FA has been disabled'
+      });
+    } catch (error) {
+      logger.error('2FA disable error:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Verify 2FA token during login
+   */
+  async verify2FA(req, res, next) {
+    try {
+      const { email, token, useBackupCode } = req.body;
+
+      if (!email || !token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and token are required'
+        });
+      }
+
+      // Find user
+      const user = await User.findOne({ 
+        where: { email },
+        attributes: ['id', 'email', 'firstName', 'lastName', 'role', 'twoFactorEnabled', 'twoFactorSecret', 'twoFactorBackupCodes']
+      });
+
+      if (!user || !user.twoFactorEnabled) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid request'
+        });
+      }
+
+      let isValid = false;
+
+      if (useBackupCode) {
+        // Verify backup code
+        const backupCodes = user.twoFactorBackupCodes || [];
+        const index = twoFactorService.verifyBackupCode(token, backupCodes);
+        
+        if (index !== -1) {
+          isValid = true;
+          // Remove used backup code
+          backupCodes.splice(index, 1);
+          await user.update({ twoFactorBackupCodes: backupCodes });
+          
+          logger.info('Backup code used', { userId: user.id, remaining: backupCodes.length });
+        }
+      } else {
+        // Verify TOTP token
+        isValid = twoFactorService.verifyToken(token, user.twoFactorSecret);
+      }
+
+      if (!isValid) {
+        logger.warn('Invalid 2FA token', { userId: user.id, email });
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid verification code'
+        });
+      }
+
+      // Generate auth token
+      const authToken = await authService.generateToken(user.id);
+
+      // Update last login
+      await user.update({ lastLogin: new Date() });
+
+      logger.info('2FA verification successful', { userId: user.id });
+
+      res.json({
+        success: true,
+        message: '2FA verification successful',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role
+          },
+          token: authToken
+        }
+      });
+    } catch (error) {
+      logger.error('2FA verify error:', error);
       next(error);
     }
   }

@@ -32,4 +32,10 @@ router.post('/reset-password', strictRateLimiter, authController.resetPassword);
 // Verify email
 router.post('/verify-email', authController.verifyEmail);
 
+// 2FA routes
+router.post('/2fa/setup', authenticateToken, authController.setup2FA);
+router.post('/2fa/enable', authenticateToken, authController.enable2FA);
+router.post('/2fa/disable', authenticateToken, authController.disable2FA);
+router.post('/2fa/verify', authController.verify2FA);
+
 export { router as authRouter };
