@@ -116,6 +116,16 @@ router.put('/',
       const newGeneral = { ...currentGeneral, ...updates };
       await settingsService.set('general', newGeneral, req.user.id, 'General system settings');
       updatedSettings.general = newGeneral;
+      
+      // SYNC: Also update maintenance.enabled for public endpoint compatibility
+      if (updates.maintenanceMode !== undefined) {
+        await settingsService.set('maintenance.enabled', updates.maintenanceMode, req.user.id, 'Maintenance mode toggle');
+      }
+      
+      // SYNC: Also update general.allowRegistration
+      if (updates.registrationEnabled !== undefined) {
+        await settingsService.set('general.allowRegistration', updates.registrationEnabled, req.user.id, 'Registration toggle');
+      }
     }
 
     // Handle feature flags
