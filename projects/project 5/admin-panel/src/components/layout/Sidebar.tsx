@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Globe,
   CheckCircle,
-  FileText
+  FileText,
+  DollarSign,
+  ArrowDownUp
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { toggleSidebar } from '../../store/slices/themeSlice';
@@ -40,9 +42,15 @@ const navigation = [
     permission: 'orders.view',
   },
   {
+    name: 'Transactions',
+    href: '/transactions',
+    icon: ArrowDownUp,
+    permission: 'transactions.view',
+  },
+  {
     name: 'Balance Management',
     href: '/balance',
-    icon: CreditCard,
+    icon: DollarSign,
     permission: 'users.view',
   },
   {
@@ -91,7 +99,7 @@ const navigation = [
     name: 'Audit Logs',
     href: '/audit-logs',
     icon: FileText,
-    permission: 'audit.view',
+    permission: 'audit_logs.view',
   },
   {
     name: 'Settings',
