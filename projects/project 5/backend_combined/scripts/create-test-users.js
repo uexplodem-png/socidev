@@ -8,17 +8,15 @@ async function createTestUsers() {
     await sequelize.authenticate();
     console.log('✅ Database connected');
 
-    // Hash the password
+    // Password (will be hashed by Sequelize hooks)
     const password = 'Meva1618';
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Users to create
     const users = [
       {
         email: 'superadmin@gmail.com',
         username: 'superadmin',
-        password: hashedPassword,
+        password: password,
         firstName: 'Super',
         lastName: 'Admin',
         role: 'super_admin',
@@ -30,7 +28,7 @@ async function createTestUsers() {
       {
         email: 'taskdoer@gmail.com',
         username: 'taskdoer',
-        password: hashedPassword,
+        password: password,
         firstName: 'Task',
         lastName: 'Doer',
         role: 'task_doer',
@@ -42,7 +40,7 @@ async function createTestUsers() {
       {
         email: 'taskgiver@gmail.com',
         username: 'taskgiver',
-        password: hashedPassword,
+        password: password,
         firstName: 'Task',
         lastName: 'Giver',
         role: 'task_giver',
@@ -65,7 +63,7 @@ async function createTestUsers() {
         if (existingUser) {
           console.log(`⚠️  User ${userData.email} already exists, updating...`);
           await existingUser.update({
-            password: hashedPassword,
+            password: password,
             balance: userData.balance,
             status: 'active',
             role: userData.role,
