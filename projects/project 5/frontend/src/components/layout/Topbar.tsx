@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   User,
   Settings,
@@ -141,18 +142,20 @@ export const Topbar = () => {
               {/* Dropdown Menu */}
               {isMenuOpen && (
                 <div className='absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
-                  <a
-                    href='/profile'
+                  <Link
+                    to='/profile'
+                    onClick={() => setIsMenuOpen(false)}
                     className='flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50'>
                     <User className='w-4 h-4' />
                     {t("profile")}
-                  </a>
-                  <a
-                    href='/settings'
+                  </Link>
+                  <Link
+                    to='/settings'
+                    onClick={() => setIsMenuOpen(false)}
                     className='flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50'>
                     <Settings className='w-4 h-4' />
                     {t("settings")}
-                  </a>
+                  </Link>
                   <hr className='my-1' />
                   <button
                     onClick={logout}
