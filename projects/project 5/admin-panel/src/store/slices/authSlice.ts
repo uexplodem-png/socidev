@@ -15,6 +15,10 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
+      // Clear all storage before login to ensure fresh state
+      localStorage.clear();
+      sessionStorage.clear();
+      
       const response = await authAPI.login(credentials);
       localStorage.setItem('token', response.token);
       return response;
@@ -41,7 +45,9 @@ export const validateToken = createAsyncThunk(
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
-    localStorage.removeItem('token');
+    // Clear all localStorage and sessionStorage
+    localStorage.clear();
+    sessionStorage.clear();
     return null;
   }
 );
@@ -56,7 +62,9 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.permissions = [];
       state.loading = false;
-      localStorage.removeItem('token');
+      // Clear all localStorage and sessionStorage
+      localStorage.clear();
+      sessionStorage.clear();
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
@@ -96,13 +104,15 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.permissions = action.payload.user.permissions || [];
       })
-      .addCase(validateToken.rejected, (state, action) => {
+      .addCase(validateToken.rejected, (state) => {
         state.loading = false;
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
         state.permissions = [];
-        localStorage.removeItem('token');
+        // Clear all storage when token validation fails
+        localStorage.clear();
+        sessionStorage.clear();
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;

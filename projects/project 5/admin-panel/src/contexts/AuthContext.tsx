@@ -82,6 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await response.json();
       
+      // Clear all storage first to ensure fresh state
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Set new auth data
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auth-token', data.token);
@@ -95,7 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth-token');
+    // Clear all localStorage and sessionStorage
+    localStorage.clear();
+    sessionStorage.clear();
   };
 
   const value = {
