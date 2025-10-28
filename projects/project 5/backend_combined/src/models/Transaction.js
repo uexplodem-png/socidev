@@ -63,21 +63,25 @@ const Transaction = sequelize.define(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
-    balance_before: {
+    balanceBefore: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
+      field: 'balance_before',
     },
-    balance_after: {
+    balanceAfter: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
+      field: 'balance_after',
     },
-    processed_at: {
+    processedAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'processed_at',
     },
-    processed_by: {
+    processedBy: {
       type: DataTypes.UUID,
       allowNull: true,
+      field: 'processed_by',
       references: {
         model: User,
         key: "id",
@@ -96,7 +100,7 @@ User.hasMany(Transaction, { foreignKey: "userId" });
 Transaction.belongsTo(Order, { foreignKey: "orderId" });
 Order.hasOne(Transaction, { foreignKey: "orderId" });
 
-Transaction.belongsTo(User, { foreignKey: "processed_by" });
+Transaction.belongsTo(User, { as: 'processor', foreignKey: "processedBy" });
 
 export default Transaction;
 
