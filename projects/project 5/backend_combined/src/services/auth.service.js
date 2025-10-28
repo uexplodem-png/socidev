@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import User from '../models/User.js';
 import { ApiError } from '../utils/ApiError.js';
+import permissionsService from './permissionsService.js';
 
 export class AuthService {
   async register(userData) {
@@ -17,7 +18,7 @@ export class AuthService {
     }
 
     const user = await User.create(userData);
-    const token = this.generateToken(user.id);
+    const token = await this.generateToken(user.id);
 
     return {
       token,
@@ -46,14 +47,14 @@ export class AuthService {
     try {
       await user.update({ lastLogin: now });
       
-      const token = this.generateToken(user.id);
+      const token = await this.generateToken(user.id);
       return {
         token,
         user: this.sanitizeUser(user)
       };
     } catch (error) {
       // Even if update fails, allow login to proceed
-      const token = this.generateToken(user.id);
+      const token = await this.generateToken(user.id);
       return {
         token,
         user: this.sanitizeUser(user)
@@ -61,9 +62,17 @@ export class AuthService {
     }
   }
 
-  generateToken(userId) {
+  async generateToken(userId) {
+    // Get user permissions and roles for JWT
+    const permissions = await permissionsService.getUserPermissions(userId);
+    const roles = await permissionsService.getUserRoles(userId);
+    
     return jwt.sign(
-      { userId },
+      { 
+        userId,
+        permissions,
+        roles: roles.map(r => ({ id: r.id, key: r.key, label: r.label }))
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );

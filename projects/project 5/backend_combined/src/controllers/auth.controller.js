@@ -76,7 +76,7 @@ export class AuthController {
       }
 
       // Generate tokens
-      const token = authService.generateToken(user.id);
+      const token = await authService.generateToken(user.id);
 
       res.status(201).json({
         success: true,
@@ -163,7 +163,7 @@ export class AuthController {
       logger.info('Last login timestamp updated', { userId: user.id, email });
 
       // Generate tokens
-      const token = authService.generateToken(user.id);
+      const token = await authService.generateToken(user.id);
       
       logger.info('Login successful', { userId: user.id, email });
       
