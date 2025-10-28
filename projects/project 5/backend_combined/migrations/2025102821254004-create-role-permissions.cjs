@@ -28,6 +28,16 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      mode: {
+        type: Sequelize.ENUM('all', 'taskDoer', 'taskGiver'),
+        allowNull: false,
+        defaultValue: 'all'
+      },
+      allow: {
+        type: Sequelize.TINYINT,
+        allowNull: false,
+        defaultValue: 1
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

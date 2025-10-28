@@ -21,6 +21,7 @@ import {
   maintenanceMode, 
   sanitizeInput 
 } from './middleware/security.js';
+import { initializeDatabase } from './utils/initializeDatabase.js';
 
 // Import routes
 import { apiRouter } from './routes/index.js';
@@ -133,6 +134,9 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDatabase();
+    
+    // Initialize database (permissions, roles, settings)
+    await initializeDatabase();
     
     app.listen(PORT, () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);
