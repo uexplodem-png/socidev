@@ -3,9 +3,13 @@ import { TaskController, uploadScreenshot } from "../controllers/task.controller
 import { authenticateToken as auth } from "../middleware/auth.js";
 import { validateTaskCompletion } from "../validators/task.validator.js";
 import { rateLimiter } from "../middleware/rate-limiter.js";
+import { enforceFeatureFlag } from "../middleware/settingsEnforcement.js";
 
 const router = express.Router();
 const taskController = new TaskController();
+
+// Apply feature flag check to all task routes
+router.use(enforceFeatureFlag('features.tasks.moduleEnabled', 'Tasks module is currently disabled'));
 
 // Get available tasks
 router.get(

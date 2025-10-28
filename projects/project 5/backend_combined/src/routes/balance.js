@@ -2,14 +2,26 @@ import express from "express";
 import { body } from "express-validator";
 import { BalanceController } from "../controllers/balance.controller.js";
 import { authenticateToken as auth } from "../middleware/auth.js";
+import { enforceFeatureFlag } from "../middleware/settingsEnforcement.js";
 
 const router = express.Router();
 const balanceController = new BalanceController();
 
-// Add balance
+// Get balance (always allowed - users need to see their balance)
+router.get("/", auth, balanceController.getBalance);
+
+// Get transactions - check if transactions module is enabled
+router.get("/transactions", 
+  auth, 
+  enforceFeatureFlag('features.transactions.moduleEnabled', 'Transactions module is currently disabled'),
+  balanceController.getTransactions
+);
+
+// Add balance - check if deposits are enabled
 router.post(
   "/deposit",
   auth,
+  enforceFeatureFlag('features.transactions.moduleEnabled', 'Deposits are currently disabled'),
   [
     body("amount")
       .isFloat({ min: 0.01 })
@@ -22,10 +34,11 @@ router.post(
   balanceController.addBalance
 );
 
-// Withdraw balance
+// Withdraw balance - check if withdrawals are enabled
 router.post(
   "/withdraw",
   auth,
+  enforceFeatureFlag('features.transactions.withdrawalsEnabled', 'Withdrawals are currently disabled'),
   [
     body("amount")
       .isFloat({ min: 0.01 })
@@ -37,11 +50,5 @@ router.post(
   ],
   balanceController.withdrawBalance
 );
-
-// Get transactions
-router.get("/transactions", auth, balanceController.getTransactions);
-
-// Get balance
-router.get("/", auth, balanceController.getBalance);
 
 export { router as balanceRouter };

@@ -6,9 +6,13 @@ import {
   validateBulkOrder,
   validateOrderReport,
 } from "../validators/order.validator.js";
+import { enforceFeatureFlag } from "../middleware/settingsEnforcement.js";
 
 const router = express.Router();
 const orderController = new OrderController();
+
+// Apply feature flag check to all order routes
+router.use(enforceFeatureFlag('features.orders.moduleEnabled', 'Orders module is currently disabled'));
 
 // Get order statistics
 router.get("/stats", auth, orderController.getOrderStats);
