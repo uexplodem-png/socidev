@@ -276,16 +276,16 @@ export function enforceModeRequirements(mode) {
         // Check if task givers require verification
         const requireVerification = await settingsService.get('modes.taskGiver.requireVerification', false);
         
-        if (requireVerification && !user.verified) {
+        if (requireVerification && !user.emailVerified) {
           logger.warn('Task giver verification required', {
             userId: user.id,
-            verified: user.verified
+            emailVerified: user.emailVerified
           });
           
           return res.status(403).json({
             success: false,
             code: 'VERIFICATION_REQUIRED',
-            message: 'Account verification is required to create tasks'
+            message: 'Email verification is required to create orders. Please verify your email address.'
           });
         }
         
@@ -302,7 +302,7 @@ export function enforceModeRequirements(mode) {
           return res.status(403).json({
             success: false,
             code: 'INSUFFICIENT_BALANCE',
-            message: `Minimum balance of ${minBalance} required to create tasks`,
+            message: `Minimum balance of ${minBalance} is required to create orders. Your current balance is ${user.balance}.`,
             required: minBalance,
             current: user.balance
           });

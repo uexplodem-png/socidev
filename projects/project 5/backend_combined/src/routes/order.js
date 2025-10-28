@@ -6,7 +6,7 @@ import {
   validateBulkOrder,
   validateOrderReport,
 } from "../validators/order.validator.js";
-import { enforceFeatureFlag } from "../middleware/settingsEnforcement.js";
+import { enforceFeatureFlag, enforceModeRequirements } from "../middleware/settingsEnforcement.js";
 
 const router = express.Router();
 const orderController = new OrderController();
@@ -26,11 +26,11 @@ router.get("/:id", auth, orderController.getOrderDetails);
 // Get specific order stats (progress tracking)
 router.get("/:id/stats", auth, orderController.getOrderStatsById);
 
-// Create single order
-router.post("/", auth, validateOrder, orderController.createOrder);
+// Create single order - requires task giver verification and minimum balance
+router.post("/", auth, enforceModeRequirements('task_giver'), validateOrder, orderController.createOrder);
 
-// Create bulk orders
-router.post("/bulk", auth, validateBulkOrder, orderController.createBulkOrders);
+// Create bulk orders - requires task giver verification and minimum balance
+router.post("/bulk", auth, enforceModeRequirements('task_giver'), validateBulkOrder, orderController.createBulkOrders);
 
 // Report order issue
 router.post(
@@ -40,7 +40,7 @@ router.post(
   orderController.reportIssue
 );
 
-// Repeat order
-router.post("/:id/repeat", auth, orderController.repeatOrder);
+// Repeat order - requires task giver verification and minimum balance
+router.post("/:id/repeat", auth, enforceModeRequirements('task_giver'), orderController.repeatOrder);
 
 export { router as orderRouter };
