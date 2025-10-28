@@ -69,24 +69,24 @@ export default function DashboardPage() {
   // Calculate combined stats based on user mode
   const combinedStats = isTaskDoer
     ? {
-        activeDevices: dashboardStats?.activeDevices?.value || 0,
-        completedTasks: dashboardStats?.completedTasks?.value || 0,
-        totalEarned: dashboardStats?.totalEarned?.value || 0,
-        totalTasks: dashboardStats?.completedTasks?.total || 0,
-        activeDevicesGrowth: dashboardStats?.activeDevices?.growth || 0,
-        completedTasksGrowth: dashboardStats?.completedTasks?.growth || 0,
-        totalEarnedGrowth: dashboardStats?.totalEarned?.growth || 0,
-      }
+      activeDevices: dashboardStats?.activeDevices?.value || 0,
+      completedTasks: dashboardStats?.completedTasks?.value || 0,
+      totalEarned: dashboardStats?.totalEarned?.value || 0,
+      totalTasks: dashboardStats?.completedTasks?.total || 0,
+      activeDevicesGrowth: dashboardStats?.activeDevices?.growth || 0,
+      completedTasksGrowth: dashboardStats?.completedTasks?.growth || 0,
+      totalEarnedGrowth: dashboardStats?.totalEarned?.growth || 0,
+    }
     : {
-        activeOrders: dashboardStats?.activeOrders?.value || 0,
-        completedOrders: dashboardStats?.completedOrders?.value || 0,
-        totalOrders: dashboardStats?.totalOrders?.value || 0,
-        totalSpent: dashboardStats?.totalSpent?.value || 0,
-        activeOrdersGrowth: dashboardStats?.activeOrders?.growth || 0,
-        completedOrdersGrowth: dashboardStats?.completedOrders?.growth || 0,
-        totalOrdersGrowth: dashboardStats?.totalOrders?.growth || 0,
-        totalSpentGrowth: dashboardStats?.totalSpent?.growth || 0,
-      };
+      activeOrders: dashboardStats?.activeOrders?.value || 0,
+      completedOrders: dashboardStats?.completedOrders?.value || 0,
+      totalOrders: dashboardStats?.totalOrders?.value || 0,
+      totalSpent: dashboardStats?.totalSpent?.value || 0,
+      activeOrdersGrowth: dashboardStats?.activeOrders?.growth || 0,
+      completedOrdersGrowth: dashboardStats?.completedOrders?.growth || 0,
+      totalOrdersGrowth: dashboardStats?.totalOrders?.growth || 0,
+      totalSpentGrowth: dashboardStats?.totalSpent?.growth || 0,
+    };
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-50 to-gray-100'>
@@ -107,8 +107,8 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className='flex items-center gap-4'>
-              <Button 
-                variant='outline' 
+              <Button
+                variant='outline'
                 className='flex items-center gap-2'
                 onClick={handleRefresh}
                 disabled={isLoading}>
@@ -262,8 +262,8 @@ export default function DashboardPage() {
                         {isTaskDoer
                           ? t("viewTasks")
                           : platform.id === "youtube"
-                          ? t("manageChannels")
-                          : t("manageAccounts")}
+                            ? t("manageChannels")
+                            : t("manageAccounts")}
                         <ArrowRight className='w-4 h-4 ml-2' />
                       </Button>
                     </div>

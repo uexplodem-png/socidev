@@ -6,32 +6,89 @@ import Modal from '../components/ui/Modal';
 import { usersAPI, withdrawalsAPI } from '../services/api';
 import { User } from '../types';
 import toast from 'react-hot-toast';
-import { Search, FileText } from 'lucide-react';
+import { 
+    Search, 
+    FileText, 
+    Download, 
+    Filter, 
+    DollarSign, 
+    TrendingUp, 
+    TrendingDown,
+    Clock,
+    CheckCircle,
+    XCircle,
+    AlertCircle,
+    RefreshCw,
+    Calendar,
+    User as UserIcon
+} from 'lucide-react';
 
 interface BalanceEntry {
     id: string;
     userId: string;
     userName: string;
+    userEmail?: string;
     amount: number;
     type: 'deposit' | 'withdrawal' | 'adjustment';
-    status: 'pending' | 'approved' | 'rejected' | 'completed';
+    status: 'pending' | 'approved' | 'rejected' | 'completed' | 'failed';
     description: string;
+    method?: string;
+    reference?: string;
     notes?: string;
     createdAt: string;
     processedAt?: string;
     processedBy?: string;
 }
 
+interface BalanceOverview {
+    totalBalance: number;
+    pendingDeposits: number;
+    pendingWithdrawals: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    activeUsers: number;
+}
+
 const Balance: React.FC = () => {
     const { hasPermission } = usePermissions();
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [showAddBalanceModal, setShowAddBalanceModal] = useState(false);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showNotesModal, setShowNotesModal] = useState(false);
+    const [showFilterModal, setShowFilterModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<BalanceEntry | null>(null);
     const [selectedEntry, setSelectedEntry] = useState<BalanceEntry | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [balanceEntries, setBalanceEntries] = useState<BalanceEntry[]>([]);
+    const [allEntries, setAllEntries] = useState<BalanceEntry[]>([]);
+
+    // Overview stats
+    const [overview, setOverview] = useState<BalanceOverview>({
+        totalBalance: 0,
+        pendingDeposits: 0,
+        pendingWithdrawals: 0,
+        totalDeposits: 0,
+        totalWithdrawals: 0,
+        activeUsers: 0,
+    });
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+
+    // Filters
+    const [filters, setFilters] = useState({
+        search: '',
+        type: 'all',
+        status: 'all',
+        dateFrom: '',
+        dateTo: '',
+        minAmount: '',
+        maxAmount: '',
+    });
 
     // State for add balance form
     const [newBalanceEntry, setNewBalanceEntry] = useState({
