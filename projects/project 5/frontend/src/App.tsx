@@ -23,6 +23,7 @@ import { BalanceProvider } from "./context/BalanceContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { TasksPage } from "./pages/tasks";
 import TestPage from "./pages/test";
+import { MaintenanceBanner } from "./components/MaintenanceBanner";
 
 
 
@@ -242,6 +243,7 @@ function App() {
       <AuthProvider>
         <UserModeProvider>
           <BalanceProvider>
+            <MaintenanceBanner />
             <AppRoutes />
           </BalanceProvider>
         </UserModeProvider>

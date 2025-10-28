@@ -8,6 +8,7 @@ import { userRouter } from "./user.js";
 import { taskRouter } from "./tasks.js";
 import { adminRouter } from "./admin/index.js";
 import { platformsRouter } from "./platforms.js";
+import { settingsRouter } from "./settings.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -15,6 +16,7 @@ const router = express.Router();
 // Public routes
 router.use("/auth", authRouter);
 router.use("/platforms", platformsRouter);
+router.use("/settings", settingsRouter);
 
 // Protected routes (require authentication)
 router.use(authenticateToken);
