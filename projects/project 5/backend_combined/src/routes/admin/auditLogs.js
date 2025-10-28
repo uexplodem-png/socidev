@@ -4,6 +4,7 @@ import { AuditLog, User } from '../../models/index.js';
 import { validate } from '../../middleware/validation.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
+import { logAudit } from '../../utils/logging.js';
 import Joi from 'joi';
 import { sequelize } from '../../config/database.js';
 
@@ -29,7 +30,7 @@ const router = express.Router();
  *         description: Audit log statistics
  */
 router.get('/stats',
-  requirePermission('audit.view'),
+  requirePermission('audit_logs.view'),
   validate(Joi.object({
     timeRange: Joi.string().valid('7d', '30d', '90d').default('30d')
   }), 'query'),
@@ -141,7 +142,7 @@ router.get('/stats',
  *               type: string
  */
 router.get('/export',
-  requirePermission('audit.view'),
+  requirePermission('audit_logs.view'),
   validate(Joi.object({
     startDate: Joi.date().optional(),
     endDate: Joi.date().optional(),
@@ -210,19 +211,16 @@ router.get('/export',
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
     // Log the export
-    await AuditLog.log(
-      req.user.id,
-      'AUDIT_LOGS_EXPORTED',
-      'system',
-      'audit_logs',
-      null,
-      `Audit logs exported - ${auditLogs.length} records`,
-      {
+    await logAudit(req, {
+      action: 'AUDIT_LOGS_EXPORTED',
+      resource: 'system',
+      resourceId: 'audit_logs',
+      description: `Audit logs exported - ${auditLogs.length} records`,
+      metadata: {
         recordCount: auditLogs.length,
         filters: { startDate, endDate, action, resource },
-      },
-      req
-    );
+      }
+    });
 
     res.send(csvContent);
   })
@@ -272,7 +270,7 @@ router.get('/export',
  *         description: List of audit logs with pagination
  */
 router.get('/',
-  requirePermission('audit.view'),
+  requirePermission('audit_logs.view'),
   validate(Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),

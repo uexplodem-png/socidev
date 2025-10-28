@@ -7,6 +7,7 @@ import tasksRoutes from './tasks.js';
 import transactionsRoutes from './transactions.js';
 import withdrawalsRoutes from './withdrawals.js';
 import auditLogsRoutes from './auditLogs.js';
+import actionLogsRoutes from './actionLogs.js';
 import settingsRoutes from './settings.js';
 import platformsServicesRoutes from './platformsServices.js';
 import rbacRoutes from './rbac.js';
@@ -25,6 +26,7 @@ router.use('/tasks', tasksRoutes);
 router.use('/transactions', transactionsRoutes);
 router.use('/withdrawals', withdrawalsRoutes);
 router.use('/audit-logs', auditLogsRoutes);
+router.use('/action-logs', actionLogsRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/', platformsServicesRoutes);
@@ -43,6 +45,7 @@ router.get('/', (req, res) => {
       transactions: '/api/admin/transactions',
       withdrawals: '/api/admin/withdrawals',
       auditLogs: '/api/admin/audit-logs',
+      actionLogs: '/api/admin/action-logs',
       settings: '/api/admin/settings',
       rbac: '/api/admin/rbac',
     },
