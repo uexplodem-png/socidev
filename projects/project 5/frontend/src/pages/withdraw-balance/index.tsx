@@ -244,19 +244,19 @@ export const WithdrawBalancePage = () => {
                 <button
                   onClick={() => setSelectedMethod("bank_transfer")}
                   className={`w-full p-6 rounded-xl border-2 text-left transition-all ${selectedMethod === "bank_transfer"
-                      ? "border-blue-500 bg-blue-50/50"
-                      : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                    ? "border-blue-500 bg-blue-50/50"
+                    : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
                     }`}>
                   <div className='flex items-center gap-4'>
                     <div
                       className={`p-3 rounded-lg ${selectedMethod === "bank_transfer"
-                          ? "bg-blue-100"
-                          : "bg-gray-100"
+                        ? "bg-blue-100"
+                        : "bg-gray-100"
                         }`}>
                       <Building
                         className={`w-6 h-6 ${selectedMethod === "bank_transfer"
-                            ? "text-blue-600"
-                            : "text-gray-500"
+                          ? "text-blue-600"
+                          : "text-gray-500"
                           }`}
                       />
                     </div>
@@ -420,8 +420,8 @@ export const WithdrawBalancePage = () => {
                         type='button'
                         onClick={() => setAmount(preset.toString())}
                         className={`p-4 rounded-lg border transition-all ${amount === preset.toString()
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
                           }`}>
                         ₺{preset.toLocaleString()}
                       </button>
@@ -446,17 +446,17 @@ export const WithdrawBalancePage = () => {
                         <div className='flex items-center gap-4 flex-1'>
                           <div
                             className={`p-2 rounded-lg ${transaction.status === "completed"
-                                ? "bg-green-50"
-                                : transaction.status === "rejected" || transaction.status === "failed"
-                                  ? "bg-red-50"
-                                  : "bg-yellow-50"
+                              ? "bg-green-50"
+                              : transaction.status === "rejected" || transaction.status === "failed"
+                                ? "bg-red-50"
+                                : "bg-yellow-50"
                               }`}>
                             <DollarSign
                               className={`w-5 h-5 ${transaction.status === "completed"
-                                  ? "text-green-600"
-                                  : transaction.status === "rejected" || transaction.status === "failed"
-                                    ? "text-red-600"
-                                    : "text-yellow-600"
+                                ? "text-green-600"
+                                : transaction.status === "rejected" || transaction.status === "failed"
+                                  ? "text-red-600"
+                                  : "text-yellow-600"
                                 }`}
                             />
                           </div>
@@ -482,10 +482,10 @@ export const WithdrawBalancePage = () => {
                           </p>
                           <p
                             className={`text-sm ${transaction.status === "completed"
-                                ? "text-green-600"
-                                : transaction.status === "rejected" || transaction.status === "failed"
-                                  ? "text-red-600"
-                                  : "text-yellow-600"
+                              ? "text-green-600"
+                              : transaction.status === "rejected" || transaction.status === "failed"
+                                ? "text-red-600"
+                                : "text-yellow-600"
                               }`}>
                             {t(transaction.status)}
                           </p>
