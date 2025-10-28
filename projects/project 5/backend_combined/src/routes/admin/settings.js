@@ -77,9 +77,31 @@ router.get('/',
 router.put('/',
   requirePermission('settings.edit'),
   asyncHandler(async (req, res) => {
-    const updates = req.body;
+    let updates = req.body;
 
-    // Update individual settings
+    // Handle the case where frontend sends { key, value } format
+    if (updates.key && updates.value !== undefined) {
+      const { key, value } = updates;
+      
+      // Store the setting directly using the key
+      await settingsService.set(key, value, req.user.id);
+      
+      // Log the update
+      await logAudit(req, {
+        action: 'SETTINGS_UPDATED',
+        resource: 'settings',
+        resourceId: key,
+        description: `Setting ${key} updated`,
+        metadata: { key, value }
+      });
+
+      return res.json({
+        message: 'Settings updated successfully',
+        settings: { [key]: value }
+      });
+    }
+
+    // Original handling for direct object updates
     const updatedSettings = {};
     
     // Handle general settings

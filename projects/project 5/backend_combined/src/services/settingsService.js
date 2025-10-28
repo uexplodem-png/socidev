@@ -1,5 +1,5 @@
 import { SystemSettings } from '../models/index.js';
-import { logger } from '../utils/logger.js';
+import logger from '../config/logger.js';
 
 class SettingsService {
   constructor() {
@@ -21,14 +21,28 @@ class SettingsService {
         return cached;
       }
 
-      // Fetch from DB
+      // Fetch from DB (without raw to let Sequelize parse JSON)
       const setting = await SystemSettings.findOne({
         where: { key },
-        attributes: ['key', 'value'],
-        raw: true
+        attributes: ['key', 'value']
       });
 
-      const value = setting ? setting.value : defaultValue;
+      if (!setting) {
+        return defaultValue;
+      }
+
+      // Get the value - Sequelize should have already parsed the JSON
+      let value = setting.value;
+      
+      // If it's still a string, parse it manually (fallback for MariaDB/MySQL)
+      if (typeof value === 'string') {
+        try {
+          value = JSON.parse(value);
+        } catch (e) {
+          // If parsing fails, return as-is
+          logger.warn(`Failed to parse JSON for setting ${key}:`, e.message);
+        }
+      }
       
       // Cache the result
       this._setCache(key, value);
@@ -84,19 +98,18 @@ class SettingsService {
   /**
    * Set a setting value
    * @param {string} key - Setting key
-   * @param {*} value - Setting value (will be JSON stringified)
+   * @param {*} value - Setting value (will be stored as JSON)
    * @param {string} actorId - User ID making the change
    * @param {string} description - Optional description
    * @returns {Promise<Object>} Updated setting
    */
   async set(key, value, actorId, description = null) {
     try {
-      // Validate value is JSON-serializable
-      const jsonValue = typeof value === 'object' ? value : { value };
-
+      // Value is already an object, store it directly
+      // Sequelize will handle JSON serialization for DataTypes.JSON fields
       const [setting, created] = await SystemSettings.upsert({
         key,
-        value: jsonValue,
+        value: value, // Store value directly, Sequelize handles JSON serialization
         description,
         updated_by: actorId
       }, {
@@ -123,11 +136,28 @@ class SettingsService {
     try {
       const settings = await SystemSettings.findAll({
         attributes: ['key', 'value', 'description', 'updated_by', 'updated_at'],
-        order: [['key', 'ASC']],
-        raw: true
+        order: [['key', 'ASC']]
       });
 
-      return settings;
+      // Parse JSON values if they're strings (fallback for MariaDB/MySQL)
+      return settings.map(setting => {
+        let value = setting.value;
+        if (typeof value === 'string') {
+          try {
+            value = JSON.parse(value);
+          } catch (e) {
+            logger.warn(`Failed to parse JSON for setting ${setting.key}:`, e.message);
+          }
+        }
+        
+        return {
+          key: setting.key,
+          value: value,
+          description: setting.description,
+          updated_by: setting.updated_by,
+          updated_at: setting.updated_at
+        };
+      });
     } catch (error) {
       logger.error('SettingsService.list error:', error);
       return [];
