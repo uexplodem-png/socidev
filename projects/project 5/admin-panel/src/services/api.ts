@@ -62,6 +62,19 @@ export const dashboardAPI = {
   },
 };
 
+// Settings API
+export const settingsAPI = {
+  get: async () => {
+    return realApiService.getSettings();
+  },
+  update: async (data: any) => {
+    return realApiService.updateSettings(data);
+  },
+  resetData: async () => {
+    return realApiService.resetData();
+  }
+};
+
 // Mock Data API
 export const mockDataAPI = {
   resetData: async () => {

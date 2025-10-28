@@ -694,6 +694,26 @@ class RealApiService {
         return response.transaction;
     }
 
+    // Settings API
+    async getSettings(): Promise<any> {
+        return this.request<any>(`/admin/settings`, {
+            method: 'GET',
+        });
+    }
+
+    async updateSettings(data: any): Promise<any> {
+        return this.request<any>(`/admin/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async resetData(): Promise<any> {
+        return this.request<any>(`/admin/settings/reset-data`, {
+            method: 'POST',
+        });
+    }
+
     // Platforms API
     async getPlatforms(params: FilterParams = {}): Promise<PaginatedResponse<PlatformConfig>> {
         const queryParams = new URLSearchParams();

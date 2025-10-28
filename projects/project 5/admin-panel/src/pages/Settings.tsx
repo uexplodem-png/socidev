@@ -7,19 +7,15 @@ import {
   Shield,
   Globe,
   DollarSign,
-  Clock,
   AlertTriangle,
   Lock,
   Bell,
   BarChart3,
   Zap,
-  Key,
-  Mail,
-  Smartphone,
-  UserCheck,
-  Eye
+  
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { settingsAPI } from '../services/api';
 
 interface SystemSettings {
   siteName: string;
@@ -68,41 +64,46 @@ const Settings: React.FC = () => {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/admin/settings', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const data = await settingsAPI.get();
+      setSettings({
+        // Base defaults
+        siteName: data.siteName ?? 'SociDev',
+        maintenanceMode: data.maintenanceMode ?? false,
+        registrationEnabled: data.registrationEnabled ?? true,
+        emailNotifications: data.emailNotifications ?? true,
+  taskAutoApproval: data.taskAutoApproval ?? false,
+  maxTasksPerUser: data.maxTasksPerUser ?? 10,
+  taskApprovalTimeoutHours: data.taskApprovalTimeoutHours ?? 24,
+  orderTimeoutHours: data.orderTimeoutHours ?? 48,
+        minWithdrawalAmount: data.minWithdrawalAmount ?? 10,
+        withdrawalFee: data.withdrawalFee ?? 0,
+        currencies: data.currencies ?? ['USD'],
+        supportedPlatforms: data.supportedPlatforms ?? [],
+        // Security settings defaults
+        twoFactorAuth: data.twoFactorAuth ?? false,
+        passwordMinLength: data.passwordMinLength ?? 8,
+        sessionTimeout: data.sessionTimeout ?? 30,
+        maxLoginAttempts: data.maxLoginAttempts ?? 5,
+        lockoutDuration: data.lockoutDuration ?? 30,
+        // Notification settings defaults
+        smsNotifications: data.smsNotifications ?? false,
+        pushNotifications: data.pushNotifications ?? false,
+        adminNotifications: data.adminNotifications ?? true,
+        userActivityNotifications: data.userActivityNotifications ?? false,
+        // Analytics settings defaults
+        enableAnalytics: data.enableAnalytics ?? true,
+        analyticsRetentionDays: data.analyticsRetentionDays ?? 90,
+        trackUserBehavior: data.trackUserBehavior ?? true,
+        // Performance settings defaults
+        cacheEnabled: data.cacheEnabled ?? true,
+        cacheTTL: data.cacheTTL ?? 300,
+        apiRateLimit: data.apiRateLimit ?? 1000,
+        // Advanced settings defaults
+        debugMode: data.debugMode ?? false,
+        logLevel: data.logLevel ?? 'info',
+        autoBackup: data.autoBackup ?? true,
+        backupFrequency: data.backupFrequency ?? 'daily'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
-          ...data,
-          // Security settings defaults
-          twoFactorAuth: data.twoFactorAuth || false,
-          passwordMinLength: data.passwordMinLength || 8,
-          sessionTimeout: data.sessionTimeout || 30,
-          maxLoginAttempts: data.maxLoginAttempts || 5,
-          lockoutDuration: data.lockoutDuration || 30,
-          // Notification settings defaults
-          smsNotifications: data.smsNotifications || false,
-          pushNotifications: data.pushNotifications || false,
-          adminNotifications: data.adminNotifications || true,
-          userActivityNotifications: data.userActivityNotifications || false,
-          // Analytics settings defaults
-          enableAnalytics: data.enableAnalytics || true,
-          analyticsRetentionDays: data.analyticsRetentionDays || 90,
-          trackUserBehavior: data.trackUserBehavior || true,
-          // Performance settings defaults
-          cacheEnabled: data.cacheEnabled || true,
-          cacheTTL: data.cacheTTL || 300,
-          apiRateLimit: data.apiRateLimit || 1000,
-          // Advanced settings defaults
-          debugMode: data.debugMode || false,
-          logLevel: data.logLevel || 'info',
-          autoBackup: data.autoBackup || true,
-          backupFrequency: data.backupFrequency || 'daily'
-        });
-      }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
       toast.error('Failed to load settings');
@@ -120,19 +121,8 @@ const Settings: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(settings)
-      });
-
-      if (response.ok) {
-        toast.success('Settings saved successfully');
-      }
+      await settingsAPI.update(settings);
+      toast.success('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
@@ -148,17 +138,10 @@ const Settings: React.FC = () => {
 
     setIsResetting(true);
     try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/admin/settings/reset-data', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        toast.success('Data reset successfully');
-        // Reload the page to refresh all data
-        window.location.reload();
-      }
+      await settingsAPI.resetData();
+      toast.success('Data reset successfully');
+      // Reload the page to refresh all data
+      window.location.reload();
     } catch (error) {
       console.error('Failed to reset data:', error);
       toast.error('Failed to reset data');
