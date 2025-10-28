@@ -8,17 +8,17 @@ const Device = sequelize.define('Device', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  user_id: {
+  userId: {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'user_id'
   },
-  device_name: {
+  deviceName: {
     type: DataTypes.STRING,
     allowNull: false,
     field: 'device_name'
   },
-  device_type: {
+  deviceType: {
     type: DataTypes.ENUM('mobile', 'desktop', 'tablet', 'server'),
     allowNull: false,
     field: 'device_type'
@@ -31,7 +31,7 @@ const Device = sequelize.define('Device', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
-  ip_address: {
+  ipAddress: {
     type: DataTypes.STRING(45),
     allowNull: true,
     field: 'ip_address'
@@ -44,27 +44,27 @@ const Device = sequelize.define('Device', {
     type: DataTypes.ENUM('active', 'inactive', 'banned', 'maintenance'),
     defaultValue: 'active'
   },
-  last_active: {
+  lastActive: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_active'
   },
-  tasks_completed: {
+  tasksCompleted: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'tasks_completed'
   },
-  device_fingerprint: {
+  deviceFingerprint: {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'device_fingerprint'
   },
-  user_agent: {
+  userAgent: {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'user_agent'
   },
-  screen_resolution: {
+  screenResolution: {
     type: DataTypes.STRING(50),
     allowNull: true,
     field: 'screen_resolution'

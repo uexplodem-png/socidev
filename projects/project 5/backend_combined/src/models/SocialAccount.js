@@ -8,7 +8,7 @@ const SocialAccount = sequelize.define('SocialAccount', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  user_id: {
+  userId: {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'user_id'
@@ -21,12 +21,12 @@ const SocialAccount = sequelize.define('SocialAccount', {
     type: DataTypes.STRING(255),
     allowNull: false
   },
-  account_id: {
+  accountId: {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'account_id'
   },
-  profile_url: {
+  profileUrl: {
     type: DataTypes.STRING(500),
     allowNull: true,
     field: 'profile_url'
@@ -35,67 +35,67 @@ const SocialAccount = sequelize.define('SocialAccount', {
     type: DataTypes.ENUM('active', 'inactive', 'error', 'suspended', 'banned'),
     defaultValue: 'active'
   },
-  followers_count: {
+  followersCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'followers_count'
   },
-  following_count: {
+  followingCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'following_count'
   },
-  posts_count: {
+  postsCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'posts_count'
   },
-  last_activity: {
+  lastActivity: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_activity'
   },
-  health_score: {
+  healthScore: {
     type: DataTypes.INTEGER,
     defaultValue: 100,
     field: 'health_score'
   },
-  verification_status: {
+  verificationStatus: {
     type: DataTypes.ENUM('pending', 'verified', 'failed'),
     defaultValue: 'pending',
     field: 'verification_status'
   },
-  access_token: {
+  accessToken: {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'access_token'
   },
-  refresh_token: {
+  refreshToken: {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'refresh_token'
   },
-  token_expires_at: {
+  tokenExpiresAt: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'token_expires_at'
   },
-  account_data: {
+  accountData: {
     type: DataTypes.JSON,
     defaultValue: {},
     field: 'account_data'
   },
-  error_count: {
+  errorCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'error_count'
   },
-  last_error: {
+  lastError: {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'last_error'
   },
-  last_error_at: {
+  lastErrorAt: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_error_at'
