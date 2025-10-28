@@ -10,13 +10,15 @@ RolePermission.init(
       primaryKey: true,
       autoIncrement: true
     },
-    role_id: {
+    roleId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      field: 'role_id'
     },
-    permission_id: {
+    permissionId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      field: 'permission_id'
     },
     mode: {
       type: DataTypes.ENUM('all', 'taskDoer', 'taskGiver'),

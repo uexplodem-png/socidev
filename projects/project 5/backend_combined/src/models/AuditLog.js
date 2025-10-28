@@ -8,21 +8,24 @@ const AuditLog = sequelize.define('AuditLog', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  actor_id: {
+  actorId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'actor_id',
     references: {
       model: 'users',
       key: 'id',
     },
   },
-  actor_name: {
+  actorName: {
     type: DataTypes.STRING(255),
     allowNull: false,
+    field: 'actor_name',
   },
-  actor_email: {
+  actorEmail: {
     type: DataTypes.STRING(255),
     allowNull: false,
+    field: 'actor_email',
   },
   action: {
     type: DataTypes.STRING(100),
@@ -32,21 +35,24 @@ const AuditLog = sequelize.define('AuditLog', {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
-  resource_id: {
+  resourceId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'resource_id',
   },
-  target_user_id: {
+  targetUserId: {
     type: DataTypes.UUID,
     allowNull: true,
+    field: 'target_user_id',
     references: {
       model: 'users',
       key: 'id',
     },
   },
-  target_user_name: {
+  targetUserName: {
     type: DataTypes.STRING(255),
     allowNull: true,
+    field: 'target_user_name',
   },
   description: {
     type: DataTypes.STRING(500),
@@ -70,16 +76,19 @@ const AuditLog = sequelize.define('AuditLog', {
       this.setDataValue('metadata', value);
     },
   },
-  ip_address: {
+  ipAddress: {
     type: DataTypes.STRING(45),
     allowNull: true,
+    field: 'ip_address',
   },
-  user_agent: {
+  userAgent: {
     type: DataTypes.TEXT,
     allowNull: true,
+    field: 'user_agent',
   },
 }, {
   tableName: 'audit_logs',
+  underscored: true,
   indexes: [
     {
       fields: ['actor_id'],
@@ -122,18 +131,18 @@ AuditLog.log = async function(actorId, action, resource, resourceId, targetUserI
   const targetLastName = targetUser ? (targetUser.lastName || targetUser.last_name || '') : '';
   
   return this.create({
-    actor_id: actorId,
-    actor_name: `${actorFirstName} ${actorLastName}`,
-    actor_email: actor.email,
+    actorId: actorId,
+    actorName: `${actorFirstName} ${actorLastName}`,
+    actorEmail: actor.email,
     action,
     resource,
-    resource_id: resourceId,
-    target_user_id: targetUserId,
-    target_user_name: targetUser ? `${targetFirstName} ${targetLastName}` : null,
+    resourceId: resourceId,
+    targetUserId: targetUserId,
+    targetUserName: targetUser ? `${targetFirstName} ${targetLastName}` : null,
     description: description || `${action.replace('_', ' ')} performed on ${resource}`,
     metadata,
-    ip_address: req ? req.ip : null,
-    user_agent: req ? req.get('User-Agent') : null,
+    ipAddress: req ? req.ip : null,
+    userAgent: req ? req.get('User-Agent') : null,
   });
 };
 

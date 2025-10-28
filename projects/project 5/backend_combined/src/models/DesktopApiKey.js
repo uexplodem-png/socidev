@@ -12,6 +12,7 @@ const DesktopApiKey = sequelize.define('DesktopApiKey', {
   userId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: User,
       key: 'id'
@@ -26,11 +27,13 @@ const DesktopApiKey = sequelize.define('DesktopApiKey', {
     type: DataTypes.STRING(64),
     allowNull: false,
     unique: true,
+    field: 'api_key',
     comment: 'SHA256 hashed API key'
   },
   apiSecret: {
     type: DataTypes.STRING(128),
     allowNull: false,
+    field: 'api_secret',
     comment: 'Encrypted API secret for request signing'
   },
   permissions: {
@@ -47,24 +50,29 @@ const DesktopApiKey = sequelize.define('DesktopApiKey', {
   rateLimit: {
     type: DataTypes.INTEGER,
     defaultValue: 1000,
+    field: 'rate_limit',
     comment: 'Requests per hour'
   },
   ipWhitelist: {
     type: DataTypes.JSON,
     defaultValue: [],
+    field: 'ip_whitelist',
     comment: 'Array of whitelisted IP addresses'
   },
   lastUsedAt: {
     type: DataTypes.DATE,
-    allowNull: true
+    allowNull: true,
+    field: 'last_used_at'
   },
   lastUsedIp: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'last_used_ip'
   },
   requestCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
+    field: 'request_count',
     comment: 'Total requests made'
   },
   status: {
@@ -74,6 +82,7 @@ const DesktopApiKey = sequelize.define('DesktopApiKey', {
   expiresAt: {
     type: DataTypes.DATE,
     allowNull: true,
+    field: 'expires_at',
     comment: 'Optional expiration date'
   }
 }, {

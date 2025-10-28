@@ -12,6 +12,7 @@ const Refund = sequelize.define('Refund', {
   userId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: User,
       key: 'id'
@@ -20,6 +21,7 @@ const Refund = sequelize.define('Refund', {
   transactionId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'transaction_id',
     references: {
       model: Transaction,
       key: 'id'
@@ -38,8 +40,12 @@ const Refund = sequelize.define('Refund', {
     defaultValue: 'pending'
   },
   processedAt: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
+    field: 'processed_at'
   }
+}, {
+  tableName: 'refunds',
+  underscored: true
 });
 
 Refund.belongsTo(User, { foreignKey: 'userId' });

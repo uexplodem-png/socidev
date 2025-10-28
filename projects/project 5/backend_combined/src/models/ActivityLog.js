@@ -11,6 +11,7 @@ const ActivityLog = sequelize.define('ActivityLog', {
   userId: {
     type: DataTypes.UUID,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: User,
       key: 'id'
@@ -29,11 +30,16 @@ const ActivityLog = sequelize.define('ActivityLog', {
     defaultValue: {}
   },
   ipAddress: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING,
+    field: 'ip_address'
   },
   userAgent: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING,
+    field: 'user_agent'
   }
+}, {
+  tableName: 'activity_logs',
+  underscored: true
 });
 
 ActivityLog.belongsTo(User, { foreignKey: 'userId' });

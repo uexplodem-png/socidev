@@ -10,13 +10,15 @@ UserRole.init(
       primaryKey: true,
       autoIncrement: true
     },
-    user_id: {
+    userId: {
       type: DataTypes.STRING(36),
-      allowNull: false
+      allowNull: false,
+      field: 'user_id'
     },
-    role_id: {
+    roleId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      field: 'role_id'
     }
   },
   {

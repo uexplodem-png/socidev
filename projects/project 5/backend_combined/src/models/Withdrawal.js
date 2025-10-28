@@ -8,7 +8,7 @@ const Withdrawal = sequelize.define('Withdrawal', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  user_id: {
+  userId: {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'user_id'
@@ -30,17 +30,17 @@ const Withdrawal = sequelize.define('Withdrawal', {
     allowNull: false,
     defaultValue: {}
   },
-  processed_at: {
+  processedAt: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'processed_at'
   },
-  processed_by: {
+  processedBy: {
     type: DataTypes.UUID,
     allowNull: true,
     field: 'processed_by'
   },
-  transaction_id: {
+  transactionId: {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'transaction_id'
@@ -49,7 +49,7 @@ const Withdrawal = sequelize.define('Withdrawal', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  rejection_reason: {
+  rejectionReason: {
     type: DataTypes.STRING(500),
     allowNull: true,
     field: 'rejection_reason'
