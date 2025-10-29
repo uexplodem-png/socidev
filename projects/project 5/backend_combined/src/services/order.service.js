@@ -40,7 +40,7 @@ export class OrderService {
 
     const { rows: orders, count } = await Order.findAndCountAll({
       where,
-      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'startCount', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt'],
       limit,
       offset: (page - 1) * limit,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -74,7 +74,7 @@ export class OrderService {
   async getOrderDetails(userId, orderId) {
     const order = await Order.findOne({
       where: { id: orderId, userId },
-      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'speed', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt', 'completedAt'],
+      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'startCount', 'speed', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt', 'completedAt'],
       include: [
         {
           model: User,
