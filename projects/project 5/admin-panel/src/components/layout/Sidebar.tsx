@@ -14,8 +14,7 @@ import {
   Globe,
   CheckCircle,
   FileText,
-  DollarSign,
-  ArrowDownUp
+  DollarSign
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { toggleSidebar } from '../../store/slices/themeSlice';
@@ -40,12 +39,6 @@ const navigation = [
     href: '/orders',
     icon: ShoppingCart,
     permission: 'orders.view',
-  },
-  {
-    name: 'Transactions',
-    href: '/transactions',
-    icon: ArrowDownUp,
-    permission: 'transactions.view',
   },
   {
     name: 'Balance Management',

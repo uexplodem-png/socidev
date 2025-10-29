@@ -135,6 +135,12 @@ const Users: React.FC = () => {
             throw new Error('No user data received');
           }
 
+          // Update selectedUser with latest data including lastLogin
+          setSelectedUser({
+            ...selectedUser,
+            ...userWithDetails,
+          });
+
           // The backend includes orders, tasks, transactions, withdrawals, devices, and social accounts in the user object
           setUserOrders(userWithDetails.orders || []);
           setUserTransactions(userWithDetails.transactions || []);
@@ -153,33 +159,17 @@ const Users: React.FC = () => {
 
           // Fetch activity logs for this user (logs where this user was the actor or target)
           try {
-            // Get all audit logs without strict filters first
+            // Use the new user_id parameter to fetch logs where user is either actor OR target
             const auditData = await realApiService.getAuditLogs({
               page: 1,
               limit: 100,
+              user_id: selectedUser.id, // Backend will filter for actor_id OR target_user_id
             });
-            console.log('All audit logs:', auditData.auditLogs?.length);
-
-            // Filter logs where:
-            // 1. The actor ID matches this user (user performed the action - e.g., created order)
-            // 2. OR the target user ID matches this user (user was modified by admin)
-            const filteredLogs = (auditData.auditLogs || []).filter((log: any) => {
-              const isActor = log.actor_id === selectedUser.id;
-              const isTarget = log.target_user_id === selectedUser.id;
-              console.log('Checking log:', {
-                logActorId: log.actor_id,
-                logTargetUserId: log.target_user_id,
-                selectedUserId: selectedUser.id,
-                isActor,
-                isTarget,
-                match: isActor || isTarget
-              });
-              return isActor || isTarget;
-            });
-            console.log('Filtered logs for user:', filteredLogs.length);
-            setUserActivityLogs(filteredLogs);
+            console.log('Fetched audit logs for user:', auditData.auditLogs?.length);
+            setUserActivityLogs(auditData.auditLogs || []);
           } catch (error) {
             console.error('Error fetching activity logs:', error);
+            setUserActivityLogs([]);
           }
         } catch (error) {
           console.error('Error fetching user details:', error);

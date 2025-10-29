@@ -278,11 +278,13 @@ router.get('/',
     action: Joi.string().max(100).optional(),
     resource: Joi.string().max(50).optional(),
     actor_id: Joi.string().uuid().optional(),
+    target_user_id: Joi.string().uuid().optional(),
+    user_id: Joi.string().uuid().optional(),
     sortBy: Joi.string().valid('created_at', 'action', 'resource').default('created_at'),
     sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
   }), 'query'),
   asyncHandler(async (req, res) => {
-    const { page, limit, search, action, resource, actor_id, sortBy, sortOrder } = req.query;
+    const { page, limit, search, action, resource, actor_id, target_user_id, user_id, sortBy, sortOrder } = req.query;
 
     // Build where clause
     const where = {};
@@ -306,6 +308,18 @@ router.get('/',
 
     if (actor_id) {
       where.actor_id = actor_id;
+    }
+
+    if (target_user_id) {
+      where.target_user_id = target_user_id;
+    }
+
+    // If user_id is provided, get logs where user is either actor OR target
+    if (user_id) {
+      where[Op.or] = [
+        { actor_id: user_id },
+        { target_user_id: user_id },
+      ];
     }
 
     // Calculate offset

@@ -11,7 +11,6 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Orders from './pages/Orders';
 import Tasks from './pages/Tasks';
-import Transactions from './pages/Transactions';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
 // Newly added pages
@@ -88,13 +87,6 @@ function App() {
             <Route path="task-submissions" element={
               <ProtectedRouteWithPermission permission="tasks.view">
                 <TaskSubmissions />
-              </ProtectedRouteWithPermission>
-            } />
-
-            {/* Transactions - requires transactions.view */}
-            <Route path="transactions" element={
-              <ProtectedRouteWithPermission permission="transactions.view">
-                <Transactions />
               </ProtectedRouteWithPermission>
             } />
 
