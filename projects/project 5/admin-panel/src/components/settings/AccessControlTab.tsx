@@ -32,6 +32,7 @@ const AccessControlTab: React.FC = () => {
     const [selectedRole, setSelectedRole] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         loadRBACData();
@@ -57,6 +58,22 @@ const AccessControlTab: React.FC = () => {
             toast.error('Failed to load access control data');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await loadRBACData();
+            if (selectedRole) {
+                await loadRolePermissions(selectedRole);
+            }
+            toast.success('Access control data refreshed');
+        } catch (error) {
+            console.error('Failed to refresh data:', error);
+            toast.error('Failed to refresh data');
+        } finally {
+            setIsRefreshing(false);
         }
     };
 
@@ -105,9 +122,9 @@ const AccessControlTab: React.FC = () => {
             // Send permission key instead of ID
             await rbacAPI.updateRolePermission(selectedRole, permission.key, mode, newAllow);
 
-            // Reload role permissions
+            // Reload role permissions to ensure UI is synced with database
             await loadRolePermissions(selectedRole);
-            toast.success('Permission updated');
+            toast.success('Permission updated successfully');
         } catch (error) {
             console.error('Failed to update permission:', error);
             toast.error('Failed to update permission');
@@ -156,13 +173,24 @@ const AccessControlTab: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={clearCache}
-                        className="inline-flex items-center px-3 py-1.5 border border-amber-300 dark:border-amber-700 rounded-md shadow-sm text-xs font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
-                    >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Clear Cache
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className="inline-flex items-center px-3 py-1.5 border border-amber-300 dark:border-amber-700 rounded-md shadow-sm text-xs font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="Refresh data from server"
+                        >
+                            <RefreshCw className={`h-3 w-3 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
+                        <button
+                            onClick={clearCache}
+                            className="inline-flex items-center px-3 py-1.5 border border-amber-300 dark:border-amber-700 rounded-md shadow-sm text-xs font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                        >
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Clear Cache
+                        </button>
+                    </div>
                 </div>
             </div>
 
