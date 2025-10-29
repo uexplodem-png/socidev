@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t("dashboard"),
       icon: LayoutDashboard,
       href: "/dashboard",
-      permission: "dashboard.view",
+      // No permission required - available to all authenticated users
     },
 
     {
@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: ShoppingCart,
       href: "/new-order",
       requiredMode: "taskGiver",
-      permission: "orders.create",
+      // No permission required - basic feature for task givers
     },
     {
       id: "my-orders",
@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       href: "/my-orders",
       badge: 3,
       requiredMode: "taskGiver",
-      permission: "orders.view",
+      // No permission required - basic feature for task givers
     },
     {
       id: "add-balance",
@@ -99,34 +99,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Wallet,
       href: "/add-balance",
       requiredMode: "taskGiver",
-      permission: "transactions.create",
+      // No permission required - basic feature for task givers
     },
     {
       id: "withdraw-balance",
       label: t("withdrawBalance"),
       icon: ArrowDownLeft,
       href: "/withdraw-balance",
-      permission: "withdrawals.create",
+      // No permission required - available to all users
     },
     {
       id: "social-accounts",
       label: t("socialMediaAccounts"),
       icon: Users,
-      permission: "accounts.view",
+      // No permission required - available to all users
       children: [
         {
           id: "instagram-accounts",
           label: t("instagramAccounts"),
           icon: Instagram,
           href: "/my-accounts/instagram",
-          permission: "accounts.view",
+          // No permission required
         },
         {
           id: "youtube-accounts",
           label: t("youtubeChannels"),
           icon: Youtube,
           href: "/my-accounts/youtube",
-          permission: "accounts.view",
+          // No permission required
         },
       ],
     },
@@ -135,27 +135,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t("tasks"),
       icon: PlaySquare,
       href: "/tasks",
-      permission: "tasks.view",
+      // No permission required - available to all users (task doers need this)
     },
     {
       id: "devices",
       label: t("deviceSettings"),
       icon: Laptop,
-      permission: "devices.view",
+      // No permission required - available to all users
       children: [
         {
           id: "add-devices",
           label: t("addDevices"),
           icon: Laptop,
           href: "/add-devices",
-          permission: "devices.create",
+          // No permission required
         },
         {
           id: "my-devices",
           label: t("myDevices"),
           icon: Settings,
           href: "/my-devices",
-          permission: "devices.view",
+          // No permission required
         },
       ],
     },

@@ -21,7 +21,6 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { UserModeProvider } from "./context/UserModeContext";
 import { BalanceProvider } from "./context/BalanceContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ProtectedRouteWithPermission } from "./components/ProtectedRouteWithPermission";
 import { TasksPage } from "./pages/tasks";
 import TestPage from "./pages/test";
 import { MaintenanceBanner } from "./components/MaintenanceBanner";
@@ -110,11 +109,11 @@ function AppRoutes() {
       <Route
         path='/dashboard'
         element={
-          <ProtectedRouteWithPermission permission='dashboard.view'>
+          <ProtectedRoute>
             <Layout>
               <DashboardPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
@@ -122,31 +121,31 @@ function AppRoutes() {
       <Route
         path='/new-order'
         element={
-          <ProtectedRouteWithPermission permission='orders.create'>
+          <ProtectedRoute>
             <Layout>
               <NewOrderPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/my-orders'
         element={
-          <ProtectedRouteWithPermission permission='orders.view'>
+          <ProtectedRoute>
             <Layout>
               <MyOrdersPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/add-balance'
         element={
-          <ProtectedRouteWithPermission permission='transactions.create'>
+          <ProtectedRoute>
             <Layout>
               <AddBalancePage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
@@ -154,31 +153,31 @@ function AppRoutes() {
       <Route
         path='/withdraw-balance'
         element={
-          <ProtectedRouteWithPermission permission='withdrawals.create'>
+          <ProtectedRoute>
             <Layout>
               <WithdrawBalancePage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/add-devices'
         element={
-          <ProtectedRouteWithPermission permission='devices.create'>
+          <ProtectedRoute>
             <Layout>
               <AddDevicesPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/my-devices'
         element={
-          <ProtectedRouteWithPermission permission='devices.view'>
+          <ProtectedRoute>
             <Layout>
               <MyDevicesPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
@@ -186,21 +185,21 @@ function AppRoutes() {
       <Route
         path='/my-accounts/instagram'
         element={
-          <ProtectedRouteWithPermission permission='accounts.view'>
+          <ProtectedRoute>
             <Layout>
               <InstagramAccountsPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/my-accounts/instagram/:id'
         element={
-          <ProtectedRouteWithPermission permission='accounts.view'>
+          <ProtectedRoute>
             <Layout>
               <InstagramAccountDetailsPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
@@ -208,21 +207,21 @@ function AppRoutes() {
       <Route
         path='/my-accounts/youtube'
         element={
-          <ProtectedRouteWithPermission permission='accounts.view'>
+          <ProtectedRoute>
             <Layout>
               <YoutubeAccountsPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
       <Route
         path='/my-accounts/youtube/:id'
         element={
-          <ProtectedRouteWithPermission permission='accounts.view'>
+          <ProtectedRoute>
             <Layout>
               <YoutubeAccountDetailsPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
@@ -230,11 +229,11 @@ function AppRoutes() {
       <Route
         path='/tasks'
         element={
-          <ProtectedRouteWithPermission permission='tasks.view'>
+          <ProtectedRoute>
             <Layout>
               <TasksPage />
             </Layout>
-          </ProtectedRouteWithPermission>
+          </ProtectedRoute>
         }
       />
 
