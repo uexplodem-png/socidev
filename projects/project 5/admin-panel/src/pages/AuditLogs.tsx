@@ -471,10 +471,10 @@ export const AuditLogs: React.FC = () => {
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Metadata</p>
                 <div className="space-y-2 text-sm">
                   <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">IP Address:</span> {selectedLog.metadata.ip}
+                    <span className="font-medium">IP Address:</span> {selectedLog.ipAddress || 'N/A'}
                   </p>
                   <p className="text-gray-600 dark:text-gray-400 break-all">
-                    <span className="font-medium">User Agent:</span> {selectedLog.metadata.userAgent}
+                    <span className="font-medium">User Agent:</span> {selectedLog.userAgent || 'N/A'}
                   </p>
                 </div>
               </div>
