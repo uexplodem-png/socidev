@@ -31,6 +31,7 @@ const SecurityTab: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         loadSettings();
@@ -59,10 +60,25 @@ const SecurityTab: React.FC = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await loadSettings();
+            toast.success('Security settings refreshed');
+        } catch (error) {
+            console.error('Failed to refresh settings:', error);
+            toast.error('Failed to refresh settings');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
         try {
             await settingsAPI.update('security', settings);
+            // Refresh data from server to ensure UI is synced
+            await loadSettings();
             toast.success('Security settings saved successfully');
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -88,16 +104,27 @@ const SecurityTab: React.FC = () => {
         <div className="space-y-6">
             {/* Info Banner */}
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 mr-3 flex-shrink-0" />
-                    <div className="flex-1">
-                        <h3 className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                            Security Configuration
-                        </h3>
-                        <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                            Configure authentication, password policies, and session management settings. Changes affect all users.
-                        </p>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start">
+                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 mr-3 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                                Security Configuration
+                            </h3>
+                            <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                                Configure authentication, password policies, and session management settings. Changes affect all users.
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="inline-flex items-center px-3 py-1.5 border border-amber-300 dark:border-amber-700 rounded-md text-sm font-medium text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Refresh settings from server"
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                 </div>
             </div>
 

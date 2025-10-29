@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, DollarSign, Users, ShoppingCart, CheckSquare } from 'lucide-react';
+import { Zap, DollarSign, Users, ShoppingCart, CheckSquare, RefreshCw } from 'lucide-react';
 import { settingsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -38,6 +38,7 @@ const FeatureFlagsTab: React.FC = () => {
     const [flags, setFlags] = useState<FeatureFlags | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         loadFeatureFlags();
@@ -84,6 +85,19 @@ const FeatureFlagsTab: React.FC = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await loadFeatureFlags();
+            toast.success('Feature flags refreshed');
+        } catch (error) {
+            console.error('Failed to refresh feature flags:', error);
+            toast.error('Failed to refresh feature flags');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     const updateFlag = async (category: keyof FeatureFlags, key: string, value: boolean) => {
         if (!flags) return;
 
@@ -100,7 +114,9 @@ const FeatureFlagsTab: React.FC = () => {
         setIsSaving(true);
         try {
             await settingsAPI.update(`features.${category}`, newFlags[category]);
-            toast.success('Feature flag updated');
+            // Refresh data from server to ensure UI is synced
+            await loadFeatureFlags();
+            toast.success('Feature flag updated successfully');
         } catch (error) {
             console.error('Failed to update feature flag:', error);
             toast.error('Failed to update feature flag');
@@ -165,14 +181,25 @@ const FeatureFlagsTab: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start">
-                    <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">Feature Flags</h3>
-                        <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                            Enable or disable features across the platform. Disabled features will return a 403 error when accessed.
-                        </p>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start">
+                        <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">Feature Flags</h3>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                Enable or disable features across the platform. Disabled features will return a 403 error when accessed.
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="inline-flex items-center px-3 py-1.5 border border-blue-300 dark:border-blue-700 rounded-md text-sm font-medium text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Refresh feature flags from server"
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                 </div>
             </div>
 

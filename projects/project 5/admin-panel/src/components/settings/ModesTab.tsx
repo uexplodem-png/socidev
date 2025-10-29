@@ -23,6 +23,7 @@ const ModesTab: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         loadSettings();
@@ -47,10 +48,25 @@ const ModesTab: React.FC = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await loadSettings();
+            toast.success('Modes settings refreshed');
+        } catch (error) {
+            console.error('Failed to refresh settings:', error);
+            toast.error('Failed to refresh settings');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
         try {
             await settingsAPI.update('modes', settings);
+            // Refresh data from server to ensure UI is synced
+            await loadSettings();
             toast.success('Modes settings saved successfully');
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -76,16 +92,27 @@ const ModesTab: React.FC = () => {
         <div className="space-y-6">
             {/* Info Banner */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
-                    <div className="flex-1">
-                        <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200">
-                            User Mode Configuration
-                        </h3>
-                        <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-                            Configure how users can switch between Task Doer (worker) and Task Giver (creator) modes.
-                        </p>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start">
+                        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                                User Mode Configuration
+                            </h3>
+                            <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                Configure how users can switch between Task Doer (worker) and Task Giver (creator) modes.
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="inline-flex items-center px-3 py-1.5 border border-blue-300 dark:border-blue-700 rounded-md text-sm font-medium text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Refresh settings from server"
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                 </div>
             </div>
 
