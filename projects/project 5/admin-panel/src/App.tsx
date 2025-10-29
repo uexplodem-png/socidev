@@ -5,6 +5,7 @@ import { store } from './store';
 import { validateToken, setLoading } from './store/slices/authSlice';
 import Layout from './components/layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRouteWithPermission } from './components/ProtectedRouteWithPermission';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -54,21 +55,104 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="transactions" element={<Transactions />} />
-            <Route path="audit-logs" element={<AuditLogs />} />
-            <Route path="settings" element={<Settings />} />
-            {/* Newly added routes */}
-            <Route path="balance" element={<Balance />} />
-            <Route path="withdrawals" element={<Withdrawals />} />
-            <Route path="social-accounts" element={<SocialAccounts />} />
-            <Route path="devices" element={<Devices />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="platforms-services" element={<PlatformsServices />} />
-            <Route path="task-submissions" element={<TaskSubmissions />} />
+            
+            {/* Dashboard - requires analytics.view */}
+            <Route path="dashboard" element={
+              <ProtectedRouteWithPermission permission="analytics.view">
+                <Dashboard />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Users - requires users.view */}
+            <Route path="users" element={
+              <ProtectedRouteWithPermission permission="users.view">
+                <Users />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Orders - requires orders.view */}
+            <Route path="orders" element={
+              <ProtectedRouteWithPermission permission="orders.view">
+                <Orders />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Tasks - requires tasks.view */}
+            <Route path="tasks" element={
+              <ProtectedRouteWithPermission permission="tasks.view">
+                <Tasks />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Task Submissions - requires tasks.view */}
+            <Route path="task-submissions" element={
+              <ProtectedRouteWithPermission permission="tasks.view">
+                <TaskSubmissions />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Transactions - requires transactions.view */}
+            <Route path="transactions" element={
+              <ProtectedRouteWithPermission permission="transactions.view">
+                <Transactions />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Balance - requires balance.view */}
+            <Route path="balance" element={
+              <ProtectedRouteWithPermission permission="balance.view">
+                <Balance />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Withdrawals - requires withdrawals.view */}
+            <Route path="withdrawals" element={
+              <ProtectedRouteWithPermission permission="withdrawals.view">
+                <Withdrawals />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Social Accounts - requires social_accounts.view */}
+            <Route path="social-accounts" element={
+              <ProtectedRouteWithPermission permission="social_accounts.view">
+                <SocialAccounts />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Devices - requires devices.view */}
+            <Route path="devices" element={
+              <ProtectedRouteWithPermission permission="devices.view">
+                <Devices />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Analytics - requires analytics.view */}
+            <Route path="analytics" element={
+              <ProtectedRouteWithPermission permission="analytics.view">
+                <Analytics />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Platforms & Services - requires platforms.view */}
+            <Route path="platforms-services" element={
+              <ProtectedRouteWithPermission permission="platforms.view">
+                <PlatformsServices />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Audit Logs - requires audit_logs.view */}
+            <Route path="audit-logs" element={
+              <ProtectedRouteWithPermission permission="audit_logs.view">
+                <AuditLogs />
+              </ProtectedRouteWithPermission>
+            } />
+            
+            {/* Settings - requires settings.view */}
+            <Route path="settings" element={
+              <ProtectedRouteWithPermission permission="settings.view">
+                <Settings />
+              </ProtectedRouteWithPermission>
+            } />
           </Route>
         </Routes>
       </Router>

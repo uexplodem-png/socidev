@@ -51,7 +51,7 @@ const navigation = [
     name: 'Balance Management',
     href: '/balance',
     icon: DollarSign,
-    permission: 'users.view',
+    permission: 'balance.view',
   },
   {
     name: 'Withdrawals',
@@ -63,7 +63,7 @@ const navigation = [
     name: 'Social Accounts',
     href: '/social-accounts',
     icon: Smartphone,
-    permission: 'users.view',
+    permission: 'social_accounts.view',
   },
   {
     name: 'Tasks',
@@ -93,7 +93,7 @@ const navigation = [
     name: 'Platforms & Services',
     href: '/platforms-services',
     icon: Globe,
-    permission: 'settings.view',
+    permission: 'platforms.view',
   },
   {
     name: 'Audit Logs',

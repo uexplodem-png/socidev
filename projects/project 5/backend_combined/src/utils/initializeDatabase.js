@@ -147,6 +147,30 @@ const PERMISSIONS = {
     { key: 'api_keys.create', label: 'Create API Keys', group: 'api_keys' },
     { key: 'api_keys.revoke', label: 'Revoke API Keys', group: 'api_keys' },
   ],
+
+  // Analytics
+  analytics: [
+    { key: 'analytics.view', label: 'View Analytics', group: 'analytics' },
+    { key: 'analytics.export', label: 'Export Analytics', group: 'analytics' },
+  ],
+
+  // Balance Management
+  balance: [
+    { key: 'balance.view', label: 'View Balance', group: 'balance' },
+    { key: 'balance.adjust', label: 'Adjust Balance', group: 'balance' },
+  ],
+
+  // Audit Logs
+  auditLogs: [
+    { key: 'audit_logs.view', label: 'View Audit Logs', group: 'audit_logs' },
+    { key: 'audit_logs.export', label: 'Export Audit Logs', group: 'audit_logs' },
+  ],
+
+  // Action Logs
+  actionLogs: [
+    { key: 'action_logs.view', label: 'View Action Logs', group: 'action_logs' },
+    { key: 'action_logs.export', label: 'Export Action Logs', group: 'action_logs' },
+  ],
 };
 
 /**
@@ -164,8 +188,12 @@ const ROLES = {
     permissions: [
       // Dashboard
       'dashboard.view', 'dashboard.analytics',
+      // Analytics
+      'analytics.view', 'analytics.export',
       // Users (limited)
       'users.view', 'users.edit', 'users.suspend', 'users.verify', 'users.balance',
+      // Balance
+      'balance.view', 'balance.adjust',
       // Orders
       'orders.view', 'orders.edit', 'orders.cancel', 'orders.refund',
       // Tasks
@@ -181,8 +209,10 @@ const ROLES = {
       'services.view', 'services.edit',
       // Settings (limited)
       'settings.view', 'settings.edit',
-      // Audit
+      // Audit & Logs
       'audit.view', 'activity.view',
+      'audit_logs.view', 'audit_logs.export',
+      'action_logs.view', 'action_logs.export',
       // Reports
       'reports.view', 'reports.export', 'reports.financial',
       // Social Accounts
@@ -201,8 +231,12 @@ const ROLES = {
     permissions: [
       // Dashboard
       'dashboard.view',
+      // Analytics
+      'analytics.view',
       // Users (view only)
       'users.view',
+      // Balance
+      'balance.view',
       // Orders
       'orders.view', 'orders.edit',
       // Tasks
@@ -215,8 +249,10 @@ const ROLES = {
       'disputes.view', 'disputes.respond',
       // Platforms & Services
       'platforms.view', 'services.view',
-      // Audit
+      // Audit & Logs
       'activity.view',
+      'audit_logs.view',
+      'action_logs.view',
       // Reports
       'reports.view',
       // Social Accounts
