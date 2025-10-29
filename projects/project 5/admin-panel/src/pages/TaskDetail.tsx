@@ -26,6 +26,8 @@ const TaskDetail: React.FC = () => {
     const [task, setTask] = useState<any>(null);
     const [order, setOrder] = useState<any>(null);
     const [user, setUser] = useState<any>(null);
+    const [executions, setExecutions] = useState<any[]>([]);
+    const [loadingExecutions, setLoadingExecutions] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'order' | 'creator' | 'executions' | 'activity'>('overview');
 
     useEffect(() => {
@@ -58,6 +60,26 @@ const TaskDetail: React.FC = () => {
 
         if (id) load();
     }, [id]);
+
+    // Fetch executions when Executions tab is active
+    useEffect(() => {
+        const loadExecutions = async () => {
+            if (activeTab === 'executions' && id) {
+                setLoadingExecutions(true);
+                try {
+                    const resp = await tasksAPI.getSubmittedTasks({ taskId: id, limit: 100 });
+                    setExecutions(resp.executions || resp.data || []);
+                } catch (e) {
+                    console.error('Failed to load executions:', e);
+                    setExecutions([]);
+                } finally {
+                    setLoadingExecutions(false);
+                }
+            }
+        };
+
+        loadExecutions();
+    }, [activeTab, id]);
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
@@ -390,10 +412,143 @@ const TaskDetail: React.FC = () => {
                     )}
 
                     {activeTab === 'executions' && (
-                        <div className="text-center py-12">
-                            <PlayCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">Executions & Submissions</p>
-                            <p className="text-sm text-gray-400 mt-2">Task execution history will be displayed here</p>
+                        <div>
+                            {loadingExecutions ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                </div>
+                            ) : executions.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            Task Submissions ({executions.length})
+                                        </h3>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                            <thead className="bg-gray-50 dark:bg-gray-900">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Screenshot</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Earnings</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Submitted</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                                                {executions.map((execution: any) => {
+                                                    const getStatusBadge = (status: string) => {
+                                                        const configs: any = {
+                                                            pending: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-800 dark:text-yellow-200' },
+                                                            approved: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-200' },
+                                                            rejected: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-800 dark:text-red-200' },
+                                                        };
+                                                        const config = configs[status] || configs.pending;
+                                                        return (
+                                                            <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', config.bg, config.text)}>
+                                                                {status}
+                                                            </span>
+                                                        );
+                                                    };
+
+                                                    return (
+                                                        <tr key={execution.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                    {execution.user?.firstName} {execution.user?.lastName}
+                                                                </div>
+                                                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                                    {execution.user?.email}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                {execution.screenshotUrl || execution.screenshot_url ? (
+                                                                    <a
+                                                                        href={execution.screenshotUrl || execution.screenshot_url}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center"
+                                                                    >
+                                                                        <ExternalLink className="w-4 h-4 mr-1" />
+                                                                        View
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-gray-400 text-sm">No screenshot</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                {getStatusBadge(execution.screenshotStatus || execution.screenshot_status || 'pending')}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 dark:text-green-400">
+                                                                ${Number(execution.earnings || 0).toFixed(2)}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                                {execution.screenshotSubmittedAt || execution.screenshot_submitted_at
+                                                                    ? new Date(execution.screenshotSubmittedAt || execution.screenshot_submitted_at).toLocaleDateString()
+                                                                    : 'N/A'}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                                {(execution.screenshotStatus || execution.screenshot_status) === 'pending' && (
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={async () => {
+                                                                                try {
+                                                                                    await tasksAPI.approveTaskScreenshot(execution.id);
+                                                                                    // Reload executions
+                                                                                    const resp = await tasksAPI.getSubmittedTasks({ taskId: id, limit: 100 });
+                                                                                    setExecutions(resp.executions || resp.data || []);
+                                                                                } catch (e) {
+                                                                                    console.error('Failed to approve:', e);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                                                            Approve
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="danger"
+                                                                            onClick={async () => {
+                                                                                const reason = prompt('Rejection reason:');
+                                                                                if (!reason) return;
+                                                                                try {
+                                                                                    await tasksAPI.rejectTaskScreenshot(execution.id, reason);
+                                                                                    // Reload executions
+                                                                                    const resp = await tasksAPI.getSubmittedTasks({ taskId: id, limit: 100 });
+                                                                                    setExecutions(resp.executions || resp.data || []);
+                                                                                } catch (e) {
+                                                                                    console.error('Failed to reject:', e);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <XCircle className="w-3 h-3 mr-1" />
+                                                                            Reject
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                                {(execution.screenshotStatus || execution.screenshot_status) === 'rejected' && execution.rejectionReason && (
+                                                                    <div className="text-xs text-red-600 dark:text-red-400">
+                                                                        {execution.rejectionReason || execution.rejection_reason}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <PlayCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                    <p className="text-gray-500 dark:text-gray-400 font-medium">No Submissions Yet</p>
+                                    <p className="text-sm text-gray-400 mt-2">Task submissions will appear here once users complete and submit this task</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
