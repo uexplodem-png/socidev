@@ -98,6 +98,7 @@ export async function maintenanceMode(req, res, next) {
 
     // Allow login/register/verify endpoints so admins can login
     if (req.path === '/api/auth/login' || 
+        req.path === '/api/auth/admin-login' || 
         req.path === '/api/auth/register' || 
         req.path === '/api/auth/verify') {
       return next();
