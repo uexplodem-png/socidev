@@ -42,4 +42,20 @@ router.get('/action-logs/actions',
   adminLogsController.getActionActions
 );
 
+// System logs routes (combined.log and error.log)
+router.get('/system-logs/combined',
+  requirePermission('audit_logs.view'), // Using audit_logs permission for system logs
+  adminLogsController.getCombinedLogs
+);
+
+router.get('/system-logs/error',
+  requirePermission('audit_logs.view'),
+  adminLogsController.getErrorLogs
+);
+
+router.delete('/system-logs/clear/:type',
+  requirePermission('audit_logs.delete'), // Special permission for clearing logs
+  adminLogsController.clearSystemLogs
+);
+
 export { router as adminLogsRouter };

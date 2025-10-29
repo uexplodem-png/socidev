@@ -610,6 +610,35 @@ class RealApiService {
         return response.blob();
     }
 
+    // System Logs API (combined.log and error.log)
+    async getCombinedLogs(params: { page?: number; limit?: number; search?: string }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                queryParams.append(key, String(value));
+            }
+        });
+
+        return this.request(`/admin/system-logs/combined?${queryParams}`);
+    }
+
+    async getErrorLogs(params: { page?: number; limit?: number; search?: string }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                queryParams.append(key, String(value));
+            }
+        });
+
+        return this.request(`/admin/system-logs/error?${queryParams}`);
+    }
+
+    async clearSystemLogs(type: 'combined' | 'error'): Promise<any> {
+        return this.request(`/admin/system-logs/clear/${type}`, {
+            method: 'DELETE',
+        });
+    }
+
     // Balance & Transactions API
     async getTransactions(params: FilterParams): Promise<PaginatedResponse<Transaction>> {
         const queryParams = new URLSearchParams();

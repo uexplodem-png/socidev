@@ -89,7 +89,7 @@ const navigation = [
     permission: 'platforms.view',
   },
   {
-    name: 'Audit Logs',
+    name: 'Logs',
     href: '/audit-logs',
     icon: FileText,
     permission: 'audit_logs.view',

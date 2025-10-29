@@ -20,7 +20,9 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { auditLogsAPI } from '../services/api';
 
@@ -46,7 +48,10 @@ interface AuditLog {
 
 const columnHelper = createColumnHelper<AuditLog>();
 
+type TabType = 'audit' | 'combined' | 'error';
+
 export const AuditLogs: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('audit');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -235,7 +240,7 @@ export const AuditLogs: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Audit Logs</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Logs</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Complete log of all administrative actions and system events
           </p>
@@ -246,8 +251,50 @@ export const AuditLogs: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`${
+              activeTab === 'audit'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
+            <Shield className="h-5 w-5 mr-2" />
+            Audit Logs
+          </button>
+          <button
+            onClick={() => setActiveTab('combined')}
+            className={`${
+              activeTab === 'combined'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
+            <FileText className="h-5 w-5 mr-2" />
+            Combined Logs
+          </button>
+          <button
+            onClick={() => setActiveTab('error')}
+            className={`${
+              activeTab === 'error'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            Error Logs
+          </button>
+        </nav>
+      </div>
+
+      {/* Audit Logs Tab Content */}
+      {activeTab === 'audit' && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {auditLogs.length}
@@ -428,19 +475,19 @@ export const AuditLogs: React.FC = () => {
         </div>
       </div>
 
-      {/* Details Modal */}
-      {showDetailsModal && selectedLog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity Details</h2>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
+          {/* Details Modal */}
+          {showDetailsModal && selectedLog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity Details</h2>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    ✕
+                  </button>
+                </div>
 
             <div className="px-6 py-4 space-y-6">
               {/* Header Info */}
@@ -510,15 +557,31 @@ export const AuditLogs: React.FC = () => {
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
-              >
-                Close
-              </button>
+                <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+        </>
+      )}
+
+      {/* Combined Logs Tab Content */}
+      {activeTab === 'combined' && (
+        <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <p className="text-gray-600 dark:text-gray-400">Combined logs coming soon...</p>
+        </div>
+      )}
+
+      {/* Error Logs Tab Content */}
+      {activeTab === 'error' && (
+        <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <p className="text-gray-600 dark:text-gray-400">Error logs coming soon...</p>
         </div>
       )}
     </div>
