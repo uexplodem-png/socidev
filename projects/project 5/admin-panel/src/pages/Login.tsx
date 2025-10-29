@@ -72,18 +72,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const fillDemoCredentials = (role: 'admin' | 'manager' | 'moderator' | 'readonly') => {
-    const credentials = {
-      admin: { email: 'admin@example.com', password: 'AdminPassword123!' },
-      manager: { email: 'manager@example.com', password: 'DemoManager123!' },
-      moderator: { email: 'moderator@example.com', password: 'DemoModerator123!' },
-      readonly: { email: 'readonly@example.com', password: 'DemoReadonly123!' },
-    };
-
-    setValue('email', credentials[role].email);
-    setValue('password', credentials[role].password);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -163,71 +151,6 @@ const Login: React.FC = () => {
             >
               Sign In
             </Button>
-          </div>
-
-          {/* Demo Credentials */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                  Demo Credentials
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('admin')}
-                disabled={loading}
-              >
-                Admin Demo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('manager')}
-                disabled={loading}
-              >
-                Manager Demo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('moderator')}
-                disabled={loading}
-              >
-                Moderator Demo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fillDemoCredentials('readonly')}
-                disabled={loading}
-              >
-                Readonly Demo
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              <p className="mb-2">Available Demo Accounts:</p>
-              <div className="space-y-1 text-xs">
-                <p><strong>Admin:</strong> admin@example.com / AdminPassword123!</p>
-                <p><strong>Manager:</strong> manager@example.com / DemoManager123!</p>
-                <p><strong>Moderator:</strong> moderator@example.com / DemoModerator123!</p>
-                <p><strong>Readonly:</strong> readonly@example.com / DemoReadonly123!</p>
-              </div>
-            </div>
           </div>
         </form>
       </div>

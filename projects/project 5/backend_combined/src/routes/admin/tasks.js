@@ -230,6 +230,10 @@ router.get('/:id',
           attributes: ['id', 'firstName', 'lastName', 'email'],
           required: false,
         },
+        {
+          association: 'order',
+          attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'status', 'amount', 'createdAt', 'updatedAt'],
+        },
       ],
     });
 

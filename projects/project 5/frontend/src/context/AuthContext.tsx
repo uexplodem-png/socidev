@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             balance: Number(response.data.user.balance) || 0,
           });
           setIsAuthenticated(true);
-          
+
           // Extract permissions from JWT token
           try {
             const tokenPayload = JSON.parse(atob(token.split('.')[1]));
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         balance: Number(response.data.user.balance) || 0,
       });
       setIsAuthenticated(true);
-      
+
       // Extract permissions from JWT token
       try {
         const tokenPayload = JSON.parse(atob(response.data.token.split('.')[1]));

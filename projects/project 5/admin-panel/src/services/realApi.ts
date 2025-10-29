@@ -861,8 +861,23 @@ class RealApiService {
         });
 
         const response = await this.request<{ tasks: any[]; pagination: any }>(`/admin/tasks?${queryParams}`);
+        const mapped = (response.tasks || []).map((t: any) => {
+            const user = t.user || t.creator || {};
+            return {
+                ...t,
+                userId: t.userId || user.id,
+                userName: user.username || [user.firstName, user.lastName].filter(Boolean).join(' '),
+                userEmail: user.email,
+                targetUrl: t.target_url || t.targetUrl,
+                remainingQuantity: t.remaining_quantity || t.remainingQuantity,
+                adminStatus: t.admin_status || t.adminStatus,
+                createdAt: t.created_at || t.createdAt,
+                updatedAt: t.updated_at || t.updatedAt,
+                rate: typeof t.rate === 'string' ? parseFloat(t.rate) : t.rate,
+              };
+        });
         return {
-            data: response.tasks,
+            data: mapped,
             pagination: response.pagination
         };
     }

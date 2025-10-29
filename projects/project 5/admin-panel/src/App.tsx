@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Orders from './pages/Orders';
 import Tasks from './pages/Tasks';
+import TaskDetail from './pages/TaskDetail';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
 // Newly added pages
@@ -80,6 +81,11 @@ function App() {
             <Route path="tasks" element={
               <ProtectedRouteWithPermission permission="tasks.view">
                 <Tasks />
+              </ProtectedRouteWithPermission>
+            } />
+            <Route path="tasks/:id" element={
+              <ProtectedRouteWithPermission permission="tasks.view">
+                <TaskDetail />
               </ProtectedRouteWithPermission>
             } />
 

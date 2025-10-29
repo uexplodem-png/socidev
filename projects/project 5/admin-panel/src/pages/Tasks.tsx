@@ -8,7 +8,6 @@ import {
   createColumnHelper,
   flexRender,
   SortingState,
-  PaginationState,
   RowSelectionState
 } from '@tanstack/react-table';
 import {
@@ -27,6 +26,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
+import { Link } from 'react-router-dom';
 import { tasksAPI } from '../services/api';
 
 interface Task {
@@ -91,9 +91,9 @@ export const Tasks: React.FC = () => {
     columnHelper.accessor('id', {
       header: 'Task ID',
       cell: ({ getValue }) => (
-        <div className="text-sm font-mono text-gray-900 dark:text-white">
+        <Link to={`/tasks/${getValue()}`} className="text-sm font-mono text-blue-600 hover:underline">
           #{getValue().substring(0, 8)}
-        </div>
+        </Link>
       ),
     }),
     columnHelper.accessor('userName', {
