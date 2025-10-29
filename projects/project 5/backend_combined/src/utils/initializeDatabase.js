@@ -59,6 +59,7 @@ const PERMISSIONS = {
   // Withdrawals Management
   withdrawals: [
     { key: 'withdrawals.view', label: 'View Withdrawals', group: 'withdrawals' },
+    { key: 'withdrawals.create', label: 'Create Withdrawals', group: 'withdrawals' },
     { key: 'withdrawals.approve', label: 'Approve Withdrawals', group: 'withdrawals' },
     { key: 'withdrawals.reject', label: 'Reject Withdrawals', group: 'withdrawals' },
     { key: 'withdrawals.process', label: 'Process Withdrawals', group: 'withdrawals' },
@@ -128,6 +129,14 @@ const PERMISSIONS = {
     { key: 'social_accounts.verify', label: 'Verify Social Accounts', group: 'social_accounts' },
   ],
 
+  // Accounts (alias for social_accounts for frontend compatibility)
+  accounts: [
+    { key: 'accounts.view', label: 'View Accounts', group: 'accounts' },
+    { key: 'accounts.create', label: 'Create Accounts', group: 'accounts' },
+    { key: 'accounts.edit', label: 'Edit Accounts', group: 'accounts' },
+    { key: 'accounts.delete', label: 'Delete Accounts', group: 'accounts' },
+  ],
+
   // Instagram Management
   instagram: [
     { key: 'instagram.view', label: 'View Instagram Accounts', group: 'instagram' },
@@ -137,6 +146,7 @@ const PERMISSIONS = {
   // Devices
   devices: [
     { key: 'devices.view', label: 'View Devices', group: 'devices' },
+    { key: 'devices.create', label: 'Create Devices', group: 'devices' },
     { key: 'devices.manage', label: 'Manage Devices', group: 'devices' },
     { key: 'devices.ban', label: 'Ban Devices', group: 'devices' },
   ],
@@ -270,9 +280,10 @@ const ROLES = {
       'dashboard.view',
       'orders.view', 'orders.create',
       'tasks.view',
-      'transactions.view',
+      'transactions.view', 'transactions.create',
       'disputes.view',
       'social_accounts.view',
+      'accounts.view',
     ],
   },
   task_doer: {
@@ -282,10 +293,11 @@ const ROLES = {
       'dashboard.view',
       'tasks.view',
       'transactions.view',
-      'withdrawals.view',
+      'withdrawals.view', 'withdrawals.create',
       'social_accounts.view',
+      'accounts.view', 'accounts.create',
       'instagram.view',
-      'devices.view',
+      'devices.view', 'devices.create',
     ],
   },
 };
