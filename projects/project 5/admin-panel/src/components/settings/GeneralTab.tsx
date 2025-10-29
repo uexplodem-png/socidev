@@ -35,13 +35,13 @@ const GeneralTab: React.FC = () => {
         try {
             const data = await settingsAPI.get();
             setSettings({
-                siteName: data.general?.siteName ?? 'SociDev',
-                maintenanceMode: data.general?.maintenanceMode ?? false,
-                registrationEnabled: data.general?.registrationEnabled ?? true,
-                emailNotifications: data.general?.emailNotifications ?? true,
-                maxTasksPerUser: data.general?.maxTasksPerUser ?? 10,
-                minWithdrawalAmount: data.general?.minWithdrawalAmount ?? 10,
-                withdrawalFee: data.general?.withdrawalFee ?? 0,
+                siteName: data.siteName ?? 'SociDev',
+                maintenanceMode: data.maintenanceMode ?? false,
+                registrationEnabled: data.registrationEnabled ?? true,
+                emailNotifications: data.emailNotifications ?? true,
+                maxTasksPerUser: data.maxTasksPerUser ?? 10,
+                minWithdrawalAmount: data.minWithdrawalAmount ?? 10,
+                withdrawalFee: data.withdrawalFee ?? 0,
             });
         } catch (error) {
             console.error('Failed to load general settings:', error);
