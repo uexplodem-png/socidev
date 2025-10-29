@@ -907,6 +907,17 @@ class RealApiService {
         });
     }
 
+    // Uncompleted Tasks (claimed but not finished within 1 hour)
+    async getUncompletedTasks(params: FilterParams = {}): Promise<PaginatedResponse<any>> {
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                queryParams.append(key, String(value));
+            }
+        });
+        return this.request<any>(`/admin/tasks/uncompleted?${queryParams}`);
+    }
+
     // Task Screenshot Submissions
     async getSubmittedTasks(params?: any): Promise<any> {
         const queryParams = new URLSearchParams(params).toString();

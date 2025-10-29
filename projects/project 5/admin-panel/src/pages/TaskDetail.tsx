@@ -194,7 +194,7 @@ const TaskDetail: React.FC = () => {
                     </div>
                     <div className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">Rate per Task</div>
                     <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                        ${typeof task.rate === 'string' ? parseFloat(task.rate).toFixed(3) : (task.rate ?? 0).toFixed?.(3) || Number(task.rate || 0).toFixed(3)}
+                        ₺{typeof task.rate === 'string' ? parseFloat(task.rate).toFixed(2) : (task.rate ?? 0).toFixed?.(2) || Number(task.rate || 0).toFixed(2)}
                     </div>
                 </div>
 

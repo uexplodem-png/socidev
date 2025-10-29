@@ -109,6 +109,7 @@ router.put('/',
         updates.registrationEnabled !== undefined || updates.emailNotifications !== undefined ||
         updates.taskAutoApproval !== undefined || updates.maxTasksPerUser !== undefined ||
         updates.minWithdrawalAmount !== undefined || updates.withdrawalFee !== undefined ||
+        updates.balanceFee !== undefined ||
         updates.currencies !== undefined || updates.supportedPlatforms !== undefined ||
         updates.taskApprovalTimeoutHours !== undefined || updates.orderTimeoutHours !== undefined) {
       
@@ -117,14 +118,37 @@ router.put('/',
       await settingsService.set('general', newGeneral, req.user.id, 'General system settings');
       updatedSettings.general = newGeneral;
       
-      // SYNC: Also update maintenance.enabled for public endpoint compatibility
+      // SYNC: Individual settings for easy access
+      if (updates.siteName !== undefined) {
+        await settingsService.set('site.name', updates.siteName, req.user.id, 'Site name');
+      }
+      
       if (updates.maintenanceMode !== undefined) {
         await settingsService.set('maintenance.enabled', updates.maintenanceMode, req.user.id, 'Maintenance mode toggle');
       }
       
-      // SYNC: Also update general.allowRegistration
       if (updates.registrationEnabled !== undefined) {
-        await settingsService.set('general.allowRegistration', updates.registrationEnabled, req.user.id, 'Registration toggle');
+        await settingsService.set('registration.enabled', updates.registrationEnabled, req.user.id, 'Registration toggle');
+      }
+      
+      if (updates.emailNotifications !== undefined) {
+        await settingsService.set('email.notifications.enabled', updates.emailNotifications, req.user.id, 'Email notifications toggle');
+      }
+      
+      if (updates.maxTasksPerUser !== undefined) {
+        await settingsService.set('tasks.maxPerUser', updates.maxTasksPerUser, req.user.id, 'Max tasks per user');
+      }
+      
+      if (updates.minWithdrawalAmount !== undefined) {
+        await settingsService.set('withdrawal.minAmount', updates.minWithdrawalAmount, req.user.id, 'Minimum withdrawal amount');
+      }
+      
+      if (updates.withdrawalFee !== undefined) {
+        await settingsService.set('withdrawal.feePercent', updates.withdrawalFee, req.user.id, 'Withdrawal fee percentage');
+      }
+      
+      if (updates.balanceFee !== undefined) {
+        await settingsService.set('balance.feePercent', updates.balanceFee, req.user.id, 'Balance/transaction fee percentage');
       }
     }
 

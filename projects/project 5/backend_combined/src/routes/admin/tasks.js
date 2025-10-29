@@ -192,6 +192,101 @@ router.get('/pending',
 
 /**
  * @swagger
+ * /api/admin/tasks/uncompleted:
+ *   get:
+ *     summary: Get tasks that were claimed but not completed within the 1-hour window
+ *     tags: [Admin Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: List of uncompleted task executions
+ */
+router.get('/uncompleted',
+  requirePermission('tasks.view'),
+  validate(schemas.paginationQuery, 'query'),
+  asyncHandler(async (req, res) => {
+    const { page, limit } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Import TaskExecution model
+    const { TaskExecution } = await import('../../models/index.js');
+    
+    const now = new Date();
+
+    // Find task executions that are either:
+    // 1. Failed status (marked as failed by the auto-release job)
+    // 2. Still pending but past the cooldownEndsAt time
+    const { count, rows: executions } = await TaskExecution.findAndCountAll({
+      where: {
+        [Op.or]: [
+          { status: 'failed' }, // Already processed by auto-release
+          {
+            status: 'pending',
+            cooldownEndsAt: {
+              [Op.lt]: now, // Past the deadline
+            },
+          },
+        ],
+      },
+      attributes: ['id', 'userId', 'taskId', 'status', 'startedAt', 'cooldownEndsAt', 'completedAt', 'createdAt'],
+      limit,
+      offset,
+      order: [['cooldownEndsAt', 'DESC']], // Most recent first
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName', 'email', 'username'],
+        },
+        {
+          model: Task,
+          as: 'task',
+          attributes: ['id', 'title', 'type', 'platform', 'targetUrl', 'rate', 'quantity', 'remainingQuantity'],
+        },
+      ],
+    });
+
+    // Calculate how long each task was overdue
+    const executionsWithDetails = executions.map(exec => {
+      const execData = exec.toJSON();
+      const cooldownEndsAt = new Date(execData.cooldownEndsAt);
+      const overdueMinutes = Math.floor((now - cooldownEndsAt) / (1000 * 60));
+      
+      return {
+        ...execData,
+        overdueMinutes: overdueMinutes > 0 ? overdueMinutes : 0,
+        wasAutoReleased: execData.status === 'failed',
+      };
+    });
+
+    res.json({
+      executions: executionsWithDetails,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    });
+  })
+);
+
+/**
+ * @swagger
  * /api/admin/tasks/{id}:
  *   get:
  *     summary: Get task details by ID

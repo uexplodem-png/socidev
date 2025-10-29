@@ -1,21 +1,25 @@
   import { Transaction } from 'sequelize';
   import Withdrawal from '../models/Withdrawal.js';
+  import User from '../models/User.js';
   import { ApiError } from '../utils/ApiError.js';
   import { sendPaymentNotification } from '../utils/notifications.js';
   import logger from '../config/logger.js';
+  import { settingsService } from './settingsService.js';
 
   export class WithdrawalService {
     async requestWithdrawal(userId, amount, method, details) {
       const transaction = await Transaction.create();
 
       try {
-        // Validate withdrawal amount
-        await this.validateWithdrawalRequest(userId, amount);
+        // Validate withdrawal amount and calculate fee
+        const { fee, totalAmount } = await this.validateWithdrawalRequest(userId, amount);
 
         // Create withdrawal request
         const withdrawal = await Withdrawal.create({
           userId,
           amount,
+          fee,
+          totalAmount,
           method,
           details,
           status: 'pending'
@@ -24,6 +28,8 @@
         // Send notification
         await sendPaymentNotification(userId, 'withdrawal_requested', {
           amount,
+          fee,
+          totalAmount,
           method
         });
 
@@ -73,28 +79,39 @@
       }
     }
 
-    private async validateWithdrawalRequest(userId, amount) {
+    async validateWithdrawalRequest(userId, amount) {
       const user = await User.findByPk(userId);
       if (!user) {
         throw new ApiError(404, 'User not found');
       }
 
-      if (user.balance < amount) {
-        throw new ApiError(400, 'Insufficient balance');
+      // Get minimum withdrawal amount from settings
+      const minWithdrawalAmount = await settingsService.get('withdrawal.minAmount', 10);
+      if (amount < minWithdrawalAmount) {
+        throw new ApiError(400, `Minimum withdrawal amount is ₺${minWithdrawalAmount}`);
       }
 
-      // Add additional validation rules
-      if (amount < 100) {
-        throw new ApiError(400, 'Minimum withdrawal amount is ₺100');
+      // Get withdrawal fee percentage from settings
+      const withdrawalFeePercent = await settingsService.get('withdrawal.feePercent', 0);
+      const fee = (amount * withdrawalFeePercent) / 100;
+      const totalAmount = amount + fee;
+
+      if (user.balance < totalAmount) {
+        throw new ApiError(
+          400, 
+          `Insufficient balance. Required: ₺${totalAmount.toFixed(2)} (Amount: ₺${amount.toFixed(2)} + Fee: ₺${fee.toFixed(2)})`
+        );
       }
+
+      return { fee, totalAmount };
     }
 
-    private async processBankTransfer(withdrawal) {
+    async processBankTransfer(withdrawal) {
       // Implement bank transfer logic
       throw new Error('Not implemented');
     }
 
-    private async processCryptoWithdrawal(withdrawal) {
+    async processCryptoWithdrawal(withdrawal) {
       // Implement crypto withdrawal logic
       throw new Error('Not implemented');
     }

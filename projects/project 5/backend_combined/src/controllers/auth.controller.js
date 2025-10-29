@@ -9,6 +9,7 @@ import { loginAttemptTracker } from '../middleware/loginAttemptTracker.js';
 import { twoFactorService } from '../services/twoFactorService.js';
 import { emailVerificationService } from '../services/emailVerificationService.js';
 import { logAudit } from '../utils/logging.js';
+import { settingsService } from '../services/settingsService.js';
 
 const authService = new AuthService();
 const activityService = new ActivityService();
@@ -19,6 +20,13 @@ export class AuthController {
       const { email, password, firstName, lastName, username, phone } = req.body;
       
       logger.info('Registration attempt', { email, username });
+
+      // Check if registration is enabled
+      const registrationEnabled = await settingsService.get('registration.enabled', true);
+      if (!registrationEnabled) {
+        logger.warn('Registration blocked: Registration is disabled', { email, username });
+        throw new ApiError(403, 'Registration is currently disabled. Please contact support.');
+      }
 
       // Check if user already exists
       const existingUser = await User.findOne({

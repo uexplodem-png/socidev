@@ -52,7 +52,7 @@ const columnHelper = createColumnHelper<Task>();
 export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all'); // Changed default to 'all'
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'uncompleted'>('all');
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -294,9 +294,37 @@ export const Tasks: React.FC = () => {
         params.admin_status = 'pending';
       }
 
-      const data = await tasksAPI.getTasks(params);
-      setTasks(data.data || []);
-      setTotalPages(data.pagination.totalPages || 1);
+      let data: any;
+      if (activeTab === 'uncompleted') {
+        // Fetch uncompleted task executions instead of tasks
+        const uncompletedData: any = await tasksAPI.getUncompletedTasks(params);
+        // Map executions to task-like format for table display
+        const mappedTasks = (uncompletedData.executions || []).map((exec: any) => ({
+          id: exec.id,
+          userId: exec.userId,
+          userName: exec.User?.username || [exec.User?.firstName, exec.User?.lastName].filter(Boolean).join(' '),
+          userEmail: exec.User?.email,
+          type: exec.task?.type,
+          platform: exec.task?.platform,
+          targetUrl: exec.task?.targetUrl || exec.task?.target_url,
+          quantity: exec.task?.quantity,
+          remainingQuantity: exec.task?.remainingQuantity || exec.task?.remaining_quantity,
+          rate: exec.task?.rate,
+          status: exec.wasAutoReleased ? 'auto-released' : 'overdue',
+          taskTitle: exec.task?.title,
+          startedAt: exec.startedAt,
+          cooldownEndsAt: exec.cooldownEndsAt,
+          overdueMinutes: exec.overdueMinutes,
+          description: `Claimed but not completed. Overdue by ${exec.overdueMinutes} minutes`,
+        }));
+        setTasks(mappedTasks);
+        data = uncompletedData;
+      } else {
+        data = await tasksAPI.getTasks(params);
+        setTasks(data.data || []);
+      }
+      
+      setTotalPages(data.pagination?.totalPages || 1);
     } catch (error: any) {
       console.error('Failed to fetch tasks:', error);
       toast.error(error.message || 'Failed to load tasks');
@@ -439,6 +467,15 @@ export const Tasks: React.FC = () => {
               }`}
           >
             All Tasks
+          </button>
+          <button
+            onClick={() => setActiveTab('uncompleted')}
+            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'uncompleted'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+          >
+            Uncompleted
           </button>
         </nav>
       </div>

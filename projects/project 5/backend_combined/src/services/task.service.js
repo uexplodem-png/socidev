@@ -9,6 +9,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { sequelize } from "../config/database.js";
 import { addHours } from "date-fns";
 import fileService from "./file.service.js";
+import { settingsService } from "./settingsService.js";
 
 export class TaskService {
   /**
@@ -149,17 +150,23 @@ export class TaskService {
       }));
 
     const where = {
-      // Show tasks that are either:
-      // 1. Created from orders (userId is null) - available for all task doers
-      // 2. Created by other users (userId not equal to current user)
-      [Op.or]: [
-        { userId: null }, // Tasks from orders
-        { userId: { [Op.ne]: userId } } // Other users' tasks
-      ],
       adminStatus: "approved", // Only show admin-approved tasks
       id: { [Op.notIn]: completedTaskIds }, // Exclude completed tasks
       remainingQuantity: { [Op.gt]: 0 }, // Only show tasks with remaining quantity
     };
+
+    // CRITICAL: Always exclude tasks created by the current user
+    // This prevents task owners from seeing or claiming their own tasks
+    // Handle both order-based tasks (userId: null but orderId exists) and direct tasks
+    where[Op.or] = [
+      { 
+        userId: null, // Order-based tasks
+        orderId: { [Op.ne]: null } // Ensure it's an order task
+      },
+      { 
+        userId: { [Op.ne]: userId } // Other users' direct tasks
+      }
+    ];
 
     // Add platform filter
     if (filters.platform) {
@@ -190,7 +197,7 @@ export class TaskService {
         {
           model: Order,
           as: "order",
-          attributes: ["id", "status"],
+          attributes: ["id", "status", "userId"],
           required: false,
         },
       ],
@@ -205,6 +212,12 @@ export class TaskService {
     return tasks
       .filter((task) => {
         const taskData = task.toJSON();
+        
+        // CRITICAL: Prevent users from claiming their own order's tasks
+        // If task has an order and the order belongs to the current user, exclude it
+        if (taskData.order && taskData.order.userId === userId) {
+          return false;
+        }
         
         // If task has an order, only show if order status is NOT pending
         if (taskData.order && taskData.order.status === "pending") {
@@ -246,14 +259,14 @@ export class TaskService {
     const dbTransaction = await sequelize.transaction();
 
     try {
-      // Get task and check if it exists (include Order to check status)
+      // Get task and check if it exists (include Order to check status and owner)
       const task = await Task.findByPk(taskId, { 
-        attributes: ['id', 'userId', 'platform', 'type', 'targetUrl', 'rate', 'quantity', 'remainingQuantity', 'status', 'adminStatus', 'title', 'description'],
+        attributes: ['id', 'userId', 'orderId', 'platform', 'type', 'targetUrl', 'rate', 'quantity', 'remainingQuantity', 'status', 'adminStatus', 'title', 'description'],
         include: [
           {
             model: Order,
             as: "order",
-            attributes: ["id", "status"],
+            attributes: ["id", "status", "userId"],
           },
         ],
         transaction: dbTransaction 
@@ -268,9 +281,45 @@ export class TaskService {
         throw new ApiError(400, "Task is not approved by admin");
       }
 
+      // CRITICAL: Prevent users from claiming their own order's tasks
+      if (task.order && task.order.userId === userId) {
+        throw new ApiError(400, "You cannot claim tasks from your own orders");
+      }
+
       // Check if task is from a pending order - prevent claiming
       if (task.order && task.order.status === "pending") {
         throw new ApiError(400, "Cannot claim task from pending order. Order must be approved first.");
+      }
+
+      // Check max tasks per user limit from settings
+      const maxTasksPerUser = await settingsService.get('tasks.maxPerUser', 10);
+      const userPendingTasksCount = await TaskExecution.count({
+        where: {
+          userId,
+          status: "pending",
+        },
+        transaction: dbTransaction,
+      });
+
+      if (userPendingTasksCount >= maxTasksPerUser) {
+        throw new ApiError(
+          400,
+          `You have reached the maximum limit of ${maxTasksPerUser} concurrent tasks. Please complete some tasks before claiming new ones.`
+        );
+      }
+
+      // Check if user already has a pending (uncompleted) execution for this task
+      const existingPendingExecution = await TaskExecution.findOne({
+        where: {
+          userId,
+          taskId,
+          status: "pending",
+        },
+        transaction: dbTransaction,
+      });
+
+      if (existingPendingExecution) {
+        throw new ApiError(400, "You have already started this task. Please complete it first.");
       }
 
       // Check if user has already completed a similar task (same target URL)
@@ -301,6 +350,17 @@ export class TaskService {
           throw new ApiError(400, "This task has been fully completed");
         }
 
+        // RESERVATION SYSTEM: Decrease remaining quantity when task is claimed
+        // This reserves a slot for this user and prevents race conditions
+        await task.decrement('remainingQuantity', {
+          by: 1,
+          transaction: dbTransaction,
+        });
+
+        // Set 1-hour timeout for task completion
+        const now = new Date();
+        const cooldownEndsAt = addHours(now, 1);
+
         // Claim the task by creating a task execution
         // Don't change task.userId - keep it null so others can claim it too
         const execution = await TaskExecution.create(
@@ -308,8 +368,9 @@ export class TaskService {
             userId,
             taskId,
             status: "pending",
-            executedAt: new Date(),
-            startedAt: new Date(),
+            executedAt: now,
+            startedAt: now,
+            cooldownEndsAt: cooldownEndsAt, // 1-hour window to complete
           },
           { transaction: dbTransaction }
         );
@@ -320,8 +381,8 @@ export class TaskService {
           "Task",
           taskId,
           null,
-          `Claimed and started task: ${task.title}`,
-          { taskType: task.type, platform: task.platform },
+          `Claimed and started task: ${task.title} (reserved slot, must complete within 1 hour)`,
+          { taskType: task.type, platform: task.platform, cooldownEndsAt },
           null
         );
 
@@ -330,6 +391,7 @@ export class TaskService {
         // Return task with execution info
         return {
           ...task.toJSON(),
+          remainingQuantity: task.remainingQuantity - 1, // Return updated quantity
           execution,
         };
       }
@@ -340,24 +402,29 @@ export class TaskService {
         throw new ApiError(400, "Cannot execute own task");
       }
 
+      // Check if there's remaining quantity
+      if (task.remainingQuantity <= 0) {
+        throw new ApiError(400, "This task has been fully completed");
+      }
+
       // Check if task is already completed by this user
-      const existingExecution = await TaskExecution.findOne({
+      const existingCompletedExecution = await TaskExecution.findOne({
         where: {
           userId,
           taskId,
           status: "completed",
         },
-        attributes: ['id', 'status'],
+        attributes: ['id', 'status', 'completedAt'],
         transaction: dbTransaction,
       });
 
-      if (existingExecution) {
+      if (existingCompletedExecution) {
         if (task.type === "follow" || task.type === "subscribe") {
           throw new ApiError(400, "Task already completed");
         }
 
         const cooldownEndsAt = addHours(
-          new Date(existingExecution.completedAt),
+          new Date(existingCompletedExecution.completedAt),
           12
         );
         if (new Date() < cooldownEndsAt) {
@@ -365,19 +432,46 @@ export class TaskService {
         }
       }
 
+      // RESERVATION SYSTEM: Decrease remaining quantity when task is claimed
+      await task.decrement('remainingQuantity', {
+        by: 1,
+        transaction: dbTransaction,
+      });
+
+      // Set 1-hour timeout for task completion
+      const now = new Date();
+      const taskCooldownEndsAt = addHours(now, 1);
+
       // Create task execution
       const execution = await TaskExecution.create(
         {
           userId,
           taskId,
           status: "pending",
-          executedAt: new Date(),
+          executedAt: now,
+          startedAt: now,
+          cooldownEndsAt: taskCooldownEndsAt, // 1-hour window to complete
         },
         { transaction: dbTransaction }
       );
 
+      await AuditLog.log(
+        userId,
+        "start",
+        "Task",
+        taskId,
+        null,
+        `Started task: ${task.title} (must complete within 1 hour)`,
+        { taskType: task.type, platform: task.platform, cooldownEndsAt: taskCooldownEndsAt },
+        null
+      );
+
       await dbTransaction.commit();
-      return execution;
+      return {
+        ...task.toJSON(),
+        remainingQuantity: task.remainingQuantity - 1,
+        execution,
+      };
     } catch (error) {
       await dbTransaction.rollback();
       throw error;

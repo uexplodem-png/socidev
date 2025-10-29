@@ -17,6 +17,16 @@ const Withdrawal = sequelize.define('Withdrawal', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   },
+  fee: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
+  totalAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    field: 'total_amount'
+  },
   method: {
     type: DataTypes.ENUM('bank_transfer', 'crypto', 'paypal'),
     allowNull: false

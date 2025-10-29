@@ -249,6 +249,11 @@ export const tasksAPI = {
     return realApiService.rejectTask(id, reason, notes);
   },
 
+  // Uncompleted tasks
+  getUncompletedTasks: async (params: FilterParams = {}) => {
+    return realApiService.getUncompletedTasks(params);
+  },
+
   // Screenshot submission approval
   getSubmittedTasks: async (params?: any) => {
     return realApiService.getSubmittedTasks(params);

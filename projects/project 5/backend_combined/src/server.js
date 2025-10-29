@@ -26,6 +26,9 @@ import { initializeDatabase } from './utils/initializeDatabase.js';
 // Import routes
 import { apiRouter } from './routes/index.js';
 
+// Import schedulers
+import { taskScheduler } from './services/task.scheduler.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -123,6 +126,10 @@ app.use(errorHandler);
 // Graceful shutdown
 const gracefulShutdown = (signal) => {
   logger.info(`${signal} received, shutting down gracefully`);
+  
+  // Stop schedulers
+  taskScheduler.stop();
+  
   process.exit(0);
 };
 
@@ -137,6 +144,9 @@ const startServer = async () => {
     
     // Initialize database (permissions, roles, settings)
     await initializeDatabase();
+    
+    // Start task auto-release scheduler
+    taskScheduler.start();
     
     app.listen(PORT, () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);

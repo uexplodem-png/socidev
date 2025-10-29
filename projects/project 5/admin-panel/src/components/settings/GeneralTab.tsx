@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, RefreshCw, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../../services/api';
+import { realApiService } from '../../services/realApi';
 
 interface GeneralSettings {
     siteName: string;
@@ -11,6 +12,7 @@ interface GeneralSettings {
     maxTasksPerUser: number;
     minWithdrawalAmount: number;
     withdrawalFee: number;
+    balanceFee: number;
 }
 
 const GeneralTab: React.FC = () => {
@@ -22,6 +24,7 @@ const GeneralTab: React.FC = () => {
         maxTasksPerUser: 10,
         minWithdrawalAmount: 10,
         withdrawalFee: 0,
+        balanceFee: 0,
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -42,6 +45,7 @@ const GeneralTab: React.FC = () => {
                 maxTasksPerUser: data.maxTasksPerUser ?? 10,
                 minWithdrawalAmount: data.minWithdrawalAmount ?? 10,
                 withdrawalFee: data.withdrawalFee ?? 0,
+                balanceFee: data.balanceFee ?? 0,
             });
         } catch (error) {
             console.error('Failed to load general settings:', error);
@@ -67,7 +71,8 @@ const GeneralTab: React.FC = () => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await settingsAPI.update('general', settings);
+            // Send settings directly to backend which handles the 'general' key internally
+            await realApiService.updateSettings(settings);
             toast.success('General settings saved successfully');
             // Refetch updated data from server
             await loadSettings();
@@ -274,6 +279,24 @@ const GeneralTab: React.FC = () => {
                             />
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Percentage fee charged on withdrawals
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Balance/Transaction Fee (%)
+                            </label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={settings.balanceFee}
+                                onChange={(e) => updateSetting('balanceFee', parseFloat(e.target.value))}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                            />
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Platform fee charged on transactions
                             </p>
                         </div>
                     </div>

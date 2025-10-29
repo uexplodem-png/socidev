@@ -81,6 +81,7 @@ export const strictRateLimiter = rateLimit({
  * Maintenance mode middleware
  * Returns 503 for users when maintenance mode is enabled
  * Allows admin bypass with appropriate permission
+ * IMPORTANT: This should run BEFORE auth middleware to block login attempts
  */
 export async function maintenanceMode(req, res, next) {
   try {
@@ -90,14 +91,28 @@ export async function maintenanceMode(req, res, next) {
       return next();
     }
 
-    // Check if user is admin with bypass permission
-    if (req.user && req.user.role === 'super_admin') {
+    // Allow health check and admin routes always
+    if (req.path === '/health' || req.path.startsWith('/api/admin/')) {
       return next();
     }
 
-    // Check for settings.edit permission (allows admin bypass)
-    if (req.user && req.user.permissions?.includes('settings.edit')) {
+    // Allow login/register endpoints for checking (but registration will be blocked separately)
+    // This is needed so admins can still login
+    if (req.path === '/api/auth/login' || req.path === '/api/auth/verify') {
       return next();
+    }
+
+    // For authenticated requests, check if user is admin
+    if (req.user) {
+      // Check if user is admin with bypass permission
+      if (req.user.role === 'super_admin' || req.user.role === 'admin') {
+        return next();
+      }
+
+      // Check for settings.edit permission (allows admin bypass)
+      if (req.user.permissions?.includes('settings.edit')) {
+        return next();
+      }
     }
 
     // Return 503 Service Unavailable
@@ -111,6 +126,7 @@ export async function maintenanceMode(req, res, next) {
       error: 'Service temporarily unavailable for maintenance',
       code: 'MAINTENANCE_MODE',
       message: 'The service is currently undergoing maintenance. Please try again later.',
+      maintenance: true,
     });
   } catch (error) {
     logger.error('Maintenance mode check failed:', error);
