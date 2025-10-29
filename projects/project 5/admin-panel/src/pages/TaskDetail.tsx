@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { tasksAPI, ordersAPI, usersAPI } from '../services/api';
 import Button from '../components/ui/Button';
 import { cn } from '../utils/cn';
-import { 
-    ArrowLeft, 
-    ExternalLink, 
-    CheckCircle, 
-    Clock, 
-    XCircle, 
+import {
+    ArrowLeft,
+    ExternalLink,
+    CheckCircle,
+    Clock,
+    XCircle,
     TrendingUp,
     Package,
     DollarSign,
@@ -271,9 +271,9 @@ const TaskDetail: React.FC = () => {
                             {/* Target URL */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700">
                                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Target URL</div>
-                                <a 
-                                    href={task.targetUrl || task.target_url} 
-                                    target="_blank" 
+                                <a
+                                    href={task.targetUrl || task.target_url}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all flex items-start"
                                 >
@@ -339,9 +339,9 @@ const TaskDetail: React.FC = () => {
                                     {order.targetUrl && (
                                         <div className="bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700">
                                             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Order Target URL</div>
-                                            <a 
-                                                href={order.targetUrl} 
-                                                target="_blank" 
+                                            <a
+                                                href={order.targetUrl}
+                                                target="_blank"
                                                 rel="noreferrer"
                                                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all flex items-start"
                                             >

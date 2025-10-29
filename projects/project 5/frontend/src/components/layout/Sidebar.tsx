@@ -162,9 +162,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const filteredMenuItems = menuItems.filter((item) => {
-    // Check permission first
-    if (item.permission && !hasPermission(item.permission)) {
-      return false;
+    // IMPORTANT: Check permission - if permission is required but user doesn't have it, hide
+    if (item.permission) {
+      const hasPerm = hasPermission(item.permission);
+      if (!hasPerm) {
+        console.log(`Permission check failed for menu item: ${item.id}, required: ${item.permission}`);
+        return false;
+      }
     }
 
     // If item has a required mode, check if it matches current mode

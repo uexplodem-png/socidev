@@ -36,6 +36,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const hasPermission = (permission: string): boolean => {
+    // If no permissions array or empty, deny access
+    if (!permissions || permissions.length === 0) {
+      return false;
+    }
     return permissions.includes(permission);
   };
 

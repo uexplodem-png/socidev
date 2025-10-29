@@ -203,9 +203,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         }
 
         // Check modes.maintenance or general.maintenanceMode
-        return state.settings.modes?.maintenance?.enabled || 
-               state.settings.general?.maintenanceMode || 
-               false;
+        return state.settings.modes?.maintenance?.enabled ||
+            state.settings.general?.maintenanceMode ||
+            false;
     },
 
     refresh: async () => {

@@ -323,7 +323,7 @@ export const Tasks: React.FC = () => {
         data = await tasksAPI.getTasks(params);
         setTasks(data.data || []);
       }
-      
+
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (error: any) {
       console.error('Failed to fetch tasks:', error);
