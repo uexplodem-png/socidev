@@ -4,7 +4,7 @@ import TaskExecution from '../models/TaskExecution.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
 import { sequelize } from '../config/database.js';
-import logger from '../utils/logger.js';
+import logger from '../config/logger.js';
 
 /**
  * Task Auto-Release Scheduler

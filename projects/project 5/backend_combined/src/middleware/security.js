@@ -80,8 +80,8 @@ export const strictRateLimiter = rateLimit({
 /**
  * Maintenance mode middleware
  * Returns 503 for users when maintenance mode is enabled
- * Allows admin bypass with appropriate permission
- * IMPORTANT: This should run BEFORE auth middleware to block login attempts
+ * Allows super_admin, admin, and moderator to bypass
+ * Decodes JWT token to check user role before authentication middleware runs
  */
 export async function maintenanceMode(req, res, next) {
   try {
@@ -96,32 +96,48 @@ export async function maintenanceMode(req, res, next) {
       return next();
     }
 
-    // Allow login/register endpoints for checking (but registration will be blocked separately)
-    // This is needed so admins can still login
-    if (req.path === '/api/auth/login' || req.path === '/api/auth/verify') {
+    // Allow login/register/verify endpoints so admins can login
+    if (req.path === '/api/auth/login' || 
+        req.path === '/api/auth/register' || 
+        req.path === '/api/auth/verify') {
       return next();
     }
 
-    // For authenticated requests, check if user has privileged role
-    if (req.user) {
-      // Allow super_admin, admin, and moderator to bypass maintenance
-      if (req.user.role === 'super_admin' || 
-          req.user.role === 'admin' || 
-          req.user.role === 'moderator') {
-        return next();
-      }
-
-      // Check for settings.edit permission (allows admin bypass)
-      if (req.user.permissions?.includes('settings.edit')) {
-        return next();
+    // Check for JWT token and decode it to get user role
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      try {
+        // Decode JWT token (without verification - just to check role)
+        // The actual verification happens in auth middleware
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        
+        // Allow super_admin, admin, and moderator to bypass maintenance
+        if (payload.role === 'super_admin' || 
+            payload.role === 'admin' || 
+            payload.role === 'moderator') {
+          logger.info('Maintenance mode bypassed by privileged user', {
+            userId: payload.userId,
+            role: payload.role,
+            path: req.path
+          });
+          return next();
+        }
+      } catch (decodeError) {
+        // If token decode fails, continue to block (better safe than sorry)
+        logger.warn('Failed to decode token in maintenance mode', {
+          error: decodeError.message,
+          path: req.path
+        });
       }
     }
 
-    // Return 503 Service Unavailable
+    // Return 503 Service Unavailable for regular users
     logger.info('Maintenance mode blocked request', {
       ip: req.ip,
       path: req.path,
-      userId: req.user?.id,
+      hasAuth: !!authHeader
     });
 
     return res.status(503).json({

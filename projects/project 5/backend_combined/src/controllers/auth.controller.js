@@ -181,6 +181,25 @@ export class AuthController {
         throw new ApiError(401, 'Invalid credentials');
       }
 
+      // Check maintenance mode - only allow privileged users to login
+      const isMaintenanceEnabled = await settingsService.get('maintenance.enabled', false);
+      if (isMaintenanceEnabled) {
+        const privilegedRoles = ['super_admin', 'admin', 'moderator'];
+        if (!privilegedRoles.includes(user.role)) {
+          logger.warn('Login blocked: Maintenance mode active for regular users', { 
+            email, 
+            userId: user.id, 
+            role: user.role 
+          });
+          throw new ApiError(503, 'The service is currently under maintenance. Please try again later.');
+        }
+        logger.info('Maintenance mode: Privileged user login allowed', { 
+          email, 
+          userId: user.id, 
+          role: user.role 
+        });
+      }
+
       // Clear login attempts on successful login
       await loginAttemptTracker.clearAttempts(email, req.ip || req.connection?.remoteAddress);
 

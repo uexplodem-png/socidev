@@ -41,14 +41,25 @@ function AppRoutes() {
     </div>;
   }
 
-  // Check maintenance mode - only show to non-privileged users
-  if (isMaintenanceMode()) {
-    const userRoles = user?.roles?.map(r => r.key) || [];
-    const isPrivilegedUser = userRoles.includes('super_admin') || 
-                             userRoles.includes('admin') || 
-                             userRoles.includes('moderator');
-    
-    if (!isPrivilegedUser) {
+  // Check maintenance mode - ONLY for authenticated users who are not privileged
+  // Allow login/register pages to be accessible so admins can login
+  const currentPath = window.location.pathname;
+  const isPublicAuthPage = currentPath === '/login' || currentPath === '/register';
+  
+  if (isMaintenanceMode() && !isPublicAuthPage) {
+    // If user is authenticated, check their role
+    if (isAuthenticated) {
+      const userRoles = user?.roles?.map(r => r.key) || [];
+      const isPrivilegedUser = userRoles.includes('super_admin') ||
+        userRoles.includes('admin') ||
+        userRoles.includes('moderator');
+
+      // Regular users see maintenance page
+      if (!isPrivilegedUser) {
+        return <Maintenance />;
+      }
+    } else {
+      // Not authenticated and not on auth page - show maintenance
       return <Maintenance />;
     }
   }
@@ -62,9 +73,11 @@ function AppRoutes() {
           isAuthenticated ? (
             <Navigate to='/dashboard' replace />
           ) : (
-            <Layout>
-              <HomePage />
-            </Layout>
+            isMaintenanceMode() ? <Maintenance /> : (
+              <Layout>
+                <HomePage />
+              </Layout>
+            )
           )
         }
       />
