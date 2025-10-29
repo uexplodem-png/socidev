@@ -130,7 +130,7 @@ class RealApiService {
 
     // Auth API
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        return this.request<AuthResponse>('/auth/login', {
+        return this.request<AuthResponse>('/auth/admin-login', {
             method: 'POST',
             body: JSON.stringify(credentials),
         });
