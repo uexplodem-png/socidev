@@ -29,7 +29,10 @@ export async function logAudit(req, options) {
     // Extract actor info from request
     const actor = req.user || {};
     const actorId = actor.id || null;
-    const actorName = actor.username || actor.email || 'System';
+    // Build actor name from available fields
+    const actorName = actor.first_name && actor.last_name 
+      ? `${actor.first_name} ${actor.last_name}`.trim()
+      : (actor.first_name || actor.last_name || actor.email || 'System');
     const actorEmail = actor.email || null;
 
     // Extract IP and user agent
