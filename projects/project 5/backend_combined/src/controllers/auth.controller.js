@@ -217,6 +217,168 @@ export class AuthController {
     }
   }
 
+  async adminLogin(req, res, next) {
+    try {
+      const { email, password } = req.body;
+      
+      logger.info('Admin login attempt', { email, passwordLength: password?.length });
+
+      // Find user
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        logger.warn('Admin login failed: User not found', { email });
+        // Record failed attempt
+        await loginAttemptTracker.recordFailedAttempt(req, email);
+        // Log failed login attempt
+        try {
+          await activityService.logActivity(
+            null,
+            'auth',
+            'admin_login_failed',
+            { 
+              reason: 'User not found',
+              email: email
+            },
+            req
+          );
+        } catch (activityError) {
+          logger.error('Failed to log activity for admin login failure', { error: activityError.message });
+        }
+        throw new ApiError(401, 'Invalid credentials');
+      }
+
+      // Check if user has admin role
+      const adminRoles = ['super_admin', 'admin', 'moderator'];
+      if (!adminRoles.includes(user.role)) {
+        logger.warn('Admin login failed: User is not an admin', { email, userId: user.id, role: user.role });
+        // Record failed attempt
+        await loginAttemptTracker.recordFailedAttempt(req, email);
+        // Log failed admin login attempt
+        try {
+          await activityService.logActivity(
+            user.id,
+            'auth',
+            'admin_login_failed',
+            { 
+              reason: 'Insufficient permissions - not an admin role',
+              email: email,
+              role: user.role
+            },
+            req
+          );
+          
+          // Log audit trail
+          await logAudit({
+            actorId: user.id,
+            actorName: `${user.firstName} ${user.lastName}`,
+            actorEmail: user.email,
+            action: 'ADMIN_LOGIN_DENIED',
+            resource: 'admin_auth',
+            resourceId: user.id.toString(),
+            description: `Unauthorized admin login attempt by ${user.role} user`,
+            metadata: { email, role: user.role },
+            ipAddress: req.ip || req.connection?.remoteAddress,
+            userAgent: req.get('user-agent')
+          });
+        } catch (activityError) {
+          logger.error('Failed to log activity for admin login failure', { error: activityError.message });
+        }
+        throw new ApiError(403, 'Access denied. Admin privileges required.');
+      }
+
+      // Validate password
+      const isValidPassword = await user.validatePassword(password);
+      logger.debug('Password validation result', { isValidPassword, userId: user.id });
+      
+      if (!isValidPassword) {
+        logger.warn('Admin login failed: Invalid password', { email, userId: user.id });
+        // Record failed attempt
+        await loginAttemptTracker.recordFailedAttempt(req, email);
+        // Log failed login attempt
+        try {
+          await activityService.logActivity(
+            user.id,
+            'auth',
+            'admin_login_failed',
+            { 
+              reason: 'Invalid password',
+              email: email
+            },
+            req
+          );
+        } catch (activityError) {
+          logger.error('Failed to log activity for admin login failure', { error: activityError.message });
+        }
+        throw new ApiError(401, 'Invalid credentials');
+      }
+
+      // Clear login attempts on successful login
+      await loginAttemptTracker.clearAttempts(email, req.ip || req.connection?.remoteAddress);
+
+      // Update last login timestamp
+      await user.update({
+        lastLogin: new Date()
+      });
+      
+      logger.info('Admin login successful', { userId: user.id, email, role: user.role });
+
+      // Generate tokens
+      const token = await authService.generateToken(user.id);
+      
+      // Log successful admin login
+      try {
+        await activityService.logActivity(
+          user.id,
+          'auth',
+          'admin_login_success',
+          { 
+            email: email,
+            role: user.role,
+            lastLogin: user.lastLogin
+          },
+          req
+        );
+
+        // Log audit trail
+        await logAudit({
+          actorId: user.id,
+          actorName: `${user.firstName} ${user.lastName}`,
+          actorEmail: user.email,
+          action: 'ADMIN_LOGIN',
+          resource: 'admin_auth',
+          resourceId: user.id.toString(),
+          description: `Admin user logged in successfully`,
+          metadata: { email, role: user.role },
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('user-agent')
+        });
+      } catch (activityError) {
+        logger.error('Failed to log activity for successful admin login', { error: activityError.message });
+      }
+
+      res.json({
+        success: true,
+        message: 'Admin login successful',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            phone: user.phone,
+            role: user.role,
+            lastLogin: user.lastLogin
+          },
+          token
+        }
+      });
+    } catch (error) {
+      logger.error('Admin login error', { error: error.message, stack: error.stack });
+      next(error);
+    }
+  }
+
   async refreshToken(req, res, next) {
     try {
       res.json({

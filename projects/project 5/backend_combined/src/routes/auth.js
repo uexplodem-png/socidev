@@ -14,6 +14,9 @@ router.post('/register', authRateLimiter, validate(schemas.register), authContro
 // Login - with account lockout check and rate limiting
 router.post('/login', authRateLimiter, checkAccountLockout, validate(schemas.login), authController.login);
 
+// Admin login - with role validation
+router.post('/admin-login', authRateLimiter, checkAccountLockout, validate(schemas.login), authController.adminLogin);
+
 // Validate token (requires authentication)
 router.get('/validate', authenticateToken, authController.validateToken);
 
