@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Update - {{siteName}}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #ffffff;
+            padding: 40px 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .status-approved { background: #10b981; color: white; }
+        .status-processing { background: #3b82f6; color: white; }
+        .status-completed { background: #22c55e; color: white; }
+        .status-failed { background: #ef4444; color: white; }
+        .status-cancelled { background: #6b7280; color: white; }
+        .order-details {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .order-row:last-child {
+            border-bottom: none;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #f7f7f7;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-radius: 0 0 10px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Order Update</h1>
+        <p>Order #{{orderId}}</p>
+    </div>
+    
+    <div class="content">
+        <p>Hi {{firstName}},</p>
+        
+        <p>
+            <span class="status-badge status-{{status}}">{{status}}</span>
+        </p>
+        
+        <p>{{statusMessage}}</p>
+        
+        <div class="order-details">
+            <h3 style="margin-top: 0;">Order Details</h3>
+            <div class="order-row">
+                <span><strong>Platform:</strong></span>
+                <span>{{platform}}</span>
+            </div>
+            <div class="order-row">
+                <span><strong>Service:</strong></span>
+                <span>{{service}}</span>
+            </div>
+            <div class="order-row">
+                <span><strong>Quantity:</strong></span>
+                <span>{{quantity}}</span>
+            </div>
+            <div class="order-row">
+                <span><strong>Amount:</strong></span>
+                <span>₺{{amount}}</span>
+            </div>
+        </div>
+        
+        <p style="text-align: center;">
+            <a href="{{orderUrl}}" class="button">View Order</a>
+        </p>
+        
+        <p>If you have any questions about your order, please contact our support team at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>.</p>
+        
+        <p>Best regards,<br>The {{siteName}} Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; {{currentYear}} {{siteName}}. All rights reserved.</p>
+    </div>
+</body>
+</html>

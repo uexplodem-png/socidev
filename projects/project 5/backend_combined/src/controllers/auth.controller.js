@@ -71,6 +71,16 @@ export class AuthController {
       
       logger.info('User registered successfully', { userId: user.id, email, username });
       
+      // Send welcome email (async, don't wait for it)
+      try {
+        const { emailService } = await import('../services/email.service.js');
+        emailService.sendWelcomeEmail(user).catch(err => {
+          logger.error('Failed to send welcome email', { userId: user.id, error: err.message });
+        });
+      } catch (emailError) {
+        logger.error('Failed to load email service', { error: emailError.message });
+      }
+      
       // Log successful registration
       try {
         await activityService.logActivity(

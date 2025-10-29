@@ -25,6 +25,19 @@
           status: 'pending'
         });
 
+        // Send email notification (async, don't wait)
+        try {
+          const user = await User.findByPk(userId);
+          if (user) {
+            const { emailService } = await import('./email.service.js');
+            emailService.sendWithdrawalRequestEmail(user, withdrawal).catch(err => {
+              logger.error('Failed to send withdrawal request email', { userId, error: err.message });
+            });
+          }
+        } catch (emailError) {
+          logger.error('Failed to send withdrawal email', { error: emailError.message });
+        }
+
         // Send notification
         await sendPaymentNotification(userId, 'withdrawal_requested', {
           amount,
