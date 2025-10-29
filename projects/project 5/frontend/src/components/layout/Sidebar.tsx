@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useUserMode } from "../../context/UserModeContext";
+import { usePermissions } from "../../hooks/usePermissions";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -29,6 +30,7 @@ interface MenuItem {
   badge?: number;
   children?: Omit<MenuItem, "children">[];
   requiredMode?: "taskGiver" | "taskDoer";
+  permission?: string;
 }
 
 interface SidebarProps {
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { t } = useLanguage();
   const { userMode } = useUserMode();
+  const { hasPermission } = usePermissions();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
@@ -70,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t("dashboard"),
       icon: LayoutDashboard,
       href: "/dashboard",
+      permission: "dashboard.view",
     },
 
     {
@@ -78,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: ShoppingCart,
       href: "/new-order",
       requiredMode: "taskGiver",
+      permission: "orders.create",
     },
     {
       id: "my-orders",
@@ -86,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       href: "/my-orders",
       badge: 3,
       requiredMode: "taskGiver",
+      permission: "orders.view",
     },
     {
       id: "add-balance",
@@ -93,29 +99,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Wallet,
       href: "/add-balance",
       requiredMode: "taskGiver",
+      permission: "transactions.create",
     },
     {
       id: "withdraw-balance",
       label: t("withdrawBalance"),
       icon: ArrowDownLeft,
       href: "/withdraw-balance",
+      permission: "withdrawals.create",
     },
     {
       id: "social-accounts",
       label: t("socialMediaAccounts"),
       icon: Users,
+      permission: "accounts.view",
       children: [
         {
           id: "instagram-accounts",
           label: t("instagramAccounts"),
           icon: Instagram,
           href: "/my-accounts/instagram",
+          permission: "accounts.view",
         },
         {
           id: "youtube-accounts",
           label: t("youtubeChannels"),
           icon: Youtube,
           href: "/my-accounts/youtube",
+          permission: "accounts.view",
         },
       ],
     },
@@ -124,38 +135,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t("tasks"),
       icon: PlaySquare,
       href: "/tasks",
+      permission: "tasks.view",
     },
     {
       id: "devices",
       label: t("deviceSettings"),
       icon: Laptop,
+      permission: "devices.view",
       children: [
         {
           id: "add-devices",
           label: t("addDevices"),
           icon: Laptop,
           href: "/add-devices",
+          permission: "devices.create",
         },
         {
           id: "my-devices",
           label: t("myDevices"),
           icon: Settings,
           href: "/my-devices",
+          permission: "devices.view",
         },
       ],
     },
   ];
 
   const filteredMenuItems = menuItems.filter((item) => {
+    // Check permission first
+    if (item.permission && !hasPermission(item.permission)) {
+      return false;
+    }
+
     // If item has a required mode, check if it matches current mode
     if (item.requiredMode && item.requiredMode !== userMode) {
       return false;
     }
 
-    // If item has children, filter them based on required mode
+    // If item has children, filter them based on permissions and required mode
     if (item.children) {
       const filteredChildren = item.children.filter(
-        (child) => !child.requiredMode || child.requiredMode === userMode
+        (child) => {
+          // Check child permission
+          if (child.permission && !hasPermission(child.permission)) {
+            return false;
+          }
+          // Check child mode requirement
+          return !child.requiredMode || child.requiredMode === userMode;
+        }
       );
 
       // Only show parent if it has visible children
@@ -170,9 +197,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const isExpanded = expandedGroup === item.id;
     const hasChildren = item.children && item.children.length > 0;
 
-    // Filter children based on user mode
+    // Filter children based on permissions and user mode
     const visibleChildren = item.children?.filter(
-      (child) => !child.requiredMode || child.requiredMode === userMode
+      (child) => {
+        // Check child permission
+        if (child.permission && !hasPermission(child.permission)) {
+          return false;
+        }
+        // Check child mode requirement
+        return !child.requiredMode || child.requiredMode === userMode;
+      }
     );
 
     if (hasChildren && (!visibleChildren || visibleChildren.length === 0)) {
