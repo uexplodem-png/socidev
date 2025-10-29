@@ -874,7 +874,7 @@ class RealApiService {
                 createdAt: t.created_at || t.createdAt,
                 updatedAt: t.updated_at || t.updatedAt,
                 rate: typeof t.rate === 'string' ? parseFloat(t.rate) : t.rate,
-              };
+            };
         });
         return {
             data: mapped,
