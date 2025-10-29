@@ -25,6 +25,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { auditLogsAPI } from '../services/api';
+import { SystemLogs } from '../components/SystemLogs';
 
 interface AuditLog {
   id: string;
@@ -573,16 +574,12 @@ export const AuditLogs: React.FC = () => {
 
       {/* Combined Logs Tab Content */}
       {activeTab === 'combined' && (
-        <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-          <p className="text-gray-600 dark:text-gray-400">Combined logs coming soon...</p>
-        </div>
+        <SystemLogs type="combined" />
       )}
 
       {/* Error Logs Tab Content */}
       {activeTab === 'error' && (
-        <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-          <p className="text-gray-600 dark:text-gray-400">Error logs coming soon...</p>
-        </div>
+        <SystemLogs type="error" />
       )}
     </div>
   );
