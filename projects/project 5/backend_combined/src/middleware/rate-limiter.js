@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 export const rateLimiter = ({ windowMs, max }) => {
   const limiter = new RateLimiterMemory({
     points: max,
-    duration: windowMs / 1000,
+    duration: windowMs / 10000,
   });
 
   return async (req, res, next) => {

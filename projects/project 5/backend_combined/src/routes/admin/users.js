@@ -1,7 +1,7 @@
 import express from 'express';
 import { Op } from 'sequelize';
 import bcrypt from 'bcryptjs';
-import { User, Order, Task, Transaction, AuditLog, Withdrawal, Device, SocialAccount } from '../../models/index.js';
+import { User, Order, Task, Transaction, AuditLog, Withdrawal, Device, SocialAccount, Role, UserRole } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
 import { requirePermission } from '../../middleware/auth.js';
@@ -82,6 +82,20 @@ router.post('/',
 
     // Create user
     const user = await User.create(userData);
+
+    // Assign role in user_roles table for RBAC
+    if (userData.role) {
+      const role = await Role.findOne({ where: { key: userData.role } });
+      if (role) {
+        await UserRole.create({
+          userId: user.id,
+          roleId: role.id,
+        });
+        console.log(`Assigned role ${role.key} to new user ${user.id}`);
+      } else {
+        console.warn(`Role '${userData.role}' not found in roles table`);
+      }
+    }
 
     // Log the creation to AuditLog
     await logAudit(req, {
@@ -475,6 +489,29 @@ router.put('/:id',
     await user.update(updateData);
 
     console.log('Updated user:', user.toJSON());
+
+    // If role was updated, also update user_roles table for RBAC
+    if (updates.role !== undefined && updates.role !== originalValues.role) {
+      console.log('Role changed, updating user_roles table...');
+      
+      // Find the role by key
+      const role = await Role.findOne({ where: { key: updates.role } });
+      
+      if (role) {
+        // Remove old role assignments
+        await UserRole.destroy({ where: { userId: user.id } });
+        
+        // Add new role assignment
+        await UserRole.create({
+          userId: user.id,
+          roleId: role.id,
+        });
+        
+        console.log(`Updated user_roles: User ${user.id} assigned to role ${role.key} (ID: ${role.id})`);
+      } else {
+        console.warn(`Role '${updates.role}' not found in roles table`);
+      }
+    }
 
     // Get the updated values after the update
     const updatedValues = {

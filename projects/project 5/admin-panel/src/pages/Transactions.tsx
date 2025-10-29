@@ -21,13 +21,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
-  X,
-  Eye,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Activity
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -65,7 +59,7 @@ export const Transactions: React.FC = () => {
     columnHelper.accessor('reference', {
       header: 'Reference',
       cell: ({ getValue }) => (
-        <div className="text-sm font-mono text-gray-900">
+        <div className="text-sm font-mono text-gray-900 dark:text-gray-100">
           {getValue()}
         </div>
       ),
@@ -74,8 +68,8 @@ export const Transactions: React.FC = () => {
       header: 'User',
       cell: ({ row }) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">{row.original.userName}</div>
-          <div className="text-sm text-gray-500">{row.original.userEmail}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.original.userName}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{row.original.userEmail}</div>
         </div>
       ),
     }),
@@ -137,7 +131,7 @@ export const Transactions: React.FC = () => {
     columnHelper.accessor('paymentMethod', {
       header: 'Method',
       cell: ({ getValue }) => (
-        <div className="text-sm text-gray-900 capitalize">
+        <div className="text-sm text-gray-900 dark:text-gray-100 capitalize">
           {getValue().replace('_', ' ')}
         </div>
       ),
@@ -145,7 +139,7 @@ export const Transactions: React.FC = () => {
     columnHelper.accessor('description', {
       header: 'Description',
       cell: ({ getValue }) => (
-        <div className="text-sm text-gray-600 max-w-xs truncate">
+        <div className="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
           {getValue()}
         </div>
       ),
@@ -154,14 +148,14 @@ export const Transactions: React.FC = () => {
       header: 'Date',
       cell: ({ getValue, row }) => (
         <div>
-          <div className="text-sm text-gray-900">
+          <div className="text-sm text-gray-900 dark:text-gray-100">
             {new Date(getValue()).toLocaleDateString()}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {new Date(getValue()).toLocaleTimeString()}
           </div>
           {row.original.completedAt && (
-            <div className="text-xs text-green-600">
+            <div className="text-xs text-green-600 dark:text-green-400">
               Completed: {new Date(row.original.completedAt).toLocaleDateString()}
             </div>
           )}
@@ -259,83 +253,21 @@ export const Transactions: React.FC = () => {
     );
   }
 
-  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const completedAmount = transactions
-    .filter(t => t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Transactions</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Transactions</h1>
         <button
           onClick={exportTransactions}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <ArrowDownRight className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Volume</dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  ${Math.abs(totalAmount).toLocaleString()}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Completed</dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  ${Math.abs(completedAmount).toLocaleString()}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-600" />
-              </div>
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Pending</dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  {transactions.filter(t => t.status === 'pending').length}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -344,14 +276,14 @@ export const Transactions: React.FC = () => {
               placeholder="Search transactions..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="pl-10 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
 
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">All Types</option>
             <option value="deposit">Deposit</option>
@@ -364,7 +296,7 @@ export const Transactions: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
@@ -374,7 +306,7 @@ export const Transactions: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {transactions.length} transactions
             </span>
           </div>
@@ -382,16 +314,16 @@ export const Transactions: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white shadow border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none"
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       <div className="flex items-center space-x-1">
@@ -408,9 +340,9 @@ export const Transactions: React.FC = () => {
                 </tr>
               ))}
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
+                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -423,26 +355,26 @@ export const Transactions: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Showing page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 ({transactions.length} transactions)
               </p>
@@ -451,7 +383,7 @@ export const Transactions: React.FC = () => {
               <button
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <ChevronLeft className="h-4 w-4 -ml-1" />
@@ -459,21 +391,21 @@ export const Transactions: React.FC = () => {
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
                 <ChevronRight className="h-4 w-4 -ml-1" />

@@ -163,8 +163,8 @@ const FeatureFlagsTab: React.FC = () => {
                             onClick={() => updateFlag(category, key, !flags[category][key as keyof typeof flags[typeof category]])}
                             disabled={isSaving}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${flags[category][key as keyof typeof flags[typeof category]]
-                                    ? 'bg-blue-600'
-                                    : 'bg-gray-200 dark:bg-gray-700'
+                                ? 'bg-blue-600'
+                                : 'bg-gray-200 dark:bg-gray-700'
                                 } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <span

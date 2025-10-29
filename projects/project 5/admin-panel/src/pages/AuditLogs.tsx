@@ -64,7 +64,7 @@ export const AuditLogs: React.FC = () => {
     columnHelper.accessor('createdAt', {
       header: 'Timestamp',
       cell: ({ getValue }) => (
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-gray-900 dark:text-gray-100">
           {new Date(getValue()).toLocaleString()}
         </div>
       ),
@@ -73,8 +73,8 @@ export const AuditLogs: React.FC = () => {
       header: 'Actor',
       cell: ({ row }) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">{row.original.actorName}</div>
-          <div className="text-sm text-gray-500">{row.original.actorEmail}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{row.original.actorName}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{row.original.actorEmail}</div>
         </div>
       ),
     }),
@@ -119,7 +119,7 @@ export const AuditLogs: React.FC = () => {
         return (
           <div className="flex items-center">
             <Icon className="h-4 w-4 text-gray-400 mr-2" />
-            <span className="text-sm text-gray-900 capitalize">{resource}</span>
+            <span className="text-sm text-gray-900 dark:text-gray-100 capitalize">{resource}</span>
           </div>
         );
       },
@@ -127,7 +127,7 @@ export const AuditLogs: React.FC = () => {
     columnHelper.accessor('description', {
       header: 'Description',
       cell: ({ getValue }) => (
-        <div className="text-sm text-gray-600 max-w-md">
+        <div className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
           {getValue()}
         </div>
       ),
@@ -135,7 +135,7 @@ export const AuditLogs: React.FC = () => {
     columnHelper.accessor('targetUserName', {
       header: 'Target',
       cell: ({ getValue }) => (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           {getValue() || '-'}
         </div>
       ),
@@ -144,11 +144,11 @@ export const AuditLogs: React.FC = () => {
       id: 'metadata',
       header: 'Details',
       cell: ({ row }) => (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           <div>IP: {row.original.metadata.ip}</div>
           {row.original.metadata.changes && (
             <div className="mt-1">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                 Has Changes
               </span>
             </div>
@@ -218,47 +218,47 @@ export const AuditLogs: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Audit Logs</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Audit Logs</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Complete log of all administrative actions and system events
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Shield className="h-5 w-5 text-gray-400" />
-          <span className="text-sm text-gray-600">Immutable Records</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Immutable Records</span>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {auditLogs.length}
           </div>
-          <div className="text-sm text-gray-600">Total Logs</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total Logs</div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {auditLogs.filter(log => log.action.includes('CREATED') || log.action.includes('APPROVED')).length}
           </div>
-          <div className="text-sm text-gray-600">Positive Actions</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Positive Actions</div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
             {auditLogs.filter(log => log.action.includes('UPDATED') || log.action.includes('SUSPENDED')).length}
           </div>
-          <div className="text-sm text-gray-600">Modifications</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Modifications</div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="text-2xl font-bold text-red-600">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             {auditLogs.filter(log => log.action.includes('BANNED') || log.action.includes('REJECTED')).length}
           </div>
-          <div className="text-sm text-gray-600">Restrictive Actions</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Restrictive Actions</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -267,14 +267,14 @@ export const AuditLogs: React.FC = () => {
               placeholder="Search logs..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="pl-10 w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
 
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">All Actions</option>
             {uniqueActions.map(action => (
@@ -285,7 +285,7 @@ export const AuditLogs: React.FC = () => {
           <select
             value={resourceFilter}
             onChange={(e) => setResourceFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">All Resources</option>
             {uniqueResources.map(resource => (
@@ -295,7 +295,7 @@ export const AuditLogs: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {auditLogs.length} logs found
             </span>
           </div>
@@ -303,16 +303,16 @@ export const AuditLogs: React.FC = () => {
       </div>
 
       {/* Audit Logs Table */}
-      <div className="bg-white shadow border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none"
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       <div className="flex items-center space-x-1">
@@ -329,11 +329,11 @@ export const AuditLogs: React.FC = () => {
                 </tr>
               ))}
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                   onClick={() => {
                     setSelectedLog(row.original);
                     setShowDetailsModal(true);
@@ -351,26 +351,26 @@ export const AuditLogs: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Showing page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 ({auditLogs.length} logs)
               </p>
@@ -379,7 +379,7 @@ export const AuditLogs: React.FC = () => {
               <button
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <ChevronLeft className="h-4 w-4 -ml-1" />
@@ -387,21 +387,21 @@ export const AuditLogs: React.FC = () => {
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
                 <ChevronRight className="h-4 w-4 -ml-1" />
@@ -414,12 +414,12 @@ export const AuditLogs: React.FC = () => {
       {/* Details Modal */}
       {showDetailsModal && selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Activity Details</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity Details</h2>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 ✕
               </button>
@@ -429,34 +429,34 @@ export const AuditLogs: React.FC = () => {
               {/* Header Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Admin</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedLog.actorName}</p>
-                  <p className="text-xs text-gray-500">{selectedLog.actorEmail}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Admin</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedLog.actorName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{selectedLog.actorEmail}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Timestamp</p>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Timestamp</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {new Date(selectedLog.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Action</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedLog.action}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Action</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedLog.action}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Resource</p>
-                  <p className="text-sm font-medium text-gray-900 capitalize">{selectedLog.resource}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Resource</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{selectedLog.resource}</p>
                 </div>
               </div>
 
               {/* Metadata */}
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium text-gray-900 mb-3">Metadata</p>
+              <div className="border-t dark:border-gray-700 pt-4">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Metadata</p>
                 <div className="space-y-2 text-sm">
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     <span className="font-medium">IP Address:</span> {selectedLog.metadata.ip}
                   </p>
-                  <p className="text-gray-600 break-all">
+                  <p className="text-gray-600 dark:text-gray-400 break-all">
                     <span className="font-medium">User Agent:</span> {selectedLog.metadata.userAgent}
                   </p>
                 </div>
@@ -464,24 +464,24 @@ export const AuditLogs: React.FC = () => {
 
               {/* Changes */}
               {selectedLog.metadata.changes && (
-                <div className="border-t pt-4">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Changes</p>
+                <div className="border-t dark:border-gray-700 pt-4">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Changes</p>
                   <div className="space-y-3">
                     {Object.entries(selectedLog.metadata.changes.before || {}).map(([field, beforeValue]: any) => {
                       const afterValue = selectedLog.metadata.changes?.after?.[field];
                       if (beforeValue === afterValue) return null;
 
                       return (
-                        <div key={field} className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded">
+                        <div key={field} className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded">
                           <div>
-                            <p className="text-xs text-gray-600 mb-1 capitalize">{field} (Before)</p>
-                            <p className="text-sm font-mono bg-red-50 p-2 rounded text-red-900 break-all">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 capitalize">{field} (Before)</p>
+                            <p className="text-sm font-mono bg-red-50 dark:bg-red-900/20 p-2 rounded text-red-900 dark:text-red-300 break-all">
                               {String(beforeValue || '-')}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600 mb-1 capitalize">{field} (After)</p>
-                            <p className="text-sm font-mono bg-green-50 p-2 rounded text-green-900 break-all">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 capitalize">{field} (After)</p>
+                            <p className="text-sm font-mono bg-green-50 dark:bg-green-900/20 p-2 rounded text-green-900 dark:text-green-300 break-all">
                               {String(afterValue || '-')}
                             </p>
                           </div>
@@ -493,10 +493,10 @@ export const AuditLogs: React.FC = () => {
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end">
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                className="px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded hover:bg-gray-700 dark:hover:bg-gray-600"
               >
                 Close
               </button>
