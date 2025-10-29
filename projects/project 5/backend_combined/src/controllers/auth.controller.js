@@ -269,7 +269,7 @@ export class AuthController {
             lastName: req.user.lastName,
             username: req.user.username,
             phone: req.user.phone,
-            balance: req.user.balance || 0,
+            balance: parseFloat(req.user.balance) || 0,
             role: req.user.role
           }
         }

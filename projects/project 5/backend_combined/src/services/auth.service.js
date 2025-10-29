@@ -85,7 +85,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
-      balance: user.balance,
+      balance: parseFloat(user.balance) || 0,
       lastLogin: user.lastLogin
     };
   }

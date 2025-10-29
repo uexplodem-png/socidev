@@ -91,7 +91,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await authApi.login({ email, password });
       localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
+      setUser({
+        ...response.data.user,
+        balance: Number(response.data.user.balance) || 0,
+      });
       setIsAuthenticated(true);
       
       // Extract permissions from JWT token
