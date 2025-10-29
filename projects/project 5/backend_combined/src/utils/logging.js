@@ -35,18 +35,25 @@ export async function logAudit(req, options) {
       : (actor.first_name || actor.last_name || actor.email || 'System');
     const actorEmail = actor.email || null;
 
+    // For unauthenticated actions (like failed login), we need at least basic info
+    // If no user is available, use the metadata email or "Anonymous"
+    const finalActorId = actorId || 'system';
+    const finalActorName = actorName || (metadata?.email ? `Anonymous (${metadata.email})` : 'Anonymous User');
+    const finalActorEmail = actorEmail || metadata?.email || 'unknown@system.local';
+    const finalResourceId = resourceId || 'N/A';
+
     // Extract IP and user agent
     const ipAddress = req.ip || req.connection.remoteAddress || null;
     const userAgent = req.headers['user-agent'] || null;
 
     // Create audit log entry
     const auditLog = await AuditLog.create({
-      actor_id: actorId,
-      actor_name: actorName,
-      actor_email: actorEmail,
+      actor_id: finalActorId,
+      actor_name: finalActorName,
+      actor_email: finalActorEmail,
       action,
       resource,
-      resource_id: resourceId,
+      resource_id: finalResourceId,
       target_user_id: targetUserId,
       target_user_name: targetUserName,
       description,
