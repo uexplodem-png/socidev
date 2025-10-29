@@ -274,12 +274,12 @@ router.get('/',
   validate(Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
-    search: Joi.string().max(255).optional(),
-    action: Joi.string().max(100).optional(),
-    resource: Joi.string().max(50).optional(),
-    actor_id: Joi.string().uuid().optional(),
-    target_user_id: Joi.string().uuid().optional(),
-    user_id: Joi.string().uuid().optional(),
+    search: Joi.string().max(255).allow('').optional(),
+    action: Joi.string().max(100).allow('').optional(),
+    resource: Joi.string().max(50).allow('').optional(),
+    actor_id: Joi.string().uuid().allow('').optional(),
+    target_user_id: Joi.string().uuid().allow('').optional(),
+    user_id: Joi.string().uuid().allow('').optional(),
     sortBy: Joi.string().valid('created_at', 'action', 'resource').default('created_at'),
     sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
   }), 'query'),
@@ -289,7 +289,7 @@ router.get('/',
     // Build where clause
     const where = {};
 
-    if (search) {
+    if (search && search.trim()) {
       where[Op.or] = [
         { actor_name: { [Op.like]: `%${search}%` } },
         { actor_email: { [Op.like]: `%${search}%` } },
@@ -298,24 +298,24 @@ router.get('/',
       ];
     }
 
-    if (action) {
+    if (action && action.trim()) {
       where.action = action;
     }
 
-    if (resource) {
+    if (resource && resource.trim()) {
       where.resource = resource;
     }
 
-    if (actor_id) {
+    if (actor_id && actor_id.trim()) {
       where.actor_id = actor_id;
     }
 
-    if (target_user_id) {
+    if (target_user_id && target_user_id.trim()) {
       where.target_user_id = target_user_id;
     }
 
     // If user_id is provided, get logs where user is either actor OR target
-    if (user_id) {
+    if (user_id && user_id.trim()) {
       where[Op.or] = [
         { actor_id: user_id },
         { target_user_id: user_id },

@@ -179,13 +179,23 @@ export const AuditLogs: React.FC = () => {
 
   const fetchAuditLogs = async () => {
     try {
+      // Map frontend column names to backend column names
+      const sortByMap: Record<string, string> = {
+        createdAt: 'created_at',
+        action: 'action',
+        resource: 'resource',
+      };
+
+      const sortBy = sorting[0]?.id || 'createdAt';
+      const mappedSortBy = sortByMap[sortBy] || 'created_at';
+
       const params = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
-        search: globalFilter,
-        action: actionFilter,
-        resource: resourceFilter,
-        sortBy: sorting[0]?.id || 'createdAt',
+        search: globalFilter || '',
+        action: actionFilter || '',
+        resource: resourceFilter || '',
+        sortBy: mappedSortBy,
         sortOrder: (sorting[0]?.desc ? 'desc' : 'asc') as 'asc' | 'desc',
       };
 
@@ -201,7 +211,8 @@ export const AuditLogs: React.FC = () => {
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [pagination, globalFilter, actionFilter, resourceFilter, sorting]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.pageIndex, pagination.pageSize, globalFilter, actionFilter, resourceFilter, JSON.stringify(sorting)]);
 
   if (isLoading) {
     return (
