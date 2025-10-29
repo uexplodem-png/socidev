@@ -49,6 +49,10 @@ export const authHandlers = [
     // Passthrough to real backend
     return HttpResponse.passthrough();
   }),
+  http.post('http://localhost:3000/api/auth/admin-login', () => {
+    // Passthrough to real backend for admin login
+    return HttpResponse.passthrough();
+  }),
   http.post('http://localhost:3000/api/auth/*', () => {
     // Passthrough to real backend
     return HttpResponse.passthrough();
