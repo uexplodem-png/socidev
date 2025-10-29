@@ -48,18 +48,18 @@ export async function logAudit(req, options) {
 
     // Create audit log entry
     const auditLog = await AuditLog.create({
-      actor_id: finalActorId,
-      actor_name: finalActorName,
-      actor_email: finalActorEmail,
+      actorId: finalActorId,
+      actorName: finalActorName,
+      actorEmail: finalActorEmail,
       action,
       resource,
-      resource_id: finalResourceId,
-      target_user_id: targetUserId,
-      target_user_name: targetUserName,
+      resourceId: finalResourceId,
+      targetUserId: targetUserId,
+      targetUserName: targetUserName,
       description,
       metadata: metadata ? JSON.stringify(metadata) : null,
-      ip_address: ipAddress,
-      user_agent: userAgent
+      ipAddress: ipAddress,
+      userAgent: userAgent
     });
 
     logger.info('Audit log created', {
@@ -103,12 +103,12 @@ export async function logAction(req, options) {
 
     // Create action log entry
     const actionLog = await ActivityLog.create({
-      user_id: userId,
+      userId: userId,
       type,
       action,
       details,
-      ip_address: ipAddress,
-      user_agent: userAgent
+      ipAddress: ipAddress,
+      userAgent: userAgent
     });
 
     logger.info('Action log created', {
