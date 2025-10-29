@@ -4,14 +4,14 @@
  * Handles audit logs and action logs viewing with pagination and filters.
  */
 
-import { AuditLog, ActivityLog, User } from '../models/index.js';
-import { ApiError } from '../utils/ApiError.js';
-import logger from '../config/logger.js';
+import { AuditLog, ActivityLog, User } from '../../models/index.js';
+import { ApiError } from '../../utils/ApiError.js';
+import logger from '../../config/logger.js';
 import { Op } from 'sequelize';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { logAudit } from '../utils/logging.js';
+import { logAudit } from '../../utils/logging.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -400,17 +400,12 @@ export class AdminLogsController {
       const paginatedLogs = parsedLogs.slice(startIndex, endIndex);
 
       // Log audit trail
-      await logAudit({
-        actorId: req.user.id,
-        actorName: `${req.user.firstName} ${req.user.lastName}`,
-        actorEmail: req.user.email,
+      await logAudit(req, {
         action: 'SYSTEM_LOGS_VIEWED',
         resource: 'system_logs',
         resourceId: 'combined',
         description: 'Viewed combined system logs',
-        metadata: { page, limit, search },
-        ipAddress: req.ip || req.connection?.remoteAddress,
-        userAgent: req.get('user-agent')
+        metadata: { page, limit, search }
       });
 
       logger.info('Combined system logs fetched', {
@@ -501,17 +496,12 @@ export class AdminLogsController {
       const paginatedLogs = parsedLogs.slice(startIndex, endIndex);
 
       // Log audit trail
-      await logAudit({
-        actorId: req.user.id,
-        actorName: `${req.user.firstName} ${req.user.lastName}`,
-        actorEmail: req.user.email,
+      await logAudit(req, {
         action: 'SYSTEM_LOGS_VIEWED',
         resource: 'system_logs',
         resourceId: 'error',
         description: 'Viewed error system logs',
-        metadata: { page, limit, search },
-        ipAddress: req.ip || req.connection?.remoteAddress,
-        userAgent: req.get('user-agent')
+        metadata: { page, limit, search }
       });
 
       logger.info('Error system logs fetched', {
@@ -557,17 +547,12 @@ export class AdminLogsController {
       await fs.writeFile(logPath, '');
 
       // Log audit trail
-      await logAudit({
-        actorId: req.user.id,
-        actorName: `${req.user.firstName} ${req.user.lastName}`,
-        actorEmail: req.user.email,
+      await logAudit(req, {
         action: 'SYSTEM_LOGS_CLEARED',
         resource: 'system_logs',
         resourceId: type,
         description: `Cleared ${type} system logs`,
-        metadata: { logType: type },
-        ipAddress: req.ip || req.connection?.remoteAddress,
-        userAgent: req.get('user-agent')
+        metadata: { logType: type }
       });
 
       logger.warn(`${type} system logs cleared by admin`, {
