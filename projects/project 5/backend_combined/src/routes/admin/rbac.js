@@ -79,8 +79,8 @@ router.get('/roles/:roleId/permissions',
     const { roleId } = req.params;
 
     const rolePermissions = await RolePermission.findAll({
-      where: { role_id: roleId },
-      attributes: ['id', 'permission_id', 'mode', 'allow'],
+      where: { roleId: roleId },
+      attributes: ['id', 'permissionId', 'mode', 'allow'],
       include: [
         {
           model: Permission,
@@ -92,7 +92,7 @@ router.get('/roles/:roleId/permissions',
 
     const permissions = rolePermissions.map(rp => ({
       id: rp.id,
-      permissionId: rp.permission_id,
+      permissionId: rp.permissionId,
       key: rp.permission.key,
       label: rp.permission.label,
       group: rp.permission.group,
@@ -135,8 +135,8 @@ router.post('/roles/:roleId/permissions',
 
     // Upsert role permission
     const [rolePermission, created] = await RolePermission.upsert({
-      role_id: roleId,
-      permission_id: permission.id,
+      roleId: roleId,
+      permissionId: permission.id,
       mode,
       allow: allow ? 1 : 0
     }, {
@@ -180,7 +180,7 @@ router.delete('/roles/:roleId/permissions/:permissionId',
     const { roleId, permissionId } = req.params;
     const { mode } = req.query;
 
-    const where = { role_id: roleId, permission_id: permissionId };
+    const where = { roleId: roleId, permissionId: permissionId };
     if (mode) {
       where.mode = mode;
     }
