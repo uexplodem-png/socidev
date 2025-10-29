@@ -48,6 +48,7 @@ interface SettingsState {
     // Actions
     fetchSettings: () => Promise<void>;
     getFeatureFlag: (path: string) => boolean;
+    isMaintenanceMode: () => boolean;
     refresh: () => Promise<void>;
 }
 
@@ -186,6 +187,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
         // Return the boolean value, default to true if not boolean
         return typeof value === 'boolean' ? value : true;
+    },
+
+    isMaintenanceMode: (): boolean => {
+        const state = get();
+
+        // Trigger fetch if no settings or cache is stale
+        if (!state.settings || Date.now() - state.lastFetch >= CACHE_DURATION) {
+            // Non-blocking fetch
+            state.fetchSettings();
+        }
+
+        if (!state.settings) {
+            return false; // Default to not in maintenance while loading
+        }
+
+        // Check modes.maintenance or general.maintenanceMode
+        return state.settings.modes?.maintenance?.enabled || 
+               state.settings.general?.maintenanceMode || 
+               false;
     },
 
     refresh: async () => {

@@ -25,17 +25,32 @@ import { ProtectedRouteWithPermission } from "./components/ProtectedRouteWithPer
 import { TasksPage } from "./pages/tasks";
 import TestPage from "./pages/test";
 import { MaintenanceBanner } from "./components/MaintenanceBanner";
+import Maintenance from "./pages/Maintenance";
+import { useFeatureFlags } from "./hooks/useFeatureFlags";
 
 
 
 function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isMaintenanceMode, loading: settingsLoading } = useFeatureFlags(isAuthenticated);
 
   // Show loading spinner while checking authentication
-  if (isLoading) {
+  if (isLoading || settingsLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
     </div>;
+  }
+
+  // Check maintenance mode - only show to non-privileged users
+  if (isMaintenanceMode()) {
+    const userRoles = user?.roles?.map(r => r.key) || [];
+    const isPrivilegedUser = userRoles.includes('super_admin') || 
+                             userRoles.includes('admin') || 
+                             userRoles.includes('moderator');
+    
+    if (!isPrivilegedUser) {
+      return <Maintenance />;
+    }
   }
 
   return (

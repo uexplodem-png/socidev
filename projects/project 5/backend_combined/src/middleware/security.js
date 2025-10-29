@@ -102,10 +102,12 @@ export async function maintenanceMode(req, res, next) {
       return next();
     }
 
-    // For authenticated requests, check if user is admin
+    // For authenticated requests, check if user has privileged role
     if (req.user) {
-      // Check if user is admin with bypass permission
-      if (req.user.role === 'super_admin' || req.user.role === 'admin') {
+      // Allow super_admin, admin, and moderator to bypass maintenance
+      if (req.user.role === 'super_admin' || 
+          req.user.role === 'admin' || 
+          req.user.role === 'moderator') {
         return next();
       }
 
