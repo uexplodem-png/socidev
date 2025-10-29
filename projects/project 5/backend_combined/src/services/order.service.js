@@ -128,7 +128,7 @@ export class OrderService {
 
       // Fetch service to get service name
       const service = await Service.findByPk(orderData.service, { 
-        attributes: ['id', 'name', 'basePrice', 'pricePerUnit'],
+        attributes: ['id', 'name', 'pricePerUnit'],
         transaction: dbTransaction 
       });
       
@@ -250,7 +250,7 @@ export class OrderService {
         where: {
           id: orders.map((o) => o.service),
         },
-        attributes: ['id', 'name', 'basePrice', 'pricePerUnit'],
+        attributes: ['id', 'name', 'pricePerUnit'],
         transaction: dbTransaction,
       });
 
