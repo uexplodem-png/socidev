@@ -35,10 +35,11 @@ interface AuditLog {
   targetUserId: string | null;
   targetUserName: string | null;
   description: string;
+  ipAddress: string | null;
+  userAgent: string | null;
   metadata: {
-    ip: string;
-    userAgent: string;
     changes?: any;
+    [key: string]: any;
   };
   createdAt: string;
 }
@@ -56,7 +57,7 @@ export const AuditLogs: React.FC = () => {
     pageSize: 10,
   });
   const [totalPages, setTotalPages] = useState(0);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -141,12 +142,17 @@ export const AuditLogs: React.FC = () => {
       ),
     }),
     columnHelper.display({
-      id: 'metadata',
+      id: 'details',
       header: 'Details',
       cell: ({ row }) => (
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          <div>IP: {row.original.metadata.ip}</div>
-          {row.original.metadata.changes && (
+          <div>IP: {row.original.ipAddress || 'N/A'}</div>
+          {row.original.userAgent && (
+            <div className="truncate max-w-xs" title={row.original.userAgent}>
+              UA: {row.original.userAgent.substring(0, 50)}...
+            </div>
+          )}
+          {row.original.metadata?.changes && (
             <div className="mt-1">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                 Has Changes
