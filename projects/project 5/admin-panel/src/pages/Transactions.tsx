@@ -6,7 +6,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   createColumnHelper,
-  flexRender
+  flexRender,
+  SortingState
 } from '@tanstack/react-table';
 import {
   Search,
@@ -20,7 +21,13 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X,
+  Eye,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -52,7 +59,7 @@ export const Transactions: React.FC = () => {
     pageSize: 10,
   });
   const [totalPages, setTotalPages] = useState(0);
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = [
     columnHelper.accessor('reference', {
@@ -96,7 +103,7 @@ export const Transactions: React.FC = () => {
     }),
     columnHelper.accessor('amount', {
       header: 'Amount',
-      cell: ({ getValue, row }) => {
+      cell: ({ getValue }) => {
         const amount = getValue();
         const isPositive = amount > 0;
         return (
