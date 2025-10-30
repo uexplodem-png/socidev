@@ -8,7 +8,6 @@ import {
     createColumnHelper,
     flexRender,
     SortingState,
-    PaginationState,
     RowSelectionState
 } from '@tanstack/react-table';
 import {
@@ -34,7 +33,7 @@ import {
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
-import { TaskSubmission, TaskSubmissionStatus } from '../types';
+import { TaskSubmission } from '../types';
 import { tasksAPI } from '../services/api';
 
 interface TaskSubmissionWithOrder extends TaskSubmission {
@@ -479,10 +478,10 @@ export const TaskSubmissions: React.FC = () => {
                 return;
             }
 
-            console.log('Approving submission:', { submissionId, executionId: submission.executionId, submission });
+            console.log('Approving submission:', { submissionId, submission });
 
-            // submissionId is the executionId, pass it as the executionId parameter
-            await tasksAPI.approveTaskScreenshot(submission.taskId, submission.executionId);
+            // Use submission id to approve
+            await tasksAPI.approveTaskScreenshot(submissionId);
             setSubmissions(submissions.map(sub =>
                 sub.id === submissionId ? { ...sub, status: 'approved', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin' } : sub
             ));
@@ -504,23 +503,17 @@ export const TaskSubmissions: React.FC = () => {
                 // Handle bulk rejection
                 const selectedSubmissionIds = Object.keys(rowSelection).filter(id => rowSelection[id as keyof typeof rowSelection]);
                 for (const id of selectedSubmissionIds) {
-                    const submission = submissions.find(sub => sub.id === id);
-                    if (submission) {
-                        await tasksAPI.rejectTaskScreenshot(submission.taskId, rejectionReason, submission.executionId);
-                    }
+                    await tasksAPI.rejectTaskScreenshot(id, rejectionReason);
                 }
                 toast.success(`Successfully rejected ${selectedSubmissionIds.length} submission(s)`);
                 setRowSelection({});
             } else {
                 // Handle single rejection
-                const submission = submissions.find(sub => sub.id === rejectingSubmissionId);
-                if (submission) {
-                    await tasksAPI.rejectTaskScreenshot(submission.taskId, rejectionReason, submission.executionId);
-                    setSubmissions(submissions.map(sub =>
-                        sub.id === rejectingSubmissionId ?
-                            { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
-                    ));
-                }
+                await tasksAPI.rejectTaskScreenshot(rejectingSubmissionId, rejectionReason);
+                setSubmissions(submissions.map(sub =>
+                    sub.id === rejectingSubmissionId ?
+                        { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
+                ));
                 toast.success('Submission rejected successfully');
             }
             setRejectingSubmissionId(null);
@@ -542,10 +535,7 @@ export const TaskSubmissions: React.FC = () => {
 
         try {
             for (const id of selectedSubmissionIds) {
-                const submission = submissions.find(sub => sub.id === id);
-                if (submission) {
-                    await tasksAPI.approveTaskScreenshot(submission.taskId, submission.executionId);
-                }
+                await tasksAPI.approveTaskScreenshot(id);
             }
             setSubmissions(submissions.map(sub =>
                 selectedSubmissionIds.includes(sub.id) ?
@@ -556,33 +546,6 @@ export const TaskSubmissions: React.FC = () => {
         } catch (error) {
             console.error('Bulk approve failed:', error);
             toast.error('Bulk approve failed');
-        }
-    };
-
-    const handleBulkReject = async () => {
-        const selectedSubmissionIds = Object.keys(rowSelection).filter(id => rowSelection[id as keyof typeof rowSelection]);
-        if (selectedSubmissionIds.length === 0) {
-            toast.error('Please select at least one submission to reject');
-            return;
-        }
-
-        if (!rejectionReason) {
-            toast.error('Please provide a rejection reason');
-            return;
-        }
-
-        try {
-            // Simulate API call
-            setSubmissions(submissions.map(sub =>
-                selectedSubmissionIds.includes(sub.id) ?
-                    { ...sub, status: 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: 'Admin', rejectionReason } : sub
-            ));
-            toast.success(`Successfully rejected ${selectedSubmissionIds.length} submission(s)`);
-            setRowSelection({});
-            setRejectionReason('');
-        } catch (error) {
-            console.error('Bulk reject failed:', error);
-            toast.error('Bulk reject failed');
         }
     };
 
@@ -805,11 +768,11 @@ export const TaskSubmissions: React.FC = () => {
 
             {/* Screenshot Modal */}
             {screenshotModalOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
                     onClick={() => setScreenshotModalOpen(false)}
                 >
-                    <div 
+                    <div
                         className="bg-white rounded-lg max-w-4xl max-h-full overflow-auto dark:bg-gray-800"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -835,11 +798,11 @@ export const TaskSubmissions: React.FC = () => {
 
             {/* Rejection Reason Modal */}
             {rejectingSubmissionId && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
                     onClick={() => setRejectingSubmissionId(null)}
                 >
-                    <div 
+                    <div
                         className="bg-white rounded-lg max-w-md w-full dark:bg-gray-800"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1055,8 +1018,8 @@ export const TaskSubmissions: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${proof.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                        proof.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                                            'bg-red-100 text-red-800'
+                                                    proof.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                                        'bg-red-100 text-red-800'
                                                     }`}>
                                                     {proof.status}
                                                 </span>

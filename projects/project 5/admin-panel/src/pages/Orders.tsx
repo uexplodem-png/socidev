@@ -9,28 +9,27 @@ import {
   flexRender
 } from '@tanstack/react-table';
 import {
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Edit,
-  RefreshCw,
-  Ban,
-  CheckCircle,
   Clock,
-  AlertTriangle,
-  ChevronUp,
-  ChevronDown,
+  CheckCircle,
+  Filter,
+  RefreshCw,
+  Search,
+  Edit,
+  Eye,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  Ban,
+  RotateCcw,
   Plus,
-  RotateCcw
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { ProtectedPage } from '../components/ProtectedPage';
-import { mockDataAPI, ordersAPI } from '../services/api';
+import { ordersAPI } from '../services/api';
 
 interface Order {
   id: string;
@@ -299,26 +298,26 @@ export const Orders: React.FC = () => {
         status: statusFilter,
         platform: platformFilter,
         sortBy: sorting[0]?.id || 'created_at',
-        sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+        sortOrder: (sorting[0]?.desc ? 'desc' : 'asc') as 'asc' | 'desc',
       };
 
       // Use the real API instead of mock data
       const response = await ordersAPI.getOrders(params);
 
       // Map backend order data to frontend Order interface
-      const mappedOrders = response.data.map(order => ({
+      const mappedOrders = response.data.map((order: any) => ({
         id: order.id,
-        userId: order.userId || order.user_id,
-        userName: order.userName || order.user_name || (order.user ? `${order.user.firstName || order.user.first_name} ${order.user.lastName || order.user.last_name}` : 'Unknown User'),
-        userEmail: order.userEmail || order.user_email || (order.user ? order.user.email : ''),
+        userId: order.userId || order.user_id || '',
+        userName: order.userName || order.user_name || 'Unknown User',
+        userEmail: order.userEmail || order.user_email || '',
         amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount,
         status: order.status,
         platform: order.platform,
         service: order.service,
-        targetUrl: order.targetUrl || order.target_url,
+        targetUrl: order.targetUrl || order.target_url || '',
         quantity: order.quantity,
         completed: order.completedCount || order.completed_count || 0,
-        progress: order.progress,
+        progress: order.progress || 0,
         createdAt: order.createdAt || order.created_at,
         updatedAt: order.updatedAt || order.updated_at,
         startCount: order.startCount || order.start_count,
@@ -368,25 +367,25 @@ export const Orders: React.FC = () => {
       // Map backend order data to frontend Order interface
       const mappedOrder = {
         id: fetchedOrder.id,
-        userId: fetchedOrder.userId || fetchedOrder.user_id,
-        userName: fetchedOrder.userName || fetchedOrder.user_name || (fetchedOrder.user ? `${fetchedOrder.user.firstName || fetchedOrder.user.first_name} ${fetchedOrder.user.lastName || fetchedOrder.user.last_name}` : 'Unknown User'),
-        userEmail: fetchedOrder.userEmail || fetchedOrder.user_email || (fetchedOrder.user ? fetchedOrder.user.email : ''),
+        userId: fetchedOrder.userId,
+        userName: fetchedOrder.userName || 'Unknown User',
+        userEmail: fetchedOrder.userEmail || '',
         amount: typeof fetchedOrder.amount === 'string' ? parseFloat(fetchedOrder.amount) : fetchedOrder.amount,
         status: fetchedOrder.status,
         platform: fetchedOrder.platform,
         service: fetchedOrder.service,
-        targetUrl: fetchedOrder.targetUrl || fetchedOrder.target_url,
+        targetUrl: fetchedOrder.targetUrl,
         quantity: fetchedOrder.quantity,
-        completed: fetchedOrder.completedCount || fetchedOrder.completed_count || 0,
+        completed: fetchedOrder.completedCount || 0,
         progress: fetchedOrder.progress,
-        createdAt: fetchedOrder.createdAt || fetchedOrder.created_at,
-        updatedAt: fetchedOrder.updatedAt || fetchedOrder.updated_at,
-        startCount: fetchedOrder.startCount || fetchedOrder.start_count,
-        remainingCount: fetchedOrder.remainingCount || fetchedOrder.remaining_count,
-        completedCount: fetchedOrder.completedCount || fetchedOrder.completed_count,
+        createdAt: fetchedOrder.createdAt,
+        updatedAt: fetchedOrder.updatedAt,
+        startCount: fetchedOrder.startCount,
+        remainingCount: fetchedOrder.remainingCount,
+        completedCount: fetchedOrder.completedCount,
         speed: fetchedOrder.speed,
-        startedAt: fetchedOrder.startedAt || fetchedOrder.started_at,
-        completedAt: fetchedOrder.completedAt || fetchedOrder.completed_at,
+        startedAt: fetchedOrder.startedAt,
+        completedAt: fetchedOrder.completedAt,
       };
 
       setSelectedOrder(mappedOrder);
@@ -409,33 +408,6 @@ export const Orders: React.FC = () => {
       console.error('Failed to refund order:', error);
       toast.error(error.message || 'Failed to refund order');
     }
-  };
-
-  const exportOrders = () => {
-    const csvContent = [
-      ['Order ID', 'Customer', 'Platform', 'Service', 'Status', 'Amount', 'Created'],
-      ...orders.map(order => [
-        order.id,
-        order.userName,
-        order.platform,
-        order.service,
-        order.status,
-        order.amount.toString(),
-        new Date(order.createdAt).toLocaleDateString()
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', `orders-export-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    toast.success('Orders exported successfully');
   };
 
   // Handle add order form changes
