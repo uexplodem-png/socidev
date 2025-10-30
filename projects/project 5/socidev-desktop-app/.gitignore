@@ -8,8 +8,13 @@ coverage/
 
 # Production
 dist/
-build/
 release/
+*.asar
+
+# Build assets (keep build/ folder but ignore generated icons if using placeholders)
+build/*.icns
+build/*.ico
+build/*.png
 
 # Misc
 .DS_Store
