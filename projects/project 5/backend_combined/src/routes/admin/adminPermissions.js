@@ -1,6 +1,6 @@
 import express from 'express';
 import { asyncHandler } from '../../middleware/errorHandler.js';
-import { requireAdminPermission } from '../../middleware/auth.js';
+import { requireAdminPermission, authenticateToken } from '../../middleware/auth.js';
 import { 
   getAllAdminPermissions, 
   updateAdminPermission, 
@@ -17,6 +17,7 @@ const router = express.Router();
  * Get current user's permissions (for frontend permission checking)
  */
 router.get('/my-permissions',
+  authenticateToken, // Authenticate user first
   asyncHandler(async (req, res) => {
     const user = req.user;
     if (!user || !user.role) {

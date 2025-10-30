@@ -97,7 +97,8 @@ export const requireAdmin = (req, res, next) => {
     });
   }
 
-  if (!['admin', 'super_admin'].includes(req.user.role)) {
+  // Allow admin, super_admin, and moderator roles
+  if (!['admin', 'super_admin', 'moderator'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Admin access required',
       code: 'INSUFFICIENT_PERMISSIONS',
