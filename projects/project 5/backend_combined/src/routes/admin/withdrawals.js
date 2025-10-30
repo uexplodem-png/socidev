@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { Withdrawal, User, Transaction, ActivityLog } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
-import { requirePermission } from '../../middleware/auth.js';
+import { requirePermission, authorizeRoles } from '../../middleware/auth.js';
 import Joi from 'joi';
 
 const router = express.Router();
@@ -211,6 +211,7 @@ router.get('/:id',
  *         description: Invalid status transition
  */
 router.post('/:id/status',
+  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can approve/reject withdrawals
   requirePermission('withdrawals.process'),
   validate(schemas.updateWithdrawalStatus),
   asyncHandler(async (req, res) => {
@@ -423,6 +424,7 @@ router.get('/stats',
  *         description: Withdrawals processed successfully
  */
 router.post('/bulk-process',
+  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can bulk process withdrawals
   requirePermission('withdrawals.process'),
   validate(Joi.object({
     withdrawal_ids: Joi.array().items(Joi.string().uuid()).min(1).required(),

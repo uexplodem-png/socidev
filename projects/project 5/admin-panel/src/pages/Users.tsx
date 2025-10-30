@@ -7,6 +7,7 @@ import { realApiService } from '../services/realApi';
 import { useAppDispatch } from '../store';
 import { addNotification } from '../store/slices/notificationSlice';
 import { usePermissions } from '../hooks/usePermissions';
+import { useRole } from '../hooks/useRole';
 import DataTable from '../components/ui/DataTable';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -15,6 +16,7 @@ import { cn } from '../utils/cn';
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
   const { canAccess } = usePermissions();
+  const { canEditUsers, canAdjustBalance } = useRole();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -136,14 +138,10 @@ const Users: React.FC = () => {
           }
 
           // Update selectedUser with latest data including lastLogin
-          setSelectedUser({
-            ...selectedUser,
-            ...userWithDetails,
-          });
+          setSelectedUser(userWithDetails);
 
           // The backend includes orders, tasks, transactions, withdrawals, devices, and social accounts in the user object
           setUserOrders(userWithDetails.orders || []);
-          setUserTransactions(userWithDetails.transactions || []);
           setUserWithdrawals(userWithDetails.withdrawals || []);
           setUserSocialAccounts(userWithDetails.socialAccounts || []);
           setUserDevices(userWithDetails.devices || []);
@@ -183,7 +181,8 @@ const Users: React.FC = () => {
 
       fetchUserDetails();
     }
-  }, [selectedUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser?.id]);
 
   // Populate edit form when showing edit modal
   useEffect(() => {
@@ -401,14 +400,18 @@ const Users: React.FC = () => {
           </Button>
           {canAccess('users', 'edit') && (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleUserAction(row.original.id, 'activate')}
-                disabled={row.original.status === 'active'}
-              >
-                <UserCheck className="h-4 w-4" />
-              </Button>
+              {/* Only admin and super_admin can activate users */}
+              {canEditUsers && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUserAction(row.original.id, 'activate')}
+                  disabled={row.original.status === 'active'}
+                >
+                  <UserCheck className="h-4 w-4" />
+                </Button>
+              )}
+              {/* Moderators can suspend, but not ban */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -645,7 +648,7 @@ const Users: React.FC = () => {
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Details</h3>
-            {canAccess('users', 'edit') && (
+            {canAccess('users', 'edit') && canAdjustBalance && (
               <Button
                 variant="outline"
                 size="sm"

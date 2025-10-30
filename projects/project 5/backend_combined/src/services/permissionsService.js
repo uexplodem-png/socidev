@@ -1,5 +1,6 @@
 import { User, Role, Permission, UserRole, RolePermission } from '../models/index.js';
 import logger from '../config/logger.js';
+import { getDefaultPermissions, checkPermission } from '../utils/permissions.js';
 
 class PermissionsService {
   constructor() {
@@ -88,6 +89,20 @@ class PermissionsService {
    */
   async getUserPermissions(userId, mode = 'all') {
     try {
+      // Önce kullanıcıyı çek - role ve userMode'a ihtiyacımız var
+      const user = await User.findByPk(userId, {
+        attributes: ['id', 'role', 'userMode']
+      });
+
+      if (!user) {
+        logger.warn(`User not found for permissions: ${userId}`);
+        return [];
+      }
+
+      // Default permissions'ı al
+      const defaultPermissions = getDefaultPermissions(user.role, user.userMode || 'task_doer');
+
+      // Database'den role-based permissions'ı al (opsiyonel - ekstra yetkiler için)
       const userRoles = await UserRole.findAll({
         where: { user_id: userId },
         attributes: ['role_id'],
@@ -120,18 +135,22 @@ class PermissionsService {
         ]
       });
 
-      const permissions = new Set();
+      // Database permissions'ı topla
+      const dbPermissions = new Set();
       for (const userRole of userRoles) {
         if (userRole.role && userRole.role.rolePermissions) {
           for (const rolePerm of userRole.role.rolePermissions) {
             if (rolePerm.permission) {
-              permissions.add(rolePerm.permission.key);
+              dbPermissions.add(rolePerm.permission.key);
             }
           }
         }
       }
 
-      return Array.from(permissions);
+      // Default ve DB permissions'ı birleştir
+      const allPermissions = new Set([...defaultPermissions, ...dbPermissions]);
+
+      return Array.from(allPermissions);
     } catch (error) {
       logger.error(`PermissionsService.getUserPermissions error:`, error);
       return [];

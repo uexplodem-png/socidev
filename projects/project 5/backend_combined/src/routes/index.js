@@ -9,6 +9,7 @@ import { taskRouter } from "./tasks.js";
 import { adminRouter } from "./admin/index.js";
 import { platformsRouter } from "./platforms.js";
 import { settingsRouter } from "./settings.js";
+import permissionRestrictionsRouter from "./permissionRestrictions.routes.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -29,5 +30,6 @@ router.use("/tasks", taskRouter);
 
 // Admin routes (require authentication and admin role)
 router.use("/admin", adminRouter);
+router.use("/admin", permissionRestrictionsRouter);
 
 export { router as apiRouter };

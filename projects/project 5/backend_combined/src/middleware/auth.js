@@ -200,10 +200,41 @@ export const optionalAuth = async (req, res, next) => {
   next();
 };
 
+/**
+ * Middleware to authorize specific roles
+ * @param {...string} allowedRoles - Allowed roles (e.g., 'admin', 'super_admin')
+ */
+export const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      logger.warn('Role authorization failed', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requiredRoles: allowedRoles
+      });
+      return res.status(403).json({
+        error: 'Insufficient permissions',
+        code: 'INSUFFICIENT_PERMISSIONS',
+        required: allowedRoles
+      });
+    }
+
+    next();
+  };
+};
+
 export default {
   authenticateToken,
   requireAdmin,
   requireSuperAdmin,
   requirePermission,
   optionalAuth,
+  authorizeRoles,
 };

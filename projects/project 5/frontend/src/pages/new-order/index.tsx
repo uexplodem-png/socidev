@@ -9,6 +9,8 @@ import { Card } from "../../components/ui/Card";
 import { useLanguage } from "../../context/LanguageContext";
 import { getPlatforms, Platform } from "../../lib/api/platforms";
 import { useFeatureFlags } from "../../hooks/useFeatureFlags";
+import { useAuth } from "../../context/AuthContext";
+import { RestrictedPermission } from "../../components/RestrictedPermission";
 
 const getPlatformIcon = (name: string) => {
   const lowerName = name.toLowerCase();
@@ -27,6 +29,10 @@ export const NewOrderPage = () => {
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureFlags(true);
+  const { canUsePermission } = useAuth();
+
+  // Check permission restriction
+  const permissionCheck = canUsePermission('orders.create');
 
   // Check if orders module is enabled
   const ordersEnabled = isFeatureEnabled('orders');
@@ -69,6 +75,11 @@ export const NewOrderPage = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
+  }
+
+  // Check if permission is restricted
+  if (permissionCheck.isRestricted) {
+    return <RestrictedPermission permissionName="Sipariş Verme" />;
   }
 
   // Show disabled message if orders module is disabled

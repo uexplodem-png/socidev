@@ -10,6 +10,7 @@ import { twoFactorService } from '../services/twoFactorService.js';
 import { emailVerificationService } from '../services/emailVerificationService.js';
 import { logAudit } from '../utils/logging.js';
 import { settingsService } from '../services/settingsService.js';
+import { getDefaultPermissions } from '../utils/permissions.js';
 
 const authService = new AuthService();
 const activityService = new ActivityService();
@@ -70,6 +71,39 @@ export class AuthController {
       });
       
       logger.info('User registered successfully', { userId: user.id, email, username });
+
+      // Assign default role to user in user_roles table
+      try {
+        const { Role, UserRole } = await import('../models/index.js');
+        
+        // Get the role ID based on user.role (default is 'task_doer')
+        const roleRecord = await Role.findOne({ 
+          where: { key: user.role || 'task_doer' } 
+        });
+        
+        if (roleRecord) {
+          await UserRole.create({
+            user_id: user.id,
+            role_id: roleRecord.id
+          });
+          logger.info('User role assigned successfully', { 
+            userId: user.id, 
+            role: user.role,
+            roleId: roleRecord.id 
+          });
+        } else {
+          logger.warn('Role not found in database, skipping user_roles assignment', { 
+            userId: user.id, 
+            role: user.role 
+          });
+        }
+      } catch (roleError) {
+        logger.error('Failed to assign user role', { 
+          userId: user.id, 
+          error: roleError.message 
+        });
+        // Don't throw error, user is already created
+      }
       
       // Send welcome email (async, don't wait for it)
       try {

@@ -125,6 +125,13 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true,
     field: 'refresh_token'
+  },
+  restrictedPermissions: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    field: 'restricted_permissions',
+    comment: 'Admin tarafından sınırlandırılmış yetkiler'
   }
 }, {
   tableName: 'users',

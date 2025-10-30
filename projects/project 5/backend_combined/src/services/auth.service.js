@@ -63,15 +63,21 @@ export class AuthService {
   }
 
   async generateToken(userId) {
-    // Get user permissions and roles for JWT
+    // Get user permissions, roles and restrictions for JWT
     const permissions = await permissionsService.getUserPermissions(userId);
     const roles = await permissionsService.getUserRoles(userId);
+    
+    // Get user's restricted permissions
+    const user = await User.findByPk(userId, {
+      attributes: ['restrictedPermissions']
+    });
     
     return jwt.sign(
       { 
         userId,
         permissions,
-        roles: roles.map(r => ({ id: r.id, key: r.key, label: r.label }))
+        roles: roles.map(r => ({ id: r.id, key: r.key, label: r.label })),
+        restrictedPermissions: user?.restrictedPermissions || null
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }

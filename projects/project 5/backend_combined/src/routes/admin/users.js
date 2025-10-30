@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { User, Order, Task, Transaction, AuditLog, Withdrawal, Device, SocialAccount, Role, UserRole } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
-import { requirePermission } from '../../middleware/auth.js';
+import { requirePermission, authorizeRoles } from '../../middleware/auth.js';
 import { settingsService } from '../../services/settingsService.js';
 import { logAudit } from '../../utils/logging.js';
 import Joi from 'joi';
@@ -438,6 +438,7 @@ router.get('/:id',
  *         description: User not found
  */
 router.put('/:id',
+  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can edit users
   requirePermission('users.edit'),
   validate(schemas.updateUser),
   asyncHandler(async (req, res) => {
@@ -818,6 +819,7 @@ router.post('/bulk-action',
  *         description: User not found
  */
 router.post('/:id/balance',
+  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can adjust balance
   requirePermission('users.edit'),
   validate(schemas.adjustBalance || Joi.object({
     amount: Joi.number().min(0.01).required(),

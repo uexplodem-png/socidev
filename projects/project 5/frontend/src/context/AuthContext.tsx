@@ -23,7 +23,10 @@ interface AuthContextType {
   logout: () => void;
   user: User | null;
   permissions: string[];
+  restrictedPermissions: string[];
   hasPermission: (permission: string) => boolean;
+  isPermissionRestricted: (permission: string) => boolean;
+  canUsePermission: (permission: string) => { canUse: boolean; isRestricted: boolean };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [restrictedPermissions, setRestrictedPermissions] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const hasPermission = (permission: string): boolean => {
@@ -41,6 +45,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
     return permissions.includes(permission);
+  };
+
+  const isPermissionRestricted = (permission: string): boolean => {
+    return restrictedPermissions.includes(permission);
+  };
+
+  const canUsePermission = (permission: string): { canUse: boolean; isRestricted: boolean } => {
+    const hasIt = hasPermission(permission);
+    const isRestricted = isPermissionRestricted(permission);
+    
+    return {
+      canUse: hasIt && !isRestricted,
+      isRestricted: hasIt && isRestricted
+    };
   };
 
   useEffect(() => {
@@ -65,13 +83,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
           setIsAuthenticated(true);
 
-          // Extract permissions from JWT token
+          // Extract permissions and restrictions from JWT token
           try {
             const tokenPayload = JSON.parse(atob(token.split('.')[1]));
             setPermissions(tokenPayload.permissions || []);
+            setRestrictedPermissions(tokenPayload.restrictedPermissions || []);
           } catch (decodeError) {
             console.error('Failed to decode token:', decodeError);
             setPermissions([]);
+            setRestrictedPermissions([]);
           }
         } else {
           localStorage.removeItem("token");
@@ -101,13 +121,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       setIsAuthenticated(true);
 
-      // Extract permissions from JWT token
+      // Extract permissions and restrictions from JWT token
       try {
         const tokenPayload = JSON.parse(atob(response.data.token.split('.')[1]));
         setPermissions(tokenPayload.permissions || []);
+        setRestrictedPermissions(tokenPayload.restrictedPermissions || []);
       } catch (decodeError) {
         console.error('Failed to decode token:', decodeError);
         setPermissions([]);
+        setRestrictedPermissions([]);
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -120,13 +142,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAuthenticated(false);
     setUser(null);
     setPermissions([]);
+    setRestrictedPermissions([]);
     // Dispatch a custom event to notify other contexts
     window.dispatchEvent(new CustomEvent("userLoggedOut"));
     navigate("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, user, permissions, hasPermission }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      isLoading, 
+      login, 
+      logout, 
+      user, 
+      permissions, 
+      restrictedPermissions,
+      hasPermission,
+      isPermissionRestricted,
+      canUsePermission
+    }}>
       {children}
     </AuthContext.Provider>
   );
