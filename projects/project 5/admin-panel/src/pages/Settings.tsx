@@ -113,12 +113,12 @@ const Settings: React.FC = () => {
             </nav>
           </div>
 
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTabComponent}
-          </div>
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTabComponent}
         </div>
       </div>
+    </div>
     </WithPermissionCheck>
   );
 };
