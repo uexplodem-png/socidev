@@ -60,6 +60,10 @@ const Users: React.FC = () => {
   const [userApiLogs, setUserApiLogs] = useState<any[]>([]);
   const [apiLogsLoading, setApiLogsLoading] = useState(false);
   const [apiLogsPagination, setApiLogsPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  const [showEditRateLimitModal, setShowEditRateLimitModal] = useState(false);
+  const [showEditAllowedIpsModal, setShowEditAllowedIpsModal] = useState(false);
+  const [editRateLimit, setEditRateLimit] = useState('');
+  const [editAllowedIps, setEditAllowedIps] = useState('');
 
   // New state for add user form
   const [newUser, setNewUser] = useState({
@@ -1186,6 +1190,74 @@ const Users: React.FC = () => {
     }
   };
 
+  const handleUpdateRateLimit = async () => {
+    if (!userApiKey || !editRateLimit) return;
+
+    const rateLimit = parseInt(editRateLimit);
+    if (isNaN(rateLimit) || rateLimit < 1) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Rate limit must be a positive number',
+      }));
+      return;
+    }
+
+    try {
+      await realApiService.updateApiKeyRateLimit(userApiKey.id, rateLimit);
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Rate limit updated successfully',
+      }));
+
+      // Refresh API key data
+      const apiKeyData = await realApiService.getUserApiKey(selectedUser!.id);
+      setUserApiKey(apiKeyData.apiKey || null);
+      setShowEditRateLimitModal(false);
+      setEditRateLimit('');
+    } catch (error) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to update rate limit',
+      }));
+    }
+  };
+
+  const handleUpdateAllowedIps = async () => {
+    if (!userApiKey) return;
+
+    // Parse IPs from textarea (one per line or comma-separated)
+    const ips = editAllowedIps
+      .split(/[\n,]/)
+      .map(ip => ip.trim())
+      .filter(ip => ip.length > 0);
+
+    try {
+      await realApiService.updateApiKeyAllowedIps(userApiKey.id, ips);
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Allowed IPs updated successfully',
+      }));
+
+      // Refresh API key data
+      const apiKeyData = await realApiService.getUserApiKey(selectedUser!.id);
+      setUserApiKey(apiKeyData.apiKey || null);
+      setShowEditAllowedIpsModal(false);
+      setEditAllowedIps('');
+    } catch (error: any) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Failed to update allowed IPs',
+      }));
+    }
+  };
+
   const renderApiTab = () => {
     if (!userApiKey) {
       return (
@@ -1295,20 +1367,46 @@ const Users: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Rate Limit
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Rate Limit
+                  </label>
+                  {canAccess('api', 'edit') && (
+                    <button
+                      onClick={() => {
+                        setEditRateLimit(userApiKey.rateLimit?.toString() || '1000');
+                        setShowEditRateLimitModal(true);
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-gray-900 dark:text-white">
                   {userApiKey.rateLimit?.toLocaleString() || 1000} req/day
                 </p>
               </div>
             </div>
 
-            {userApiKey.allowedIps && userApiKey.allowedIps.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Allowed IPs
                 </label>
+                {canAccess('api', 'edit') && (
+                  <button
+                    onClick={() => {
+                      setEditAllowedIps((userApiKey.allowedIps || []).join('\n'));
+                      setShowEditAllowedIpsModal(true);
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              {userApiKey.allowedIps && userApiKey.allowedIps.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {userApiKey.allowedIps.map((ip: string, index: number) => (
                     <span
@@ -1319,8 +1417,10 @@ const Users: React.FC = () => {
                     </span>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">All IPs allowed</p>
+              )}
+            </div>
 
             {canAccess('api', 'edit') && (
               <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -2270,6 +2370,99 @@ const Users: React.FC = () => {
               </div>
             </div>
           )}
+        </Modal>
+
+        {/* Edit Rate Limit Modal */}
+        <Modal
+          isOpen={showEditRateLimitModal}
+          onClose={() => {
+            setShowEditRateLimitModal(false);
+            setEditRateLimit('');
+          }}
+          title="Edit Rate Limit"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Rate Limit (requests per day)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={editRateLimit}
+                onChange={(e) => setEditRateLimit(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="1000"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Number of API requests allowed per day
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEditRateLimitModal(false);
+                  setEditRateLimit('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateRateLimit}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Edit Allowed IPs Modal */}
+        <Modal
+          isOpen={showEditAllowedIpsModal}
+          onClose={() => {
+            setShowEditAllowedIpsModal(false);
+            setEditAllowedIps('');
+          }}
+          title="Edit Allowed IP Addresses"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Allowed IP Addresses
+              </label>
+              <textarea
+                value={editAllowedIps}
+                onChange={(e) => setEditAllowedIps(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
+                placeholder="Enter IP addresses (one per line or comma-separated)&#10;192.168.1.1&#10;10.0.0.1&#10;Or use * to allow all IPs"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Enter IP addresses one per line or comma-separated. Use * to allow all IPs. Leave empty to restrict all.
+              </p>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-xs text-blue-800 dark:text-blue-300">
+                <strong>Note:</strong> If the list is empty, API requests from all IPs will be blocked. Current user's IP was automatically added when they created the API key.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEditAllowedIpsModal(false);
+                  setEditAllowedIps('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAllowedIps}>
+                Save
+              </Button>
+            </div>
+          </div>
         </Modal>
       </div>
     </ProtectedPage>

@@ -1174,6 +1174,20 @@ class RealApiService {
     async getApiLogDetail(logId: string): Promise<any> {
         return this.request<any>(`/admin/api-keys/logs/${logId}`);
     }
+
+    async updateApiKeyRateLimit(apiKeyId: string, rateLimit: number): Promise<any> {
+        return this.request<any>(`/admin/api-keys/${apiKeyId}/rate-limit`, {
+            method: 'PUT',
+            body: JSON.stringify({ rateLimit }),
+        });
+    }
+
+    async updateApiKeyAllowedIps(apiKeyId: string, allowedIps: string[]): Promise<any> {
+        return this.request<any>(`/admin/api-keys/${apiKeyId}/allowed-ips`, {
+            method: 'PUT',
+            body: JSON.stringify({ allowedIps }),
+        });
+    }
 }
 
 

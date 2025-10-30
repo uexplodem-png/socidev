@@ -97,7 +97,10 @@ router.post(
     // Generate new credentials
     const { apiKey, apiSecret } = generateApiCredentials();
 
-    // Create API key
+    // Get user's IP address
+    const userIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for']?.split(',')[0];
+
+    // Create API key with user's current IP
     const newApiKey = await ApiKey.create({
       userId: req.user.id,
       apiKey,
@@ -105,6 +108,7 @@ router.post(
       status: 'active',
       rateLimit: 1000, // Default 1000 requests per day
       totalRequests: 0,
+      allowedIps: userIp ? [userIp] : [], // Add user's current IP to allowed list
     });
 
     // Log to action logs
@@ -127,6 +131,8 @@ router.post(
         apiKey: newApiKey.apiKey,
         rateLimit: newApiKey.rateLimit,
         status: newApiKey.status,
+        allowedIps: newApiKey.allowedIps,
+        userIp: userIp,
       },
     });
 

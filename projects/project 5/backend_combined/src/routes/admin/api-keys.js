@@ -290,6 +290,165 @@ router.delete(
 
 /**
  * @swagger
+ * /api/admin/api-keys/:id/rate-limit:
+ *   put:
+ *     summary: Update API key rate limit
+ *     tags: [Admin API Keys]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rateLimit:
+ *                 type: integer
+ *                 description: New rate limit (requests per day)
+ *     responses:
+ *       200:
+ *         description: Rate limit updated successfully
+ */
+router.put(
+  '/:id/rate-limit',
+  authenticateToken,
+  requirePermission('api.edit'),
+  asyncHandler(async (req, res) => {
+    const { rateLimit } = req.body;
+
+    if (!rateLimit || rateLimit < 1) {
+      return res.status(400).json({
+        error: 'Rate limit must be at least 1',
+        code: 'INVALID_RATE_LIMIT',
+      });
+    }
+
+    const apiKey = await ApiKey.findByPk(req.params.id, {
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+    });
+
+    if (!apiKey) {
+      return res.status(404).json({
+        error: 'API key not found',
+        code: 'API_KEY_NOT_FOUND',
+      });
+    }
+
+    const oldRateLimit = apiKey.rateLimit;
+    await apiKey.update({ rateLimit: parseInt(rateLimit) });
+
+    // Log audit
+    await logAudit(req, {
+      action: 'api_key_rate_limit_updated',
+      resource: 'api_key',
+      resourceId: apiKey.id,
+      targetUserId: apiKey.userId,
+      targetUserName: `${apiKey.user.firstName} ${apiKey.user.lastName}`,
+      description: `Updated API key rate limit from ${oldRateLimit} to ${rateLimit}`,
+      metadata: { apiKey: apiKey.apiKey, oldRateLimit, newRateLimit: rateLimit },
+    });
+
+    res.json({
+      message: 'Rate limit updated successfully',
+      apiKey: {
+        id: apiKey.id,
+        apiKey: apiKey.apiKey,
+        rateLimit: apiKey.rateLimit,
+        updatedAt: apiKey.updatedAt,
+      },
+    });
+  })
+);
+
+/**
+ * @swagger
+ * /api/admin/api-keys/:id/allowed-ips:
+ *   put:
+ *     summary: Update API key allowed IP addresses
+ *     tags: [Admin API Keys]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               allowedIps:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of allowed IP addresses
+ *     responses:
+ *       200:
+ *         description: Allowed IPs updated successfully
+ */
+router.put(
+  '/:id/allowed-ips',
+  authenticateToken,
+  requirePermission('api.edit'),
+  asyncHandler(async (req, res) => {
+    const { allowedIps } = req.body;
+
+    if (!Array.isArray(allowedIps)) {
+      return res.status(400).json({
+        error: 'allowedIps must be an array',
+        code: 'INVALID_ALLOWED_IPS',
+      });
+    }
+
+    // Validate IP addresses (basic validation)
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    const invalidIps = allowedIps.filter(ip => ip !== '*' && !ipRegex.test(ip));
+    
+    if (invalidIps.length > 0) {
+      return res.status(400).json({
+        error: `Invalid IP addresses: ${invalidIps.join(', ')}`,
+        code: 'INVALID_IP_FORMAT',
+      });
+    }
+
+    const apiKey = await ApiKey.findByPk(req.params.id, {
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+    });
+
+    if (!apiKey) {
+      return res.status(404).json({
+        error: 'API key not found',
+        code: 'API_KEY_NOT_FOUND',
+      });
+    }
+
+    const oldIps = apiKey.allowedIps || [];
+    await apiKey.update({ allowedIps });
+
+    // Log audit
+    await logAudit(req, {
+      action: 'api_key_allowed_ips_updated',
+      resource: 'api_key',
+      resourceId: apiKey.id,
+      targetUserId: apiKey.userId,
+      targetUserName: `${apiKey.user.firstName} ${apiKey.user.lastName}`,
+      description: `Updated API key allowed IPs`,
+      metadata: { apiKey: apiKey.apiKey, oldIps, newIps: allowedIps },
+    });
+
+    res.json({
+      message: 'Allowed IPs updated successfully',
+      apiKey: {
+        id: apiKey.id,
+        apiKey: apiKey.apiKey,
+        allowedIps: apiKey.allowedIps,
+        updatedAt: apiKey.updatedAt,
+      },
+    });
+  })
+);
+
+/**
+ * @swagger
  * /api/admin/api-keys/user/:userId:
  *   get:
  *     summary: Get API key for specific user (for Users Detail page)
