@@ -8,6 +8,7 @@ import { emailService } from '../../services/email.service.js';
 import { authenticateToken, requireAdminPermission } from '../../middleware/auth.js';
 import logger from '../../config/logger.js';
 import { logAudit } from '../../utils/logging.js';
+import { settingsService } from '../../services/settingsService.js';
 
 const router = express.Router();
 
@@ -429,20 +430,31 @@ router.post('/send',
       let errorMessage = null;
 
       try {
-        // Create transporter
-        const transporter = nodemailer.createTransport({
+        // Get email settings from database or fallback to .env
+        const emailSettings = await settingsService.get('email.smtp', {
           host: process.env.SMTP_HOST || 'smtp.gmail.com',
           port: parseInt(process.env.SMTP_PORT) || 587,
           secure: process.env.SMTP_SECURE === 'true',
+          user: process.env.SMTP_USER,
+          password: process.env.SMTP_PASSWORD,
+          fromEmail: process.env.SMTP_FROM || process.env.SMTP_USER,
+          fromName: process.env.SMTP_FROM_NAME || 'Social Developer'
+        });
+
+        // Create transporter with settings from database or .env
+        const transporter = nodemailer.createTransport({
+          host: emailSettings.host,
+          port: parseInt(emailSettings.port),
+          secure: emailSettings.secure,
           auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD,
+            user: emailSettings.user,
+            pass: emailSettings.password,
           },
         });
 
         // Send email
         const info = await transporter.sendMail({
-          from: `"${process.env.SMTP_FROM_NAME || 'Social Developer'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+          from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
           to: recipientEmail,
           subject: subject,
           html: bodyHtml,
@@ -876,6 +888,201 @@ router.get('/stats',
       res.status(500).json({
         success: false,
         message: 'Failed to fetch email stats',
+        error: error.message
+      });
+    }
+  }
+);
+
+// ============= EMAIL SETTINGS =============
+
+/**
+ * GET /api/admin/emails/settings
+ * Get email SMTP settings
+ */
+router.get('/settings',
+  authenticateToken,
+  requireAdminPermission('system.settings.view'),
+  async (req, res) => {
+    try {
+      const settings = await settingsService.get('email.smtp', {
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        user: '',
+        password: '',
+        fromEmail: '',
+        fromName: 'Social Developer',
+        replyTo: ''
+      });
+
+      // Don't expose the password
+      const sanitizedSettings = { ...settings };
+      if (sanitizedSettings.password) {
+        sanitizedSettings.password = '••••••••';
+      }
+
+      res.json({
+        success: true,
+        data: sanitizedSettings
+      });
+    } catch (error) {
+      logger.error('Failed to fetch email settings', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch email settings',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * PUT /api/admin/emails/settings
+ * Update email SMTP settings
+ */
+router.put('/settings',
+  authenticateToken,
+  requireAdminPermission('system.settings.edit'),
+  async (req, res) => {
+    try {
+      const { host, port, secure, user, password, fromEmail, fromName, replyTo } = req.body;
+
+      // Validate required fields
+      if (!host || !port || !user || !fromEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Host, port, user, and from email are required'
+        });
+      }
+
+      // Get existing settings to preserve password if not provided
+      const existingSettings = await settingsService.get('email.smtp', {});
+      
+      const newSettings = {
+        host,
+        port: parseInt(port),
+        secure: secure === true || secure === 'true',
+        user,
+        password: password && password !== '••••••••' ? password : existingSettings.password,
+        fromEmail,
+        fromName: fromName || 'Social Developer',
+        replyTo: replyTo || fromEmail
+      };
+
+      await settingsService.set('email.smtp', newSettings);
+
+      await logAudit({
+        actorId: req.user.id,
+        action: 'update',
+        resource: 'email_settings',
+        description: 'Updated email SMTP settings',
+        metadata: { host, port, user, fromEmail },
+        req
+      });
+
+      // Return sanitized settings
+      const sanitizedSettings = { ...newSettings };
+      if (sanitizedSettings.password) {
+        sanitizedSettings.password = '••••••••';
+      }
+
+      res.json({
+        success: true,
+        message: 'Email settings updated successfully',
+        data: sanitizedSettings
+      });
+    } catch (error) {
+      logger.error('Failed to update email settings', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update email settings',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/emails/settings/test
+ * Test email settings by sending a test email
+ */
+router.post('/settings/test',
+  authenticateToken,
+  requireAdminPermission('emails.send'),
+  async (req, res) => {
+    try {
+      const { testEmail } = req.body;
+
+      if (!testEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Test email address is required'
+        });
+      }
+
+      // Get email settings
+      const emailSettings = await settingsService.get('email.smtp', {
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        user: process.env.SMTP_USER,
+        password: process.env.SMTP_PASSWORD,
+        fromEmail: process.env.SMTP_FROM || process.env.SMTP_USER,
+        fromName: process.env.SMTP_FROM_NAME || 'Social Developer'
+      });
+
+      // Create transporter
+      const transporter = nodemailer.createTransport({
+        host: emailSettings.host,
+        port: parseInt(emailSettings.port),
+        secure: emailSettings.secure,
+        auth: {
+          user: emailSettings.user,
+          pass: emailSettings.password,
+        },
+      });
+
+      // Verify connection
+      await transporter.verify();
+
+      // Send test email
+      const info = await transporter.sendMail({
+        from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
+        to: testEmail,
+        subject: 'Test Email - SMTP Configuration',
+        html: `
+          <h1>Test Email Successful! ✅</h1>
+          <p>Your email SMTP settings are working correctly.</p>
+          <p>This is a test email sent from <strong>Social Developer</strong>.</p>
+          <hr>
+          <p style="color: #999; font-size: 12px;">Sent at: ${new Date().toLocaleString()}</p>
+        `,
+        text: 'Test Email Successful! Your email SMTP settings are working correctly.'
+      });
+
+      await logAudit({
+        actorId: req.user.id,
+        action: 'test',
+        resource: 'email_settings',
+        description: `Sent test email to ${testEmail}`,
+        metadata: { testEmail, messageId: info.messageId },
+        req
+      });
+
+      res.json({
+        success: true,
+        message: 'Test email sent successfully',
+        data: {
+          messageId: info.messageId,
+          testEmail
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to send test email', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send test email',
         error: error.message
       });
     }

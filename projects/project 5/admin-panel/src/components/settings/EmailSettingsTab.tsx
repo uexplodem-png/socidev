@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Mail, Server, Key } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { emailAPI } from '../../services/api';
 
 interface EmailSettings {
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  smtpUser: string;
-  smtpPassword: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password: string;
   fromEmail: string;
   fromName: string;
-  replyToEmail: string;
+  replyTo: string;
 }
 
 const EmailSettingsTab: React.FC = () => {
   const [settings, setSettings] = useState<EmailSettings>({
-    smtpHost: '',
-    smtpPort: 587,
-    smtpSecure: false,
-    smtpUser: '',
-    smtpPassword: '',
+    host: '',
+    port: 587,
+    secure: false,
+    user: '',
+    password: '',
     fromEmail: '',
     fromName: '',
-    replyToEmail: '',
+    replyTo: '',
   });
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -34,17 +35,13 @@ const EmailSettingsTab: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      // TODO: Implement API call to get email settings
-      // const response = await settingsAPI.getEmailSettings();
-      // setSettings(response.data);
-      
-      // For now, load from localStorage or use defaults
-      const savedSettings = localStorage.getItem('emailSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+      const response = await emailAPI.getEmailSettings();
+      if (response.success && response.data) {
+        setSettings(response.data);
       }
     } catch (error) {
       console.error('Failed to load email settings:', error);
+      toast.error('Failed to load email settings');
     }
   };
 
@@ -53,11 +50,11 @@ const EmailSettingsTab: React.FC = () => {
       setLoading(true);
       
       // Validation
-      if (!settings.smtpHost) {
+      if (!settings.host) {
         toast.error('SMTP Host is required');
         return;
       }
-      if (!settings.smtpPort) {
+      if (!settings.port) {
         toast.error('SMTP Port is required');
         return;
       }
@@ -66,12 +63,7 @@ const EmailSettingsTab: React.FC = () => {
         return;
       }
 
-      // TODO: Implement API call to save email settings
-      // await settingsAPI.updateEmailSettings(settings);
-      
-      // For now, save to localStorage
-      localStorage.setItem('emailSettings', JSON.stringify(settings));
-      
+      await emailAPI.updateEmailSettings(settings);
       toast.success('Email settings saved successfully');
     } catch (error: any) {
       console.error('Failed to save email settings:', error);
@@ -89,10 +81,7 @@ const EmailSettingsTab: React.FC = () => {
 
     try {
       setTesting(true);
-      
-      // TODO: Implement API call to send test email
-      // await emailAPI.sendTest({ to: testEmail });
-      
+      await emailAPI.testEmailSettings({ testEmail });
       toast.success(`Test email sent to ${testEmail}`);
       setTestEmail('');
     } catch (error: any) {
@@ -139,8 +128,8 @@ const EmailSettingsTab: React.FC = () => {
             </label>
             <input
               type="text"
-              value={settings.smtpHost}
-              onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+              value={settings.host}
+              onChange={(e) => setSettings({ ...settings, host: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="smtp.gmail.com"
             />
@@ -155,8 +144,8 @@ const EmailSettingsTab: React.FC = () => {
               SMTP Port *
             </label>
             <select
-              value={settings.smtpPort}
-              onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
+              value={settings.port}
+              onChange={(e) => setSettings({ ...settings, port: parseInt(e.target.value) })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               {commonPorts.map((port) => (
@@ -175,8 +164,8 @@ const EmailSettingsTab: React.FC = () => {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={settings.smtpSecure}
-                onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
+                checked={settings.secure}
+                onChange={(e) => setSettings({ ...settings, secure: e.target.checked })}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -207,8 +196,8 @@ const EmailSettingsTab: React.FC = () => {
             </label>
             <input
               type="text"
-              value={settings.smtpUser}
-              onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+              value={settings.user}
+              onChange={(e) => setSettings({ ...settings, user: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="your-email@example.com"
             />
@@ -221,8 +210,8 @@ const EmailSettingsTab: React.FC = () => {
             </label>
             <input
               type="password"
-              value={settings.smtpPassword}
-              onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
+              value={settings.password}
+              onChange={(e) => setSettings({ ...settings, password: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="••••••••"
             />
@@ -278,8 +267,8 @@ const EmailSettingsTab: React.FC = () => {
             </label>
             <input
               type="email"
-              value={settings.replyToEmail}
-              onChange={(e) => setSettings({ ...settings, replyToEmail: e.target.value })}
+              value={settings.replyTo}
+              onChange={(e) => setSettings({ ...settings, replyTo: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="support@yourapp.com"
             />

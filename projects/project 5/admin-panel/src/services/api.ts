@@ -143,6 +143,15 @@ export const emailAPI = {
   },
   getStats: async () => {
     return realApiService.getEmailStats();
+  },
+  getEmailSettings: async () => {
+    return realApiService.getEmailSettings();
+  },
+  updateEmailSettings: async (data: { host: string; port: number; secure: boolean; user: string; password?: string; fromEmail: string; fromName: string; replyTo?: string }) => {
+    return realApiService.updateEmailSettings(data);
+  },
+  testEmailSettings: async (data: { testEmail: string }) => {
+    return realApiService.testEmailSettings(data);
   }
 };
 

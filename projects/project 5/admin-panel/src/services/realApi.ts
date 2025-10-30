@@ -1078,6 +1078,26 @@ class RealApiService {
     async getEmailStats(): Promise<any> {
         return this.request<any>('/admin/emails/stats');
     }
+
+    async getEmailSettings(): Promise<any> {
+        return this.request<any>('/admin/emails/settings', {
+            method: 'GET',
+        });
+    }
+
+    async updateEmailSettings(data: { host: string; port: number; secure: boolean; user: string; password?: string; fromEmail: string; fromName: string; replyTo?: string }): Promise<any> {
+        return this.request<any>('/admin/emails/settings', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async testEmailSettings(data: { testEmail: string }): Promise<any> {
+        return this.request<any>('/admin/emails/settings/test', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
 }
 
 
