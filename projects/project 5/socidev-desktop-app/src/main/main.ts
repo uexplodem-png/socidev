@@ -1,6 +1,9 @@
 import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } from 'electron';
 import path from 'path';
 import AutoLaunch from 'auto-launch';
+import { secureStore } from './storage/SecureStore';
+import { sociDevClient } from './api/SociDevClient';
+import { instagramBot } from './instagram/InstagramBot';
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
@@ -10,6 +13,7 @@ if (!gotTheLock) {
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
 
 // Auto-launch configuration
 const autoLauncher = new AutoLaunch({
@@ -51,7 +55,7 @@ function createWindow() {
 
   // Minimize to tray instead of closing
   mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -86,7 +90,7 @@ function createTray() {
     {
       label: 'Quit',
       click: () => {
-        app.isQuitting = true;
+        isQuitting = true;
         app.quit();
       },
     },
@@ -165,11 +169,123 @@ ipcMain.handle('minimize-to-tray', () => {
 });
 
 ipcMain.handle('quit-app', () => {
-  app.isQuitting = true;
+  isQuitting = true;
   app.quit();
 });
 
 // Forward console logs from renderer
 ipcMain.on('log', (_event, level: string, ...args: any[]) => {
-  console[level as keyof Console]?.(...args);
+  if (level === 'error') console.error(...args);
+  else if (level === 'warn') console.warn(...args);
+  else console.log(...args);
+});
+
+// Storage IPC Handlers
+ipcMain.handle('storage-save', async (_event, key: string, value: any) => {
+  try {
+    secureStore.saveEncrypted(key, value);
+    return { success: true };
+  } catch (error) {
+    console.error('Storage save error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+ipcMain.handle('storage-get', async (_event, key: string) => {
+  try {
+    return secureStore.getEncrypted(key);
+  } catch (error) {
+    console.error('Storage get error:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('storage-delete', async (_event, key: string) => {
+  try {
+    secureStore.deleteKey(key);
+    return { success: true };
+  } catch (error) {
+    console.error('Storage delete error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// SociDev API IPC Handlers
+ipcMain.handle('api-authenticate', async (_event, apiKey: string, apiSecret: string) => {
+  try {
+    const result = await sociDevClient.authenticate(apiKey, apiSecret);
+    return result;
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+ipcMain.handle('api-get-user-info', async () => {
+  try {
+    const result = await sociDevClient.getUserInfo();
+    return result.data;
+  } catch (error) {
+    console.error('API get user info error:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('api-get-tasks', async () => {
+  try {
+    const result = await sociDevClient.getTasks();
+    return result.data || [];
+  } catch (error) {
+    console.error('API get tasks error:', error);
+    return [];
+  }
+});
+
+ipcMain.handle('api-report-task-result', async (_event, taskId: string, result: any) => {
+  try {
+    const response = await sociDevClient.reportTaskResult(taskId, result);
+    return response;
+  } catch (error) {
+    console.error('API report task result error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Instagram IPC Handlers
+ipcMain.handle('instagram-login', async () => {
+  try {
+    const result = await instagramBot.login();
+    return result;
+  } catch (error) {
+    console.error('Instagram login error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+ipcMain.handle('instagram-status', async () => {
+  try {
+    return instagramBot.getStatus();
+  } catch (error) {
+    console.error('Instagram status error:', error);
+    return { loggedIn: false };
+  }
+});
+
+ipcMain.handle('instagram-logout', async () => {
+  try {
+    return await instagramBot.logout();
+  } catch (error) {
+    console.error('Instagram logout error:', error);
+    return { success: true };
+  }
+});
+
+ipcMain.handle('instagram-execute-task', async (_event, task: any) => {
+  try {
+    const result = await instagramBot.executeTask(task);
+    return result;
+  } catch (error) {
+    console.error('Instagram execute task error:', error);
+    return { success: false, error: (error as Error).message };
+  }
 });
