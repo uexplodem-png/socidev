@@ -7,6 +7,7 @@ export interface RegisterData {
   lastName: string;
   username: string;
   phone?: string;
+  userType: 'task_doer' | 'task_giver';
 }
 
 export interface AuthUser {

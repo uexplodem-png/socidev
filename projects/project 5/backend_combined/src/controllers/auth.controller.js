@@ -18,7 +18,7 @@ const activityService = new ActivityService();
 export class AuthController {
   async register(req, res, next) {
     try {
-      const { email, password, firstName, lastName, username, phone } = req.body;
+      const { email, password, firstName, lastName, username, phone, userType } = req.body;
       
       logger.info('Registration attempt', { email, username });
 
@@ -60,25 +60,27 @@ export class AuthController {
         throw new ApiError(400, 'User with this email or username already exists');
       }
 
-      // Create user
+      // Create user with selected role
       const user = await User.create({
         email,
         password,
         firstName,
         lastName,
         username,
-        phone
+        phone,
+        role: userType || 'task_doer', // Use selected userType or default to task_doer
+        accountType: userType || 'task_doer' // Also set accountType field
       });
       
       logger.info('User registered successfully', { userId: user.id, email, username });
 
-      // Assign default role to user in user_roles table
+      // Assign selected role to user in user_roles table
       try {
         const { Role, UserRole } = await import('../models/index.js');
         
-        // Get the role ID based on user.role (default is 'task_doer')
+        // Get the role ID based on selected userType
         const roleRecord = await Role.findOne({ 
-          where: { key: user.role || 'task_doer' } 
+          where: { key: userType || 'task_doer' } 
         });
         
         if (roleRecord) {
@@ -88,12 +90,14 @@ export class AuthController {
           });
           logger.info('User role assigned successfully', { 
             userId: user.id, 
+            userType: userType,
             role: user.role,
             roleId: roleRecord.id 
           });
         } else {
           logger.warn('Role not found in database, skipping user_roles assignment', { 
             userId: user.id, 
+            userType: userType,
             role: user.role 
           });
         }
@@ -123,7 +127,9 @@ export class AuthController {
           'registration_success',
           { 
             email: email,
-            username: username
+            username: username,
+            userType: userType,
+            role: user.role
           },
           req
         );
