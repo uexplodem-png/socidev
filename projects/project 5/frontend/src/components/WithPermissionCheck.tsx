@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import NoPermission from './NoPermission';
 
 interface WithPermissionCheckProps {
-  permission: string;
-  permissionName?: string;
-  requiredMode?: 'taskDoer' | 'taskGiver' | 'both';
-  fallback?: React.ReactNode;
-  children: React.ReactNode;
+    permission: string;
+    permissionName?: string;
+    requiredMode?: 'taskDoer' | 'taskGiver' | 'both';
+    fallback?: React.ReactNode;
+    children: React.ReactNode;
 }
 
 /**
@@ -15,35 +15,36 @@ interface WithPermissionCheckProps {
  * Shows NoPermission component if access is denied
  */
 const WithPermissionCheck: React.FC<WithPermissionCheckProps> = ({
-  permission,
-  permissionName,
-  requiredMode,
-  fallback,
-  children,
+    permission,
+    permissionName,
+    requiredMode,
+    fallback,
+    children,
 }) => {
-  const { canUsePermission } = useAuth();
-  const permissionCheck = canUsePermission(permission);
+    const { canUsePermission } = useAuth();
+    const permissionCheck = canUsePermission(permission);
 
-  if (!permissionCheck.canUse || permissionCheck.isRestricted) {
-    if (fallback) {
-      return <>{fallback}</>;
+    if (!permissionCheck.canUse || permissionCheck.isRestricted) {
+        if (fallback) {
+            return <>{fallback}</>;
+        }
+
+        return (
+            <NoPermission
+                title={permissionCheck.isRestricted ? 'Erişim Kısıtlanmış' : 'Erişim Reddedildi'}
+                message={
+                    permissionCheck.isRestricted
+                        ? 'Bu özelliğe erişiminiz geçici olarak kısıtlanmıştır.'
+                        : 'Bu özelliği kullanmak için gerekli izniniz bulunmamaktadır.'
+                }
+                permissionName={permissionName || permission}
+                requiredMode={requiredMode}
+            />
+        );
     }
 
-    return (
-      <NoPermission
-        title={permissionCheck.isRestricted ? 'Erişim Kısıtlanmış' : 'Erişim Reddedildi'}
-        message={
-          permissionCheck.isRestricted
-            ? 'Bu özelliğe erişiminiz geçici olarak kısıtlanmıştır.'
-            : 'Bu özelliği kullanmak için gerekli izniniz bulunmamaktadır.'
-        }
-        permissionName={permissionName || permission}
-        requiredMode={requiredMode}
-      />
-    );
-  }
-
-  return <>{children}</>;
+    return <>{children}</>;
 };
 
 export default WithPermissionCheck;
+export { WithPermissionCheck };
