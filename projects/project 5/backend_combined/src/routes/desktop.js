@@ -8,28 +8,18 @@ const router = express.Router();
  * Desktop App Authentication
  * Simple API key + secret authentication for desktop apps
  */
-router.post(
-  '/authenticate',
-  asyncHandler(async (req, res) => {
+router.post('/authenticate', async (req, res) => {
+  try {
     const { apiKey, apiSecret } = req.body;
 
-    // Validate input
     if (!apiKey || !apiSecret) {
-      return res.status(400).json({
-        success: false,
-        error: 'API key and secret are required',
-      });
+      return res.status(400).json({ error: 'API key and secret are required' });
     }
 
-    // Find API key
+    // Find API key with user
     const keyRecord = await ApiKey.findOne({
       where: { apiKey },
-      include: [
-        {
-          association: 'User',
-          attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'balance', 'status', 'userMode'],
-        },
-      ],
+      include: [{ association: 'user' }]
     });
 
     if (!keyRecord) {
@@ -59,14 +49,14 @@ router.post(
     res.json({
       success: true,
       data: {
-        id: keyRecord.User.id,
-        firstName: keyRecord.User.firstName,
-        lastName: keyRecord.User.lastName,
-        email: keyRecord.User.email,
-        username: keyRecord.User.username,
-        balance: parseFloat(keyRecord.User.balance) || 0,
-        status: keyRecord.User.status,
-        userMode: keyRecord.User.userMode,
+        id: keyRecord.user.id,
+        firstName: keyRecord.user.firstName,
+        lastName: keyRecord.user.lastName,
+        email: keyRecord.user.email,
+        username: keyRecord.user.username,
+        balance: parseFloat(keyRecord.user.balance) || 0,
+        status: keyRecord.user.status,
+        userMode: keyRecord.user.userMode,
         apiKey: {
           id: keyRecord.id,
           rateLimit: keyRecord.rateLimit,
@@ -75,8 +65,14 @@ router.post(
         },
       },
     });
-  })
-);
+  } catch (error) {
+    console.error('Desktop authentication error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
+});
 
 /**
  * Get user info (requires valid API key + secret in headers)
@@ -99,7 +95,7 @@ router.get(
       where: { apiKey, apiSecret, status: 'active' },
       include: [
         {
-          association: 'User',
+          association: 'user',
           attributes: ['id', 'firstName', 'lastName', 'email', 'username', 'balance', 'status', 'userMode'],
         },
       ],
@@ -120,7 +116,7 @@ router.get(
 
     res.json({
       success: true,
-      data: keyRecord.User,
+      data: keyRecord.user,
     });
   })
 );

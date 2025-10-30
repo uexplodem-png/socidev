@@ -6,8 +6,11 @@ import UserAgent from 'user-agents';
 import randomstring from 'randomstring';
 import { secureStore } from '../storage/SecureStore';
 
-// Add stealth plugin to avoid detection
-puppeteerExtra.use(StealthPlugin());
+// Configure stealth plugin with maximum evasion
+const stealth = StealthPlugin();
+stealth.enabledEvasions.delete('iframe.contentWindow');
+stealth.enabledEvasions.delete('navigator.plugins');
+puppeteerExtra.use(stealth);
 
 interface InstagramSession {
   cookies: any[];
@@ -63,6 +66,42 @@ class InstagramBot {
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
+  // Simulate realistic page reading time
+  private async simulateReading(): Promise<void> {
+    const readingTime = 3000 + Math.random() * 7000; // 3-10 seconds
+    console.log(`Simulating reading... ${Math.round(readingTime / 1000)}s`);
+    
+    // Random scrolls during reading
+    const scrolls = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < scrolls; i++) {
+      await this.randomDelay(readingTime / (scrolls + 1), readingTime / scrolls);
+      await this.randomScroll();
+    }
+  }
+
+  // Simulate mouse hovering over elements
+  private async hoverRandomElement(): Promise<void> {
+    if (!this.page) return;
+    
+    try {
+      const elements = await this.page.$$('a, button, img');
+      if (elements.length > 0) {
+        const randomElement = elements[Math.floor(Math.random() * elements.length)];
+        const box = await randomElement.boundingBox();
+        if (box) {
+          await this.page.mouse.move(
+            box.x + box.width / 2 + (Math.random() - 0.5) * 10,
+            box.y + box.height / 2 + (Math.random() - 0.5) * 10,
+            { steps: 20 + Math.floor(Math.random() * 20) }
+          );
+          await this.randomDelay(500, 1500);
+        }
+      }
+    } catch (error) {
+      // Ignore errors
+    }
+  }
+
   // Human-like typing
   private async humanType(selector: string, text: string): Promise<void> {
     const input = await this.page!.$(selector);
@@ -88,43 +127,154 @@ class InstagramBot {
 
   // Launch browser with stealth settings
   async launch(): Promise<void> {
-    console.log('Launching browser with stealth mode...');
+    console.log('Launching browser with maximum stealth mode...');
 
-    const userAgent = new UserAgent({ deviceCategory: 'desktop' });
+    // Use realistic user agent (real Chrome on macOS)
+    const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-    this.browser = await puppeteerExtra.launch({
-      headless: false, // Use real browser for first login
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--disable-blink-features=AutomationControlled',
-        `--window-size=${1280 + Math.floor(Math.random() * 200)},${800 + Math.floor(Math.random() * 200)}`,
-      ],
-      defaultViewport: null,
-    });
+    try {
+      this.browser = await puppeteerExtra.launch({
+        headless: false, // MUST be false for Instagram
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-dev-shm-usage',
+          '--disable-infobars',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-hang-monitor',
+          '--disable-client-side-phishing-detection',
+          '--disable-popup-blocking',
+          '--disable-prompt-on-repost',
+          '--disable-domain-reliability',
+          '--disable-component-extensions-with-background-pages',
+          '--disable-default-apps',
+          '--mute-audio',
+          '--no-default-browser-check',
+          '--no-first-run',
+          '--ignore-certificate-errors',
+          '--ignore-ssl-errors',
+          '--ignore-certificate-errors-spki-list',
+          '--disable-site-isolation-trials',
+          '--enable-features=NetworkService,NetworkServiceInProcess',
+          '--window-size=1440,900', // Common resolution
+          '--start-maximized',
+          '--disable-notifications',
+          `--user-agent=${userAgent}`,
+        ],
+        defaultViewport: null,
+        ignoreHTTPSErrors: true,
+        protocolTimeout: 180000,
+        dumpio: false,
+        executablePath: puppeteer.executablePath(), // Use bundled Chromium
+      });
+    } catch (error) {
+      console.error('Failed to launch browser:', error);
+      throw new Error('Failed to launch browser. Please try again.');
+    }
 
-    this.page = await this.browser.newPage();
+    if (!this.browser) {
+      throw new Error('Browser not initialized');
+    }
+
+    // Create new page
+    const pages = await this.browser.pages();
+    this.page = pages[0] || await this.browser.newPage();
+    
+    if (!this.page) {
+      throw new Error('Failed to create new page');
+    }
+
+    // Enhanced anti-detection: Override navigator properties
+    await this.page.evaluateOnNewDocument(`
+      // Override the navigator.webdriver property
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'webdriver', {
+        get: () => undefined,
+        configurable: true
+      });
+      
+      // Override permissions
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters) => (
+        parameters.name === 'notifications' ?
+          Promise.resolve({ state: 'denied' }) :
+          originalQuery(parameters)
+      );
+
+      // Add chrome object
+      window.chrome = {
+        runtime: {},
+        loadTimes: function() {},
+        csi: function() {},
+        app: {}
+      };
+
+      // Override plugins
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'plugins', {
+        get: () => [
+          { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+          { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
+          { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' }
+        ],
+        configurable: true
+      });
+
+      // Override languages
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'languages', {
+        get: () => ['en-US', 'en'],
+        configurable: true
+      });
+
+      // Override platform
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'platform', {
+        get: () => 'MacIntel',
+        configurable: true
+      });
+
+      // Override vendor
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'vendor', {
+        get: () => 'Google Inc.',
+        configurable: true
+      });
+    `);
 
     // Set realistic user agent
-    await this.page.setUserAgent(userAgent.toString());
+    await this.page.setUserAgent(userAgent);
 
-    // Set extra headers
+    // Set realistic headers
     await this.page.setExtraHTTPHeaders({
       'Accept-Language': 'en-US,en;q=0.9',
       'Accept-Encoding': 'gzip, deflate, br',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"macOS"',
+      'Upgrade-Insecure-Requests': '1',
     });
 
-    // Randomize viewport
+    // Set realistic viewport
     await this.page.setViewport({
-      width: 1280 + Math.floor(Math.random() * 200),
-      height: 800 + Math.floor(Math.random() * 200),
+      width: 1440,
+      height: 900,
+      deviceScaleFactor: 2, // Retina display
+      hasTouch: false,
+      isLandscape: true,
+      isMobile: false,
     });
 
     // Initialize ghost cursor for human-like mouse movements
     this.cursor = createCursor(this.page);
+
+    // Add random mouse movements to simulate human behavior
+    this.startRandomMouseMovements();
 
     // Load saved cookies if available
     const session = secureStore.getInstagramSession();
@@ -135,7 +285,28 @@ class InstagramBot {
       this.username = session.username;
     }
 
-    console.log('Browser launched successfully');
+    console.log('Browser launched successfully with anti-detection measures');
+  }
+
+  // Random mouse movements to simulate human behavior
+  private mouseMovementInterval: NodeJS.Timeout | null = null;
+  
+  private startRandomMouseMovements(): void {
+    if (this.mouseMovementInterval) {
+      clearInterval(this.mouseMovementInterval);
+    }
+
+    this.mouseMovementInterval = setInterval(async () => {
+      if (this.page && this.cursor && Math.random() > 0.7) {
+        try {
+          const x = Math.floor(Math.random() * 1440);
+          const y = Math.floor(Math.random() * 900);
+          await this.page.mouse.move(x, y);
+        } catch (error) {
+          // Ignore errors during random movements
+        }
+      }
+    }, 15000 + Math.random() * 15000); // Every 15-30 seconds
   }
 
   // Manual login flow (one-time)
@@ -145,15 +316,33 @@ class InstagramBot {
         await this.launch();
       }
 
-      console.log('Navigating to Instagram login page...');
-      await this.page!.goto('https://www.instagram.com/accounts/login/', {
-        waitUntil: 'networkidle2',
+      if (!this.page) {
+        throw new Error('Browser page not initialized');
+      }
+
+      console.log('Navigating to Instagram...');
+      
+      // First visit instagram.com to make it look natural
+      await this.page.goto('https://www.instagram.com/', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
       });
 
       await this.randomDelay(2000, 4000);
+      await this.simulateReading();
+      
+      // Now navigate to login page
+      console.log('Going to login page...');
+      await this.page.goto('https://www.instagram.com/accounts/login/', {
+        waitUntil: 'networkidle2',
+        timeout: 30000,
+      });
+
+      await this.randomDelay(1500, 3000);
+      await this.hoverRandomElement();
 
       // Wait for user to manually log in
-      console.log('Waiting for manual login... (Please log in manually)');
+      console.log('✓ Browser ready - Please log in manually in the opened window');
 
       // Wait for navigation to home page (indicates successful login)
       await this.page!.waitForNavigation({
@@ -225,6 +414,12 @@ class InstagramBot {
       secureStore.clearInstagramSession();
       this.isLoggedIn = false;
       this.username = '';
+
+      // Clear mouse movement interval
+      if (this.mouseMovementInterval) {
+        clearInterval(this.mouseMovementInterval);
+        this.mouseMovementInterval = null;
+      }
 
       if (this.browser) {
         await this.browser.close();
