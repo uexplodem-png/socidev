@@ -253,7 +253,7 @@ module.exports = {
                                             </tr>
                                             <tr>
                                                 <td style="color: #777777; font-size: 14px; padding: 12px 0;">Total Amount:</td>
-                                                <td style="color: #4facfe; font-size: 18px; font-weight: 700; padding: 12px 0; text-align: right;">${{amount}}</td>
+                                                <td style="color: #4facfe; font-size: 18px; font-weight: 700; padding: 12px 0; text-align: right;">{{amount}}</td>
                                             </tr>
                                         </table>
                                     </td>

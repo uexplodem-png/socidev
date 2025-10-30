@@ -14,10 +14,11 @@
     "seed": "npx sequelize-cli db:seed:all",
     "seed:undo": "npx sequelize-cli db:seed:undo:all",
     "db:reset": "npm run migrate:undo && npm run migrate && npm run seed",
+    "db:init": "npm run migrate && npm run seed",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "build": "echo 'No build step required for Node.js'",
-    "postinstall": "npm run migrate"
+    "postinstall": "npm run db:init"
   },
   "keywords": [
     "express",

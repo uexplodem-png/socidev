@@ -355,89 +355,48 @@ const DEFAULT_SETTINGS = {
 
 /**
  * Initialize permissions in the database
+ * NOTE: Permissions are now managed via seeders (20251030041800-seed-permissions.cjs)
+ * This function only checks if permissions exist
  */
 async function initializePermissions() {
   try {
-    const allPermissions = Object.values(PERMISSIONS).flat();
+    const permissionCount = await Permission.count();
     
-    for (const permission of allPermissions) {
-      const [perm, created] = await Permission.findOrCreate({
-        where: { key: permission.key },
-        defaults: permission,
-      });
-      
-      if (created) {
-        logger.info(`✅ Created permission: ${permission.key}`);
-      }
+    if (permissionCount === 0) {
+      logger.warn('⚠️  No permissions found in database. Run: npm run seed');
+      logger.warn('⚠️  Permissions should be created via seeders, not InitDB');
+    } else {
+      logger.info(`✅ Found ${permissionCount} permissions in database`);
     }
     
-    logger.info(`✅ Initialized ${allPermissions.length} permissions`);
     return true;
   } catch (error) {
-    logger.error('❌ Failed to initialize permissions:', error);
+    logger.error('❌ Failed to check permissions:', error);
     throw error;
   }
 }
 
 /**
  * Initialize roles in the database
+ * NOTE: Roles and role-permission mappings are now managed via seeders:
+ * - User roles: migrations/seeders (role_permissions table)
+ * - Admin roles: 20251030041900-seed-admin-role-permissions.cjs
+ * This function only checks if roles exist
  */
 async function initializeRoles() {
   try {
-    for (const [roleName, roleData] of Object.entries(ROLES)) {
-      const [role, created] = await Role.findOrCreate({
-        where: { key: roleData.key },
-        defaults: {
-          key: roleData.key,
-          label: roleData.label,
-        },
-      });
-      
-      if (created) {
-        logger.info(`✅ Created role: ${roleData.key}`);
-      }
-      
-      // Assign permissions to role
-      let permissionsToAssign = [];
-      
-      if (roleData.permissions === '*') {
-        // Super admin gets all permissions
-        permissionsToAssign = await Permission.findAll();
-      } else {
-        // Find permissions by keys
-        permissionsToAssign = await Permission.findAll({
-          where: { key: roleData.permissions },
-        });
-      }
-      
-      // Clear existing permissions for this role
-      await RolePermission.destroy({
-        where: { role_id: role.id },
-      });
-      
-      // Assign new permissions
-      for (const permission of permissionsToAssign) {
-        await RolePermission.findOrCreate({
-          where: {
-            role_id: role.id,
-            permission_id: permission.id,
-          },
-          defaults: {
-            roleId: role.id,
-            permissionId: permission.id,
-            mode: 'all',
-            allow: 1
-          }
-        });
-      }
-      
-      logger.info(`✅ Assigned ${permissionsToAssign.length} permissions to ${roleData.key}`);
+    const roleCount = await Role.count();
+    
+    if (roleCount === 0) {
+      logger.warn('⚠️  No roles found in database. Run: npm run seed');
+      logger.warn('⚠️  Roles should be created via seeders, not InitDB');
+    } else {
+      logger.info(`✅ Found ${roleCount} roles in database`);
     }
     
-    logger.info(`✅ Initialized ${Object.keys(ROLES).length} roles`);
     return true;
   } catch (error) {
-    logger.error('❌ Failed to initialize roles:', error);
+    logger.error('❌ Failed to check roles:', error);
     throw error;
   }
 }
@@ -472,29 +431,31 @@ async function initializeSettings() {
 
 /**
  * Main initialization function
- * This runs on every server start but only creates missing data
+ * This runs on every server start
+ * 
+ * NOTE: Permissions and Roles are managed via seeders:
+ * - Permissions: 20251030041800-seed-permissions.cjs
+ * - Admin Role Permissions: 20251030041900-seed-admin-role-permissions.cjs
+ * - To load data: npm run seed
+ * 
+ * This function only:
+ * 1. Checks if data exists
+ * 2. Initializes system settings
  */
 export async function initializeDatabase() {
   try {
     logger.info('🔄 Checking database initialization...');
     
-    // Check if already initialized
-    const permissionCount = await Permission.count();
-    const roleCount = await Role.count();
-    
-    if (permissionCount > 0 && roleCount > 0) {
-      logger.info('✅ Database already initialized');
-      return true;
-    }
-    
-    logger.info('🚀 Starting database initialization...');
-    
-    // Initialize in order (permissions -> roles -> settings)
+    // Check permissions (should be loaded via seeder)
     await initializePermissions();
+    
+    // Check roles (should be loaded via seeder)
     await initializeRoles();
+    
+    // Initialize system settings (can be created here)
     await initializeSettings();
     
-    logger.info('✅ Database initialization completed successfully!');
+    logger.info('✅ Database initialization check completed!');
     return true;
   } catch (error) {
     logger.error('❌ Database initialization failed:', error);
