@@ -7,6 +7,7 @@ import {
   Lock,
   Sliders,
   Users,
+  Mail,
 } from 'lucide-react';
 import FeatureFlagsTab from '../components/settings/FeatureFlagsTab';
 import AccessControlTab from '../components/settings/AccessControlTab';
@@ -14,9 +15,10 @@ import AdminPanelAccessTab from '../components/settings/AdminPanelAccessTab';
 import GeneralTab from '../components/settings/GeneralTab';
 import ModesTab from '../components/settings/ModesTab';
 import SecurityTab from '../components/settings/SecurityTab';
+import EmailSettingsTab from '../components/settings/EmailSettingsTab';
 import WithPermissionCheck from '../components/WithPermissionCheck';
 
-type TabId = 'general' | 'flags' | 'adminAccess' | 'memberAccess' | 'modes' | 'security';
+type TabId = 'general' | 'flags' | 'adminAccess' | 'memberAccess' | 'modes' | 'security' | 'email';
 
 interface Tab {
   id: TabId;
@@ -65,6 +67,12 @@ const Settings: React.FC = () => {
       icon: <Lock className="h-5 w-5" />,
       component: null,
     },
+    {
+      id: 'email',
+      label: 'Email Settings',
+      icon: <Mail className="h-5 w-5" />,
+      component: null,
+    },
   ];
 
   // Render only the active tab component
@@ -82,6 +90,8 @@ const Settings: React.FC = () => {
         return <ModesTab />;
       case 'security':
         return <SecurityTab />;
+      case 'email':
+        return <EmailSettingsTab />;
       default:
         return <GeneralTab />;
     }

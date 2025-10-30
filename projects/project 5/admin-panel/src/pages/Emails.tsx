@@ -3,6 +3,8 @@ import { Mail, Plus, Search, Edit, Trash2, Send } from 'lucide-react';
 import { emailAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import CreateTemplateModal from '../components/emails/CreateTemplateModal';
+import EditTemplateModal from '../components/emails/EditTemplateModal';
+import SendEmailModal from '../components/emails/SendEmailModal';
 
 interface EmailTemplate {
   id: number;
@@ -28,6 +30,9 @@ const Emails: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -82,15 +87,13 @@ const Emails: React.FC = () => {
   };
 
   const handleEdit = (template: EmailTemplate) => {
-    // TODO: Implement edit modal
-    console.log('Edit template:', template);
-    toast('Edit modal coming soon!');
+    setSelectedTemplate(template);
+    setShowEditModal(true);
   };
 
   const handleSend = (template: EmailTemplate) => {
-    // TODO: Implement send modal
-    console.log('Send email:', template);
-    toast('Send email modal coming soon!');
+    setSelectedTemplate(template);
+    setShowSendModal(true);
   };
 
   const categories = [
@@ -297,6 +300,19 @@ const Emails: React.FC = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={loadTemplates}
+      />
+      
+      <EditTemplateModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={loadTemplates}
+        template={selectedTemplate}
+      />
+
+      <SendEmailModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        template={selectedTemplate}
       />
     </div>
   );
