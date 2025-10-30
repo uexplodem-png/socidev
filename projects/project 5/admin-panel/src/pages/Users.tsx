@@ -220,6 +220,14 @@ const Users: React.FC = () => {
     }
   }, [showEditUserModal, selectedUser]);
 
+  // Fetch API logs when API tab is opened
+  useEffect(() => {
+    if (activeTab === 'api' && selectedUser && userApiKey) {
+      fetchApiLogs(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedUser?.id, userApiKey?.id]);
+
   const handleUserAction = async (userId: string, action: 'activate' | 'suspend' | 'ban') => {
     try {
       let updatedUser;
@@ -1179,13 +1187,6 @@ const Users: React.FC = () => {
   };
 
   const renderApiTab = () => {
-    // Fetch API logs when tab is opened
-    useEffect(() => {
-      if (activeTab === 'api' && selectedUser && userApiKey) {
-        fetchApiLogs(1);
-      }
-    }, [activeTab, selectedUser, userApiKey]);
-
     if (!userApiKey) {
       return (
         <div className="text-center py-12">

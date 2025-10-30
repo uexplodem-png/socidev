@@ -8,7 +8,7 @@ import { userApi, UserSettings } from '../../lib/api/user';
 export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'account' | 'security' | 'notifications' | 'privacy'>('account');
+    const [activeTab, setActiveTab] = useState<'account' | 'security' | 'notifications' | 'privacy' | 'api'>('account');
     const [settings, setSettings] = useState<UserSettings>({
         notifications: {
             email: true,
@@ -27,8 +27,14 @@ export default function SettingsPage() {
         confirmPassword: '',
     });
 
+    // API Key state
+    const [apiKey, setApiKey] = useState<any>(null);
+    const [showApiSecret, setShowApiSecret] = useState(false);
+    const [generatingKey, setGeneratingKey] = useState(false);
+
     useEffect(() => {
         loadSettings();
+        loadApiKey();
     }, []);
 
     const loadSettings = async () => {
@@ -42,6 +48,94 @@ export default function SettingsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadApiKey = async () => {
+        try {
+            const token = localStorage.getItem('token') || '';
+            const response = await fetch('http://localhost:3000/api/user/api-key', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setApiKey(data.apiKey);
+            }
+        } catch (error) {
+            console.error('Failed to load API key:', error);
+        }
+    };
+
+    const generateApiKey = async () => {
+        if (!confirm('Are you sure you want to generate an API key? You can only generate one API key per account.')) {
+            return;
+        }
+
+        try {
+            setGeneratingKey(true);
+            const token = localStorage.getItem('token') || '';
+            const response = await fetch('http://localhost:3000/api/user/api-key/generate', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setApiKey(data.apiKey);
+                setShowApiSecret(true);
+                alert('API Key generated successfully! Make sure to save your API secret now - you will not be able to see it again.');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to generate API key');
+            }
+        } catch (error) {
+            console.error('Failed to generate API key:', error);
+            alert('Failed to generate API key');
+        } finally {
+            setGeneratingKey(false);
+        }
+    };
+
+    const regenerateSecret = async () => {
+        if (!confirm('Are you sure you want to regenerate your API secret? Your old secret will no longer work.')) {
+            return;
+        }
+
+        try {
+            setGeneratingKey(true);
+            const token = localStorage.getItem('token') || '';
+            const response = await fetch('http://localhost:3000/api/user/api-key/regenerate', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setApiKey(data.apiKey);
+                setShowApiSecret(true);
+                alert('API secret regenerated successfully! Make sure to save your new secret.');
+            } else {
+                alert('Failed to regenerate API secret');
+            }
+        } catch (error) {
+            console.error('Failed to regenerate API secret:', error);
+            alert('Failed to regenerate API secret');
+        } finally {
+            setGeneratingKey(false);
+        }
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        alert(`${label} copied to clipboard!`);
     };
 
     const handleSaveSettings = async () => {
@@ -93,6 +187,7 @@ export default function SettingsPage() {
         { id: 'security' as const, label: 'Security', icon: Shield },
         { id: 'notifications' as const, label: 'Notifications', icon: Bell },
         { id: 'privacy' as const, label: 'Privacy', icon: Eye },
+        { id: 'api' as const, label: 'API', icon: Key },
     ];
 
     if (loading) {
@@ -423,6 +518,181 @@ export default function SettingsPage() {
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* API Settings */}
+                        {activeTab === 'api' && (
+                            <div className="space-y-6">
+                                {!apiKey ? (
+                                    <div className="text-center py-12">
+                                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-6">
+                                            <Key className="w-10 h-10 text-purple-600" />
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-gray-900 mb-3">Generate Your API Key</h2>
+                                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                            Create an API key to integrate our services with your applications.
+                                            Each account can have only one active API key.
+                                        </p>
+                                        <button
+                                            onClick={generateApiKey}
+                                            disabled={generatingKey}
+                                            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <Key className="w-5 h-5" />
+                                            {generatingKey ? 'Generating...' : 'Generate API Key'}
+                                        </button>
+                                        <div className="mt-8 bg-blue-50 rounded-xl p-6 max-w-2xl mx-auto text-left border border-blue-200">
+                                            <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                                                <Shield className="w-5 h-5" />
+                                                Important Security Information
+                                            </h3>
+                                            <ul className="text-sm text-blue-800 space-y-2">
+                                                <li>• Your API secret will only be shown once during generation</li>
+                                                <li>• Store your API credentials in a secure location</li>
+                                                <li>• Never share your API secret with anyone</li>
+                                                <li>• You can regenerate your secret if needed</li>
+                                                <li>• Rate limit: 1000 requests per day by default</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div>
+                                                <h2 className="text-xl font-bold text-gray-900">Your API Key</h2>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    Use these credentials to authenticate API requests
+                                                </p>
+                                            </div>
+                                            <div className={`px-4 py-2 rounded-lg ${
+                                                apiKey.status === 'active'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : apiKey.status === 'suspended'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                <span className="font-medium capitalize">{apiKey.status}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {/* API Key */}
+                                            <div className="bg-gray-50 rounded-xl p-6">
+                                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                                    API Key
+                                                </label>
+                                                <div className="flex items-center gap-3">
+                                                    <code className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm font-mono text-gray-900 break-all">
+                                                        {apiKey.apiKey}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => copyToClipboard(apiKey.apiKey, 'API Key')}
+                                                        className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all hover:scale-105 whitespace-nowrap"
+                                                    >
+                                                        Copy
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* API Secret - Only show if just generated */}
+                                            {showApiSecret && apiKey.apiSecret && (
+                                                <div className="bg-yellow-50 rounded-xl p-6 border-2 border-yellow-300">
+                                                    <div className="flex items-start gap-3 mb-3">
+                                                        <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <label className="block text-sm font-medium text-yellow-900 mb-1">
+                                                                API Secret (Save this now!)
+                                                            </label>
+                                                            <p className="text-xs text-yellow-700 mb-3">
+                                                                This is the only time you'll see your API secret. Make sure to save it securely!
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <code className="flex-1 px-4 py-3 bg-white border border-yellow-300 rounded-lg text-sm font-mono text-gray-900 break-all">
+                                                            {apiKey.apiSecret}
+                                                        </code>
+                                                        <button
+                                                            onClick={() => copyToClipboard(apiKey.apiSecret, 'API Secret')}
+                                                            className="px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-all hover:scale-105 whitespace-nowrap"
+                                                        >
+                                                            Copy
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* API Statistics */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                                                    <div className="text-sm text-blue-700 mb-1">Created</div>
+                                                    <div className="text-lg font-bold text-blue-900">
+                                                        {new Date(apiKey.createdAt).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                                                    <div className="text-sm text-green-700 mb-1">Total Requests</div>
+                                                    <div className="text-lg font-bold text-green-900">
+                                                        {apiKey.totalRequests?.toLocaleString() || 0}
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                                                    <div className="text-sm text-purple-700 mb-1">Rate Limit</div>
+                                                    <div className="text-lg font-bold text-purple-900">
+                                                        {apiKey.rateLimit?.toLocaleString() || 1000}/day
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Last Used */}
+                                            {apiKey.lastUsedAt && (
+                                                <div className="bg-gray-50 rounded-xl p-6">
+                                                    <div className="text-sm text-gray-600 mb-1">Last Used</div>
+                                                    <div className="text-base font-medium text-gray-900">
+                                                        {new Date(apiKey.lastUsedAt).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Actions */}
+                                            <div className="flex gap-3 pt-4 border-t">
+                                                <button
+                                                    onClick={regenerateSecret}
+                                                    disabled={generatingKey}
+                                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+                                                >
+                                                    <Key className="w-5 h-5" />
+                                                    {generatingKey ? 'Regenerating...' : 'Regenerate Secret'}
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setShowApiSecret(!showApiSecret)}
+                                                    className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
+                                                >
+                                                    <Eye className="w-5 h-5" />
+                                                    {showApiSecret ? 'Hide' : 'Show'} Secret Warning
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* API Documentation Link */}
+                                        <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                                            <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                                <Globe className="w-5 h-5 text-purple-600" />
+                                                API Documentation
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mb-4">
+                                                Learn how to integrate our API into your applications and see available endpoints.
+                                            </p>
+                                            <button className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all hover:scale-105">
+                                                View API Docs
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

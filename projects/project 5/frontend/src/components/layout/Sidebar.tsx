@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  Key,
 } from "lucide-react";
 
 interface MenuItem {
@@ -158,6 +159,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           // No permission required
         },
       ],
+    },
+    {
+      id: "api",
+      label: "API",
+      icon: Key,
+      href: "/api",
+      // No permission required - available to all users
     },
   ];
 
