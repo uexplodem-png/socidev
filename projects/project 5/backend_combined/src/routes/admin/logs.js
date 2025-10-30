@@ -10,20 +10,20 @@ import { requirePermission } from '../../middleware/auth.js';
 
 const router = express.Router();
 
-// Audit logs routes
+// Audit logs routes (these are handled by the dedicated auditLogs.js routes, kept for backward compatibility)
 router.get('/audit-logs',
-  requirePermission('audit_logs.view'),
-  adminLogsController.getAuditLogs
+  requirePermission('audit.view'),
+  adminLogsController.getAuditLogs || ((req, res) => res.status(404).json({ error: 'Route moved to /admin/audit-logs' }))
 );
 
 router.get('/audit-logs/actions',
-  requirePermission('audit_logs.view'),
-  adminLogsController.getAuditActions
+  requirePermission('audit.view'),
+  adminLogsController.getAuditActions || ((req, res) => res.status(404).json({ error: 'Route moved to /admin/audit-logs' }))
 );
 
 router.get('/audit-logs/resources',
-  requirePermission('audit_logs.view'),
-  adminLogsController.getAuditResources
+  requirePermission('audit.view'),
+  adminLogsController.getAuditResources || ((req, res) => res.status(404).json({ error: 'Route moved to /admin/audit-logs' }))
 );
 
 // Action logs routes
@@ -44,17 +44,17 @@ router.get('/action-logs/actions',
 
 // System logs routes (combined.log and error.log)
 router.get('/system-logs/combined',
-  requirePermission('audit_logs.view'), // Using audit_logs permission for system logs
+  requirePermission('audit.view'), // Using audit permission for system logs
   adminLogsController.getCombinedLogs
 );
 
 router.get('/system-logs/error',
-  requirePermission('audit_logs.view'),
+  requirePermission('audit.view'),
   adminLogsController.getErrorLogs
 );
 
 router.delete('/system-logs/clear/:type',
-  requirePermission('audit_logs.delete'), // Special permission for clearing logs
+  requirePermission('audit.view'), // Using same permission for clearing logs
   adminLogsController.clearSystemLogs
 );
 

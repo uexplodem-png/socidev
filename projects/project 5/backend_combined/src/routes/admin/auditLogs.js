@@ -30,7 +30,7 @@ const router = express.Router();
  *         description: Audit log statistics
  */
 router.get('/stats',
-  requirePermission('audit_logs.view'),
+  requirePermission('audit.view'),
   validate(Joi.object({
     timeRange: Joi.string().valid('7d', '30d', '90d').default('30d')
   }), 'query'),
@@ -142,7 +142,7 @@ router.get('/stats',
  *               type: string
  */
 router.get('/export',
-  requirePermission('audit_logs.view'),
+  requirePermission('audit.view'),
   validate(Joi.object({
     startDate: Joi.date().optional(),
     endDate: Joi.date().optional(),
@@ -270,7 +270,7 @@ router.get('/export',
  *         description: List of audit logs with pagination
  */
 router.get('/',
-  requirePermission('audit_logs.view'),
+  requirePermission('audit.view'),
   validate(Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
