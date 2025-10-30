@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Plus, Search, Filter, Eye, Edit, Trash2, Send } from 'lucide-react';
+import { Mail, Plus, Search, Edit, Trash2, Send } from 'lucide-react';
 import { emailAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -26,10 +26,6 @@ const Emails: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -48,11 +44,23 @@ const Emails: React.FC = () => {
       if (statusFilter !== 'all') params.isActive = statusFilter === 'active';
 
       const response = await emailAPI.getTemplates(params);
-      setTemplates(response.templates);
-      setTotalPages(response.pagination.totalPages);
-    } catch (error) {
+      console.log('Email templates response:', response);
+      
+      // Backend returns { success, data, pagination }
+      if (response.success && response.data) {
+        setTemplates(response.data);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+        }
+      } else {
+        setTemplates([]);
+        setTotalPages(1);
+      }
+    } catch (error: any) {
       console.error('Failed to load email templates:', error);
-      toast.error('Failed to load email templates');
+      toast.error(error?.message || 'Failed to load email templates');
+      setTemplates([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -72,13 +80,15 @@ const Emails: React.FC = () => {
   };
 
   const handleEdit = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setShowEditModal(true);
+    // TODO: Implement edit modal
+    console.log('Edit template:', template);
+    toast('Edit modal coming soon!');
   };
 
   const handleSend = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setShowSendModal(true);
+    // TODO: Implement send modal
+    console.log('Send email:', template);
+    toast('Send email modal coming soon!');
   };
 
   const categories = [
@@ -102,7 +112,7 @@ const Emails: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => toast('Create template modal coming soon!')}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
