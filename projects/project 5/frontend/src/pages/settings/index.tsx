@@ -218,8 +218,8 @@ export default function SettingsPage() {
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`flex items-center gap-2 px-6 py-4 font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                                                ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
-                                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                            ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
+                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                             }`}
                                     >
                                         <Icon className="w-5 h-5" />
@@ -565,13 +565,12 @@ export default function SettingsPage() {
                                                     Use these credentials to authenticate API requests
                                                 </p>
                                             </div>
-                                            <div className={`px-4 py-2 rounded-lg ${
-                                                apiKey.status === 'active'
+                                            <div className={`px-4 py-2 rounded-lg ${apiKey.status === 'active'
                                                     ? 'bg-green-100 text-green-800'
                                                     : apiKey.status === 'suspended'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}>
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}>
                                                 <span className="font-medium capitalize">{apiKey.status}</span>
                                             </div>
                                         </div>

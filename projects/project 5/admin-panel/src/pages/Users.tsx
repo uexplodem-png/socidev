@@ -1144,7 +1144,7 @@ const Users: React.FC = () => {
 
     try {
       await realApiService.updateApiKeyStatus(userApiKey.id, status);
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Success',
@@ -1172,7 +1172,7 @@ const Users: React.FC = () => {
 
     try {
       await realApiService.deleteApiKey(userApiKey.id);
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Success',
@@ -1205,7 +1205,7 @@ const Users: React.FC = () => {
 
     try {
       await realApiService.updateApiKeyRateLimit(userApiKey.id, rateLimit);
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Success',
@@ -1237,7 +1237,7 @@ const Users: React.FC = () => {
 
     try {
       await realApiService.updateApiKeyAllowedIps(userApiKey.id, ips);
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Success',
@@ -1349,10 +1349,10 @@ const Users: React.FC = () => {
                 <p className="text-sm text-gray-900 dark:text-white">
                   {userApiKey.lastUsedAt
                     ? new Date(userApiKey.lastUsedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
                     : 'Never'}
                 </p>
               </div>
