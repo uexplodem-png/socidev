@@ -53,6 +53,10 @@ module.exports = {
       'roles.manage': { superAdmin: true, admin: false, moderator: false },
       'permissions.view': { superAdmin: true, admin: true, moderator: false },
 
+      // Analytics & Dashboard
+      'analytics.view': { superAdmin: true, admin: true, moderator: true },
+      'dashboard.view': { superAdmin: true, admin: true, moderator: true },
+
       // Email Management
       'emails.view': { superAdmin: true, admin: true, moderator: true },
       'emails.create': { superAdmin: true, admin: true, moderator: false },

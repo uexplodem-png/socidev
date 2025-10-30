@@ -50,6 +50,10 @@ module.exports = {
       { key: 'roles.manage', label: 'Manage Roles', group: 'rbac' },
       { key: 'permissions.view', label: 'View Permissions', group: 'rbac' },
 
+      // Analytics & Dashboard
+      { key: 'analytics.view', label: 'View Analytics', group: 'analytics' },
+      { key: 'dashboard.view', label: 'View Dashboard', group: 'analytics' },
+
       // Email Management
       { key: 'emails.view', label: 'View Emails', group: 'emails' },
       { key: 'emails.create', label: 'Create Email Templates', group: 'emails' },
