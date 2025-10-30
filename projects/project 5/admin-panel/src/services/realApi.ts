@@ -993,6 +993,91 @@ class RealApiService {
             method: 'POST',
         });
     }
+
+    // Email API
+    async getEmailTemplates(params?: { page?: number; limit?: number; search?: string; category?: string; isActive?: boolean }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.category) queryParams.append('category', params.category);
+        if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+        
+        const query = queryParams.toString();
+        return this.request<any>(`/admin/emails/templates${query ? `?${query}` : ''}`);
+    }
+
+    async getEmailTemplate(id: number): Promise<any> {
+        return this.request<any>(`/admin/emails/templates/${id}`);
+    }
+
+    async createEmailTemplate(data: any): Promise<any> {
+        return this.request<any>('/admin/emails/templates', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateEmailTemplate(id: number, data: any): Promise<any> {
+        return this.request<any>(`/admin/emails/templates/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteEmailTemplate(id: number): Promise<any> {
+        return this.request<any>(`/admin/emails/templates/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async previewEmailTemplate(id: number, variables: any): Promise<any> {
+        return this.request<any>(`/admin/emails/templates/${id}/preview`, {
+            method: 'POST',
+            body: JSON.stringify({ variables }),
+        });
+    }
+
+    async sendEmail(data: { templateId: number; recipientEmail: string; recipientName?: string; variables?: any }): Promise<any> {
+        return this.request<any>('/admin/emails/send', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async sendCustomEmail(data: { recipientEmail: string; recipientName?: string; subject: string; bodyHtml: string; bodyText?: string }): Promise<any> {
+        return this.request<any>('/admin/emails/send-custom', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async sendBulkEmail(data: { templateId: number; recipients: Array<{ email: string; name?: string; variables?: any }> }): Promise<any> {
+        return this.request<any>('/admin/emails/send-bulk', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async getEmailLogs(params?: { page?: number; limit?: number; search?: string; status?: string; templateId?: number }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.status) queryParams.append('status', params.status);
+        if (params?.templateId) queryParams.append('templateId', params.templateId.toString());
+        
+        const query = queryParams.toString();
+        return this.request<any>(`/admin/emails/logs${query ? `?${query}` : ''}`);
+    }
+
+    async getEmailLog(id: number): Promise<any> {
+        return this.request<any>(`/admin/emails/logs/${id}`);
+    }
+
+    async getEmailStats(): Promise<any> {
+        return this.request<any>('/admin/emails/stats');
+    }
 }
 
 

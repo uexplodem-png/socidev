@@ -22,6 +22,7 @@ import Devices from './pages/Devices';
 import Analytics from './pages/Analytics';
 import PlatformsServices from './pages/PlatformsServices';
 import TaskSubmissions from './pages/TaskSubmissions';
+import Emails from './pages/Emails';
 // Import the typed dispatch hook
 import { useAppDispatch } from './store';
 
@@ -149,6 +150,13 @@ function App() {
             <Route path="settings" element={
               <ProtectedRouteWithPermission permission="settings.view">
                 <Settings />
+              </ProtectedRouteWithPermission>
+            } />
+
+            {/* Emails - requires emails.view */}
+            <Route path="emails" element={
+              <ProtectedRouteWithPermission permission="emails.view">
+                <Emails />
               </ProtectedRouteWithPermission>
             } />
           </Route>

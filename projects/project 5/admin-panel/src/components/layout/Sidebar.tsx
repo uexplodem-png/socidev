@@ -14,7 +14,8 @@ import {
   Globe,
   CheckCircle,
   FileText,
-  DollarSign
+  DollarSign,
+  Mail
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { toggleSidebar } from '../../store/slices/themeSlice';
@@ -93,6 +94,12 @@ const navigation = [
     href: '/audit-logs',
     icon: FileText,
     permission: 'audit_logs.view',
+  },
+  {
+    name: 'Emails',
+    href: '/emails',
+    icon: Mail,
+    permission: 'emails.view',
   },
   {
     name: 'Settings',

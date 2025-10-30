@@ -106,6 +106,46 @@ export const rbacAPI = {
   }
 };
 
+// Email API
+export const emailAPI = {
+  getTemplates: async (params?: { page?: number; limit?: number; search?: string; category?: string; isActive?: boolean }) => {
+    return realApiService.getEmailTemplates(params);
+  },
+  getTemplate: async (id: number) => {
+    return realApiService.getEmailTemplate(id);
+  },
+  createTemplate: async (data: any) => {
+    return realApiService.createEmailTemplate(data);
+  },
+  updateTemplate: async (id: number, data: any) => {
+    return realApiService.updateEmailTemplate(id, data);
+  },
+  deleteTemplate: async (id: number) => {
+    return realApiService.deleteEmailTemplate(id);
+  },
+  previewTemplate: async (id: number, variables: any) => {
+    return realApiService.previewEmailTemplate(id, variables);
+  },
+  send: async (data: { templateId: number; recipientEmail: string; recipientName?: string; variables?: any }) => {
+    return realApiService.sendEmail(data);
+  },
+  sendCustom: async (data: { recipientEmail: string; recipientName?: string; subject: string; bodyHtml: string; bodyText?: string }) => {
+    return realApiService.sendCustomEmail(data);
+  },
+  sendBulk: async (data: { templateId: number; recipients: Array<{ email: string; name?: string; variables?: any }> }) => {
+    return realApiService.sendBulkEmail(data);
+  },
+  getLogs: async (params?: { page?: number; limit?: number; search?: string; status?: string; templateId?: number }) => {
+    return realApiService.getEmailLogs(params);
+  },
+  getLog: async (id: number) => {
+    return realApiService.getEmailLog(id);
+  },
+  getStats: async () => {
+    return realApiService.getEmailStats();
+  }
+};
+
 // Mock Data API
 export const mockDataAPI = {
   resetData: async () => {
