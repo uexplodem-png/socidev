@@ -14,6 +14,7 @@ import AdminPanelAccessTab from '../components/settings/AdminPanelAccessTab';
 import GeneralTab from '../components/settings/GeneralTab';
 import ModesTab from '../components/settings/ModesTab';
 import SecurityTab from '../components/settings/SecurityTab';
+import WithPermissionCheck from '../components/WithPermissionCheck';
 
 type TabId = 'general' | 'flags' | 'adminAccess' | 'memberAccess' | 'modes' | 'security';
 
@@ -69,19 +70,20 @@ const Settings: React.FC = () => {
   const activeTabComponent = tabs.find((tab) => tab.id === activeTab)?.component;
 
   return (
-    <div className="space-y-6 mt-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <SettingsIcon className="h-7 w-7 mr-3 text-blue-600 dark:text-blue-500" />
-            System Settings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Configure system-wide settings, feature flags, and access control
-          </p>
+    <WithPermissionCheck permission="canViewSettings">
+      <div className="space-y-6 mt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+              <SettingsIcon className="h-7 w-7 mr-3 text-blue-600 dark:text-blue-500" />
+              System Settings
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Configure system-wide settings, feature flags, and access control
+            </p>
+          </div>
         </div>
-      </div>
 
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -116,7 +118,8 @@ const Settings: React.FC = () => {
           {activeTabComponent}
         </div>
       </div>
-    </div>
+      </div>
+    </WithPermissionCheck>
   );
 };
 

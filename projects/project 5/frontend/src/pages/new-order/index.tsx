@@ -11,6 +11,7 @@ import { getPlatforms, Platform } from "../../lib/api/platforms";
 import { useFeatureFlags } from "../../hooks/useFeatureFlags";
 import { useAuth } from "../../context/AuthContext";
 import { RestrictedPermission } from "../../components/RestrictedPermission";
+import WithPermissionCheck from "../../components/WithPermissionCheck";
 
 const getPlatformIcon = (name: string) => {
   const lowerName = name.toLowerCase();
