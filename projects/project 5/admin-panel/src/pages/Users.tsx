@@ -55,6 +55,12 @@ const Users: React.FC = () => {
   const [activityLogPage, setActivityLogPage] = useState(0);
   const ACTIVITY_LOGS_PER_PAGE = 5;
 
+  // API Key state
+  const [userApiKey, setUserApiKey] = useState<any>(null);
+  const [userApiLogs, setUserApiLogs] = useState<any[]>([]);
+  const [apiLogsLoading, setApiLogsLoading] = useState(false);
+  const [apiLogsPagination, setApiLogsPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+
   // New state for add user form
   const [newUser, setNewUser] = useState({
     firstName: '',
@@ -169,6 +175,19 @@ const Users: React.FC = () => {
           } catch (error) {
             console.error('Error fetching activity logs:', error);
             setUserActivityLogs([]);
+          }
+
+          // Fetch API key data
+          try {
+            const apiKeyData = await realApiService.getUserApiKey(selectedUser.id);
+            setUserApiKey(apiKeyData.apiKey || null);
+          } catch (error: any) {
+            // 404 means user has no API key yet - this is normal
+            if (error?.message?.includes('404')) {
+              setUserApiKey(null);
+            } else {
+              console.error('Error fetching API key:', error);
+            }
           }
         } catch (error) {
           console.error('Error fetching user details:', error);
@@ -1088,6 +1107,379 @@ const Users: React.FC = () => {
     </div>
   );
 
+  // Fetch API logs with pagination
+  const fetchApiLogs = async (page = 1) => {
+    if (!selectedUser) return;
+
+    setApiLogsLoading(true);
+    try {
+      const response = await realApiService.getUserApiLogs(selectedUser.id, {
+        page,
+        limit: apiLogsPagination.limit,
+      });
+      setUserApiLogs(response.logs || []);
+      setApiLogsPagination(response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 });
+    } catch (error) {
+      console.error('Error fetching API logs:', error);
+      setUserApiLogs([]);
+    } finally {
+      setApiLogsLoading(false);
+    }
+  };
+
+  const handleApiKeyStatusChange = async (status: string) => {
+    if (!userApiKey) return;
+
+    try {
+      await realApiService.updateApiKeyStatus(userApiKey.id, status);
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Success',
+        message: `API key ${status === 'active' ? 'activated' : status === 'suspended' ? 'suspended' : 'revoked'}`,
+      }));
+
+      // Refresh API key data
+      const apiKeyData = await realApiService.getUserApiKey(selectedUser!.id);
+      setUserApiKey(apiKeyData.apiKey || null);
+    } catch (error) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to update API key status',
+      }));
+    }
+  };
+
+  const handleDeleteApiKey = async () => {
+    if (!userApiKey) return;
+
+    if (!confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await realApiService.deleteApiKey(userApiKey.id);
+      
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'API key deleted successfully',
+      }));
+
+      setUserApiKey(null);
+      setUserApiLogs([]);
+    } catch (error) {
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete API key',
+      }));
+    }
+  };
+
+  const renderApiTab = () => {
+    // Fetch API logs when tab is opened
+    useEffect(() => {
+      if (activeTab === 'api' && selectedUser && userApiKey) {
+        fetchApiLogs(1);
+      }
+    }, [activeTab, selectedUser, userApiKey]);
+
+    if (!userApiKey) {
+      return (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            No API Key
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            This user hasn't generated an API key yet.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            Users can generate an API key from their account settings.
+          </p>
+        </div>
+      );
+    }
+
+    const getStatusBadge = (status: string) => {
+      const statusMap: Record<string, { color: string; label: string }> = {
+        active: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', label: 'Active' },
+        suspended: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', label: 'Suspended' },
+        revoked: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', label: 'Revoked' },
+      };
+      const { color, label } = statusMap[status] || statusMap.active;
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
+          {label}
+        </span>
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* API Key Info */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">API Key Information</h3>
+            {getStatusBadge(userApiKey.status)}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                API Key
+              </label>
+              <div className="flex items-center space-x-2">
+                <code className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-sm font-mono">
+                  {userApiKey.apiKey}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(userApiKey.apiKey);
+                    dispatch(addNotification({
+                      type: 'success',
+                      title: 'Copied',
+                      message: 'API key copied to clipboard',
+                    }));
+                  }}
+                  className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Created
+                </label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {new Date(userApiKey.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Last Used
+                </label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {userApiKey.lastUsedAt
+                    ? new Date(userApiKey.lastUsedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : 'Never'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Total Requests
+                </label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {userApiKey.totalRequests?.toLocaleString() || 0}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Rate Limit
+                </label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {userApiKey.rateLimit?.toLocaleString() || 1000} req/day
+                </p>
+              </div>
+            </div>
+
+            {userApiKey.allowedIps && userApiKey.allowedIps.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Allowed IPs
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {userApiKey.allowedIps.map((ip: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs rounded"
+                    >
+                      {ip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {canAccess('api', 'edit') && (
+              <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {userApiKey.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleApiKeyStatusChange('suspended')}
+                  >
+                    Suspend
+                  </Button>
+                )}
+                {userApiKey.status === 'suspended' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleApiKeyStatusChange('active')}
+                  >
+                    Activate
+                  </Button>
+                )}
+                {userApiKey.status !== 'revoked' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleApiKeyStatusChange('revoked')}
+                  >
+                    Revoke
+                  </Button>
+                )}
+                {canAccess('api', 'delete') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteApiKey}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400"
+                  >
+                    Delete
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* API Logs */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">API Request Logs</h3>
+
+          {apiLogsLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading logs...</p>
+            </div>
+          ) : userApiLogs.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600 dark:text-gray-400">No API requests yet</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Timestamp
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Endpoint
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Method
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        IP Address
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Response Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {userApiLogs.map((log: any) => (
+                      <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                          <code className="text-xs">{log.endpoint}</code>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={cn(
+                            'px-2 py-1 rounded text-xs font-medium',
+                            log.method === 'GET' && 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                            log.method === 'POST' && 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                            log.method === 'PUT' && 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                            log.method === 'DELETE' && 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                          )}>
+                            {log.method}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={cn(
+                            'px-2 py-1 rounded text-xs font-medium',
+                            log.statusCode >= 200 && log.statusCode < 300 && 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                            log.statusCode >= 300 && log.statusCode < 400 && 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                            log.statusCode >= 400 && log.statusCode < 500 && 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                            log.statusCode >= 500 && 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                          )}>
+                            {log.statusCode}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {log.ipAddress}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {log.responseTime}ms
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {apiLogsPagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Page {apiLogsPagination.page} of {apiLogsPagination.totalPages} ({apiLogsPagination.total} total logs)
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={apiLogsPagination.page === 1}
+                      onClick={() => fetchApiLogs(apiLogsPagination.page - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={apiLogsPagination.page === apiLogsPagination.totalPages}
+                      onClick={() => fetchApiLogs(apiLogsPagination.page + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderAnalyticsTab = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 dark:bg-gray-800 dark:border-gray-700">
@@ -1223,6 +1615,7 @@ const Users: React.FC = () => {
                     { id: 'social', name: 'Social Media' },
                     { id: 'devices', name: 'Devices' },
                     { id: 'tasks', name: 'Tasks' },
+                    { id: 'api', name: 'API' },
                     { id: 'analytics', name: 'Analytics' },
                   ].map((tab) => (
                     <button
@@ -1255,6 +1648,7 @@ const Users: React.FC = () => {
                 {activeTab === 'social' && renderSocialMediaTab()}
                 {activeTab === 'devices' && renderDevicesTab()}
                 {activeTab === 'tasks' && renderTasksTab()}
+                {activeTab === 'api' && renderApiTab()}
                 {activeTab === 'analytics' && renderAnalyticsTab()}
               </div>
 

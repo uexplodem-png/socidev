@@ -1140,6 +1140,40 @@ class RealApiService {
             method: 'POST',
         });
     }
+
+    // API Keys Management
+    async getUserApiKey(userId: string): Promise<any> {
+        return this.request<any>(`/admin/api-keys/user/${userId}`);
+    }
+
+    async getUserApiLogs(userId: string, params?: { page?: number; limit?: number; endpoint?: string; method?: string; status?: string }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.endpoint) queryParams.append('endpoint', params.endpoint);
+        if (params?.method) queryParams.append('method', params.method);
+        if (params?.status) queryParams.append('status', params.status);
+
+        const query = queryParams.toString();
+        return this.request<any>(`/admin/api-keys/user/${userId}/logs${query ? `?${query}` : ''}`);
+    }
+
+    async updateApiKeyStatus(apiKeyId: string, status: string): Promise<any> {
+        return this.request<any>(`/admin/api-keys/${apiKeyId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status }),
+        });
+    }
+
+    async deleteApiKey(apiKeyId: string): Promise<any> {
+        return this.request<any>(`/admin/api-keys/${apiKeyId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async getApiLogDetail(logId: string): Promise<any> {
+        return this.request<any>(`/admin/api-keys/logs/${logId}`);
+    }
 }
 
 
