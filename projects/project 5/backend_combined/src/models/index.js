@@ -24,6 +24,8 @@ import Permission from './Permission.js';
 import UserRole from './UserRole.js';
 import RolePermission from './RolePermission.js';
 import AdminRolePermission from './AdminRolePermission.js';
+import EmailTemplate from './EmailTemplate.js';
+import EmailLog from './EmailLog.js';
 
 // Define associations
 const defineAssociations = () => {
@@ -103,6 +105,14 @@ const defineAssociations = () => {
   
   RolePermission.belongsTo(Role, { foreignKey: 'roleId', as: 'role' });
   RolePermission.belongsTo(Permission, { foreignKey: 'permissionId', as: 'permission' });
+
+  // Email associations
+  EmailTemplate.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+  EmailTemplate.hasMany(EmailLog, { foreignKey: 'templateId', as: 'logs' });
+  
+  EmailLog.belongsTo(EmailTemplate, { foreignKey: 'templateId', as: 'template' });
+  EmailLog.belongsTo(User, { foreignKey: 'recipientUserId', as: 'recipient' });
+  EmailLog.belongsTo(User, { foreignKey: 'sentBy', as: 'sender' });
 };
 
 // Initialize associations

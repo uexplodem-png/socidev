@@ -50,6 +50,14 @@ module.exports = {
       'settings.view': { superAdmin: true, admin: true, moderator: true },
       'settings.edit': { superAdmin: true, admin: true, moderator: false },
       'roles.manage': { superAdmin: true, admin: false, moderator: false },
+
+      // Email Management
+      'emails.view': { superAdmin: true, admin: true, moderator: true },
+      'emails.create': { superAdmin: true, admin: true, moderator: false },
+      'emails.edit': { superAdmin: true, admin: true, moderator: false },
+      'emails.delete': { superAdmin: true, admin: false, moderator: false },
+      'emails.send': { superAdmin: true, admin: true, moderator: true },
+      'emails.send_bulk': { superAdmin: true, admin: true, moderator: false },
     };
 
     const records = [];
