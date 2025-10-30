@@ -375,17 +375,22 @@ router.post('/send',
   requireAdminPermission('emails.send'),
   async (req, res) => {
     try {
-      const { templateKey, recipientEmail, variables = {} } = req.body;
+      const { templateKey, templateId, recipientEmail, recipientName, variables = {} } = req.body;
 
-      if (!templateKey || !recipientEmail) {
+      if ((!templateKey && !templateId) || !recipientEmail) {
         return res.status(400).json({
           success: false,
-          message: 'Template key and recipient email are required'
+          message: 'Template (key or id) and recipient email are required'
         });
       }
 
-      // Get template
-      const template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      // Get template by ID or key
+      let template;
+      if (templateId) {
+        template = await EmailTemplate.findOne({ where: { id: templateId, isActive: true } });
+      } else {
+        template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      }
       if (!template) {
         return res.status(404).json({
           success: false,
@@ -414,18 +419,21 @@ router.post('/send',
         attributes: ['id', 'firstName', 'lastName']
       });
 
+      // Ensure sentBy is a valid integer
+      const sentBy = req.user?.id ? parseInt(req.user.id) : null;
+
       // Create email log
       const emailLog = await EmailLog.create({
         templateId: template.id,
         recipientEmail,
-        recipientName: user ? `${user.firstName} ${user.lastName}` : variables.firstName || null,
+        recipientName: recipientName || (user ? `${user.firstName} ${user.lastName}` : variables.firstName || null),
         recipientUserId: user?.id || null,
         subject,
         bodyHtml,
         bodyText,
         variablesUsed: variables,
         status: 'sent', // Mark as sent (actual sending will be implemented later)
-        sentBy: req.user.id,
+        sentBy: sentBy,
         sentAt: new Date(),
         provider: 'smtp'
       });
@@ -480,6 +488,9 @@ router.post('/send-custom',
         attributes: ['id', 'firstName', 'lastName']
       });
 
+      // Ensure sentBy is a valid integer
+      const sentBy = req.user?.id ? parseInt(req.user.id) : null;
+
       // Create email log
       const emailLog = await EmailLog.create({
         templateId: null,
@@ -490,7 +501,7 @@ router.post('/send-custom',
         bodyHtml,
         bodyText,
         status: 'sent',
-        sentBy: req.user.id,
+        sentBy: sentBy,
         sentAt: new Date(),
         provider: 'smtp'
       });
@@ -530,17 +541,22 @@ router.post('/send-bulk',
   requireAdminPermission('emails.send_bulk'),
   async (req, res) => {
     try {
-      const { templateKey, recipients } = req.body;
+      const { templateKey, templateId, recipients } = req.body;
 
-      if (!templateKey || !recipients || !Array.isArray(recipients)) {
+      if ((!templateKey && !templateId) || !recipients || !Array.isArray(recipients)) {
         return res.status(400).json({
           success: false,
-          message: 'Template key and recipients array are required'
+          message: 'Template (key or id) and recipients array are required'
         });
       }
 
-      // Get template
-      const template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      // Get template by ID or key
+      let template;
+      if (templateId) {
+        template = await EmailTemplate.findOne({ where: { id: templateId, isActive: true } });
+      } else {
+        template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      }
       if (!template) {
         return res.status(404).json({
           success: false,
@@ -570,14 +586,17 @@ router.post('/send-bulk',
           const subject = replaceVariables(template.subject, recipient.variables || {});
           const bodyHtml = replaceVariables(template.bodyHtml, recipient.variables || {});
 
+          // Ensure sentBy is a valid integer
+          const sentBy = req.user?.id ? parseInt(req.user.id) : null;
+
           await EmailLog.create({
             templateId: template.id,
             recipientEmail: recipient.email,
-            recipientName: recipient.variables?.firstName || null,
+            recipientName: recipient.name || recipient.variables?.firstName || null,
             subject,
             bodyHtml,
             status: 'sent',
-            sentBy: req.user.id,
+            sentBy: sentBy,
             sentAt: new Date()
           });
 
