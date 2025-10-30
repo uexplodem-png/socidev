@@ -62,7 +62,8 @@ export async function hasAdminPermission(role, permissionKey) {
     return false;
   }
 
-  return rolePermissions[permissionKey] === true;
+  // Convert to boolean (handles both 1/0 and true/false)
+  return Boolean(rolePermissions[permissionKey]);
 }
 
 /**
