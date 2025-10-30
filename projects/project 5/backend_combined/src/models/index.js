@@ -26,6 +26,8 @@ import RolePermission from './RolePermission.js';
 import AdminRolePermission from './AdminRolePermission.js';
 import EmailTemplate from './EmailTemplate.js';
 import EmailLog from './EmailLog.js';
+import ApiKey from './ApiKey.js';
+import ApiLog from './ApiLog.js';
 
 // Define associations
 const defineAssociations = () => {
@@ -39,6 +41,16 @@ const defineAssociations = () => {
   User.hasMany(ActivityLog, { foreignKey: 'userId', as: 'activityLogs' });
   User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
   User.hasOne(UserSettings, { foreignKey: 'userId', as: 'settings' });
+  User.hasOne(ApiKey, { foreignKey: 'userId', as: 'apiKey' });
+  User.hasMany(ApiLog, { foreignKey: 'userId', as: 'apiLogs' });
+
+  // API Key associations
+  ApiKey.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  ApiKey.hasMany(ApiLog, { foreignKey: 'apiKeyId', as: 'logs' });
+
+  // API Log associations
+  ApiLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  ApiLog.belongsTo(ApiKey, { foreignKey: 'apiKeyId', as: 'apiKey' });
 
   // Order associations
   Order.belongsTo(User, { 
@@ -145,4 +157,8 @@ export {
   UserRole,
   RolePermission,
   AdminRolePermission,
+  EmailTemplate,
+  EmailLog,
+  ApiKey,
+  ApiLog,
 };

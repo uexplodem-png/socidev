@@ -2,6 +2,7 @@ import express from 'express';
 import { UserController } from '../controllers/user.controller.js';
 import { authenticateToken as auth } from '../middleware/auth.js';
 import { validateProfileUpdate, validatePasswordUpdate, validateSettingsUpdate } from '../validators/user.validator.js';
+import apiKeyRoutes from './user/api-key.js';
 
 const router = express.Router();
 const userController = new UserController();
@@ -50,5 +51,8 @@ router.get('/dashboard-stats',
   auth,
   userController.getDashboardStats
 );
+
+// API key management
+router.use('/api-key', apiKeyRoutes);
 
 export { router as userRouter };

@@ -15,6 +15,7 @@ import rbacRoutes from './rbac.js';
 import adminPermissionsRoutes from './adminPermissions.js';
 import emailsRoutes from './emails.js';
 import socialAccountsRoutes from './social-accounts.js';
+import apiKeysRoutes from './api-keys.js';
 
 const router = express.Router();
 
@@ -38,6 +39,7 @@ router.use('/admin-permissions', adminPermissionsRoutes); // Dynamic admin role 
 router.use('/', platformsServicesRoutes);
 router.use('/emails', emailsRoutes); // Email management system
 router.use('/social-accounts', socialAccountsRoutes); // Social accounts management
+router.use('/api-keys', apiKeysRoutes); // API key management
 
 // Admin root endpoint
 router.get('/', (req, res) => {
