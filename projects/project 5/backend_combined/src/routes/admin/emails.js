@@ -1,5 +1,6 @@
 import express from 'express';
 import { Op } from 'sequelize';
+import nodemailer from 'nodemailer';
 import EmailTemplate from '../../models/EmailTemplate.js';
 import EmailLog from '../../models/EmailLog.js';
 import { User } from '../../models/index.js';
@@ -428,8 +429,6 @@ router.post('/send',
       let errorMessage = null;
 
       try {
-        const nodemailer = require('nodemailer');
-        
         // Create transporter
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST || 'smtp.gmail.com',
