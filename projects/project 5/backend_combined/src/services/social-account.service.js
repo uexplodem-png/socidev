@@ -5,11 +5,11 @@ export class SocialAccountService {
   async addAccount(userId, { platform, username, credentials }) {
     try {
       const account = await SocialAccount.create({
-        user_id: userId,
+        userId: userId,
         platform,
         username,
-        access_token: credentials?.accessToken,
-        refresh_token: credentials?.refreshToken
+        accessToken: credentials?.accessToken,
+        refreshToken: credentials?.refreshToken
       });
       
       return account;
@@ -21,7 +21,7 @@ export class SocialAccountService {
 
   async getAccounts(userId, { platform } = {}) {
     try {
-      const whereClause = { user_id: userId };
+      const whereClause = { userId: userId };
       if (platform) {
         whereClause.platform = platform;
       }
@@ -40,7 +40,7 @@ export class SocialAccountService {
   async getAccountDetails(userId, accountId) {
     try {
       const account = await SocialAccount.findOne({
-        where: { id: accountId, user_id: userId }
+        where: { id: accountId, userId: userId }
       });
       
       if (!account) {
@@ -57,14 +57,14 @@ export class SocialAccountService {
   async updateAccountSettings(userId, accountId, settings) {
     try {
       const account = await SocialAccount.findOne({
-        where: { id: accountId, user_id: userId }
+        where: { id: accountId, userId: userId }
       });
       
       if (!account) {
         throw new ApiError(404, 'Social account not found');
       }
       
-      await account.update({ account_data: settings });
+      await account.update({ accountData: settings });
       return account;
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -75,7 +75,7 @@ export class SocialAccountService {
   async deleteAccount(userId, accountId) {
     try {
       const account = await SocialAccount.findOne({
-        where: { id: accountId, user_id: userId }
+        where: { id: accountId, userId: userId }
       });
       
       if (!account) {
@@ -93,7 +93,7 @@ export class SocialAccountService {
   async getAccountStats(userId, accountId) {
     try {
       const account = await SocialAccount.findOne({
-        where: { id: accountId, user_id: userId }
+        where: { id: accountId, userId: userId }
       });
       
       if (!account) {
