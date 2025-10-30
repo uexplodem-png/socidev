@@ -49,7 +49,9 @@ module.exports = {
       'audit.view': { superAdmin: true, admin: true, moderator: true },
       'settings.view': { superAdmin: true, admin: true, moderator: true },
       'settings.edit': { superAdmin: true, admin: true, moderator: false },
+      'roles.view': { superAdmin: true, admin: true, moderator: false },
       'roles.manage': { superAdmin: true, admin: false, moderator: false },
+      'permissions.view': { superAdmin: true, admin: true, moderator: false },
 
       // Email Management
       'emails.view': { superAdmin: true, admin: true, moderator: true },
