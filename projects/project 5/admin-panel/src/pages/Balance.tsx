@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import Button from '../components/ui/Button';
 import { usePermissions } from '../hooks/usePermissions';
 import Modal from '../components/ui/Modal';
-import { usersAPI, withdrawalsAPI } from '../services/api';
+import { withdrawalsAPI } from '../services/api';
 import { User } from '../types';
 import toast from 'react-hot-toast';
 import {
@@ -89,32 +89,38 @@ const Balance: React.FC = () => {
         try {
             setLoading(true);
 
-            // Fetch all users and transactions with proper pagination
-            // Using page=1, limit=100 (max allowed) to get recent data
-            const [usersResponse, transactionsResponse] = await Promise.all([
-                usersAPI.getUsers({
-                    page: 1,
-                    limit: 100,
-                    sortBy: 'created_at',
-                    sortOrder: 'desc'
-                }),
-                withdrawalsAPI.getTransactions({
-                    page: 1,
-                    limit: 100,
-                    sortBy: 'created_at',
-                    sortOrder: 'desc'
-                })
-            ]);
+            // Fetch transactions (they already include user data)
+            const transactionsResponse = await withdrawalsAPI.getTransactions({
+                page: 1,
+                limit: 100,
+                sortBy: 'created_at',
+                sortOrder: 'desc'
+            });
 
-            setUsers(usersResponse.data);
-            setFilteredUsers(usersResponse.data);
+            // Extract unique users from transactions (no need for separate users API call)
+            const userMap = new Map<string, User>();
+            
+            transactionsResponse.data.forEach((tx: any) => {
+                if (tx.user && !userMap.has(tx.userId)) {
+                    userMap.set(tx.userId, {
+                        id: tx.userId,
+                        firstName: tx.user.firstName || '',
+                        lastName: tx.user.lastName || '',
+                        email: tx.user.email || '',
+                        username: tx.user.username || '',
+                    } as User);
+                }
+            });
+            
+            const extractedUsers = Array.from(userMap.values());
+            setUsers(extractedUsers);
+            setFilteredUsers(extractedUsers);
 
             const entries: BalanceEntry[] = transactionsResponse.data.map((tx: any) => {
-                const user = usersResponse.data.find((u: User) => u.id === tx.userId);
                 return {
                     id: tx.id, userId: tx.userId,
-                    userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
-                    userEmail: user?.email,
+                    userName: tx.user ? `${tx.user.firstName} ${tx.user.lastName}` : 'Unknown User',
+                    userEmail: tx.user?.email,
                     amount: tx.type === 'withdrawal' ? -Math.abs(tx.amount) : tx.amount,
                     type: tx.type as 'deposit' | 'withdrawal' | 'adjustment',
                     status: tx.status as 'pending' | 'approved' | 'rejected' | 'completed' | 'failed',
@@ -126,7 +132,7 @@ const Balance: React.FC = () => {
             });
 
             setAllEntries(entries);
-            calculateOverview(usersResponse.data, entries);
+            calculateOverview(extractedUsers, entries);
         } catch (error) {
             console.error('Failed to fetch data:', error);
             toast.error('Failed to load balance data');
