@@ -150,6 +150,9 @@ router.post('/templates',
         });
       }
 
+      // Ensure user IDs are valid integers
+      const userId = req.user?.id ? parseInt(req.user.id) : null;
+
       const template = await EmailTemplate.create({
         name,
         key,
@@ -159,8 +162,8 @@ router.post('/templates',
         variables: variables || [],
         category: category || 'transactional',
         isActive: isActive !== undefined ? isActive : true,
-        createdBy: req.user.id,
-        updatedBy: req.user.id
+        createdBy: userId,
+        updatedBy: userId
       });
 
       await logAudit({
@@ -220,6 +223,9 @@ router.put('/templates/:id',
         }
       }
 
+      // Ensure updatedBy is a valid integer
+      const updatedBy = req.user?.id ? parseInt(req.user.id) : null;
+
       await template.update({
         ...(name && { name }),
         ...(key && { key }),
@@ -229,7 +235,7 @@ router.put('/templates/:id',
         ...(variables && { variables }),
         ...(category && { category }),
         ...(isActive !== undefined && { isActive }),
-        updatedBy: req.user.id
+        ...(updatedBy && { updatedBy })
       });
 
       await logAudit({
