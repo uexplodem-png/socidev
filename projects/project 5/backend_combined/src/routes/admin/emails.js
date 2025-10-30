@@ -422,6 +422,43 @@ router.post('/send',
       // Ensure sentBy is a valid integer
       const sentBy = req.user?.id ? parseInt(req.user.id) : null;
 
+      // Send actual email using nodemailer
+      let emailStatus = 'pending';
+      let providerMessageId = null;
+      let errorMessage = null;
+
+      try {
+        const nodemailer = require('nodemailer');
+        
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        });
+
+        // Send email
+        const info = await transporter.sendMail({
+          from: `"${process.env.SMTP_FROM_NAME || 'Social Developer'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+          to: recipientEmail,
+          subject: subject,
+          html: bodyHtml,
+          text: bodyText || subject,
+        });
+
+        emailStatus = 'sent';
+        providerMessageId = info.messageId;
+        logger.info(`Email sent successfully to ${recipientEmail}`, { messageId: info.messageId });
+      } catch (emailError) {
+        emailStatus = 'failed';
+        errorMessage = emailError.message;
+        logger.error(`Failed to send email to ${recipientEmail}:`, emailError);
+      }
+
       // Create email log
       const emailLog = await EmailLog.create({
         templateId: template.id,
@@ -432,10 +469,12 @@ router.post('/send',
         bodyHtml,
         bodyText,
         variablesUsed: variables,
-        status: 'sent', // Mark as sent (actual sending will be implemented later)
+        status: emailStatus,
         sentBy: sentBy,
-        sentAt: new Date(),
-        provider: 'smtp'
+        sentAt: emailStatus === 'sent' ? new Date() : null,
+        provider: 'smtp',
+        providerMessageId: providerMessageId,
+        errorMessage: errorMessage
       });
 
       await logAudit({
