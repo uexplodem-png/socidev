@@ -805,8 +805,14 @@ export const TaskSubmissions: React.FC = () => {
 
             {/* Screenshot Modal */}
             {screenshotModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-4xl max-h-full overflow-auto dark:bg-gray-800">
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+                    onClick={() => setScreenshotModalOpen(false)}
+                >
+                    <div 
+                        className="bg-white rounded-lg max-w-4xl max-h-full overflow-auto dark:bg-gray-800"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-4 border-b border-gray-200 flex justify-between items-center dark:border-gray-700">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Screenshot Preview</h3>
                             <button
@@ -829,8 +835,14 @@ export const TaskSubmissions: React.FC = () => {
 
             {/* Rejection Reason Modal */}
             {rejectingSubmissionId && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-md w-full dark:bg-gray-800">
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+                    onClick={() => setRejectingSubmissionId(null)}
+                >
+                    <div 
+                        className="bg-white rounded-lg max-w-md w-full dark:bg-gray-800"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reject Submission</h3>
                         </div>
