@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 import logger from '../config/logger.js';
 import { permissionsService } from '../services/permissionsService.js';
+import { hasAdminPermission } from '../services/adminPermissionService.js';
 
 // Verify JWT token
 export const authenticateToken = async (req, res, next) => {
@@ -201,7 +202,7 @@ export const optionalAuth = async (req, res, next) => {
 };
 
 /**
- * Middleware to authorize specific roles
+ * Middleware to authorize specific roles (Legacy - kept for backward compatibility)
  * @param {...string} allowedRoles - Allowed roles (e.g., 'admin', 'super_admin')
  */
 export const authorizeRoles = (...allowedRoles) => {
@@ -230,6 +231,75 @@ export const authorizeRoles = (...allowedRoles) => {
   };
 };
 
+/**
+ * NEW: Dynamic middleware to check admin permissions from database
+ * @param {string} permissionKey - Permission key to check (e.g., 'users.edit', 'balance.adjust')
+ */
+export const requireAdminPermission = (permissionKey) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+
+    const userRole = req.user.role;
+    
+    // Check if role is an admin role
+    if (!['super_admin', 'admin', 'moderator'].includes(userRole)) {
+      logger.warn('Non-admin role attempted admin action', {
+        userId: req.user.id,
+        userRole,
+        requiredPermission: permissionKey
+      });
+      return res.status(403).json({
+        error: 'Admin role required',
+        code: 'ADMIN_ROLE_REQUIRED'
+      });
+    }
+
+    try {
+      // Check permission from database
+      const hasPermission = await hasAdminPermission(userRole, permissionKey);
+
+      if (!hasPermission) {
+        logger.warn('Admin permission check failed', {
+          userId: req.user.id,
+          userRole,
+          permissionKey,
+          hasPermission: false
+        });
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          code: 'INSUFFICIENT_PERMISSIONS',
+          required: permissionKey,
+          role: userRole
+        });
+      }
+
+      logger.debug('Admin permission check passed', {
+        userId: req.user.id,
+        userRole,
+        permissionKey
+      });
+
+      next();
+    } catch (error) {
+      logger.error('Error checking admin permission', {
+        userId: req.user.id,
+        userRole,
+        permissionKey,
+        error: error.message
+      });
+      return res.status(500).json({
+        error: 'Permission check failed',
+        code: 'PERMISSION_CHECK_ERROR'
+      });
+    }
+  };
+};
+
 export default {
   authenticateToken,
   requireAdmin,
@@ -237,4 +307,5 @@ export default {
   requirePermission,
   optionalAuth,
   authorizeRoles,
+  requireAdminPermission,
 };

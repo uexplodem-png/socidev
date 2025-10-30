@@ -12,6 +12,7 @@ import { adminLogsRouter } from './logs.js';
 import settingsRoutes from './settings.js';
 import platformsServicesRoutes from './platformsServices.js';
 import rbacRoutes from './rbac.js';
+import adminPermissionsRoutes from './adminPermissions.js';
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.use('/action-logs', actionLogsRoutes);
 router.use('/', adminLogsRouter); // New unified logs router (includes system-logs)
 router.use('/settings', settingsRoutes);
 router.use('/rbac', rbacRoutes);
+router.use('/admin-permissions', adminPermissionsRoutes); // Dynamic admin role permissions
 router.use('/', platformsServicesRoutes);
 
 // Admin root endpoint

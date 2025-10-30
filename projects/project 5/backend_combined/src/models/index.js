@@ -23,6 +23,7 @@ import Role from './Role.js';
 import Permission from './Permission.js';
 import UserRole from './UserRole.js';
 import RolePermission from './RolePermission.js';
+import AdminRolePermission from './AdminRolePermission.js';
 
 // Define associations
 const defineAssociations = () => {
@@ -133,4 +134,5 @@ export {
   Permission,
   UserRole,
   RolePermission,
+  AdminRolePermission,
 };

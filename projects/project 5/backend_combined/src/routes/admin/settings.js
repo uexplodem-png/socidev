@@ -1,7 +1,7 @@
 import express from 'express';
 import { ActivityLog } from '../../models/index.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
-import { requirePermission, authorizeRoles } from '../../middleware/auth.js';
+import { requirePermission, authorizeRoles, requireAdminPermission } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validation.js';
 import { settingsService } from '../../services/settingsService.js';
 import { logAudit } from '../../utils/logging.js';
@@ -75,7 +75,7 @@ router.get('/',
  *         description: Settings updated successfully
  */
 router.put('/',
-  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can edit settings
+  requireAdminPermission('settings.edit'), // Dynamic permission check from database
   requirePermission('settings.edit'),
   asyncHandler(async (req, res) => {
     let updates = req.body;

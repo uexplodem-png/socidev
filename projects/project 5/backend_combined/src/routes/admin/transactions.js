@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { Transaction, User, Order, AuditLog } from '../../models/index.js';
 import { validate, schemas } from '../../middleware/validation.js';
 import { asyncHandler, NotFoundError } from '../../middleware/errorHandler.js';
-import { requirePermission, authorizeRoles } from '../../middleware/auth.js';
+import { requirePermission, authorizeRoles, requireAdminPermission } from '../../middleware/auth.js';
 import { settingsService } from '../../services/settingsService.js';
 import { logAudit } from '../../utils/logging.js';
 
@@ -425,7 +425,7 @@ router.get('/stats',
  *         description: Transaction not found
  */
 router.post('/:id/approve',
-  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can approve transactions
+  requireAdminPermission('transactions.approve'), // Dynamic permission check from database
   requirePermission('transactions.approve'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -535,7 +535,7 @@ router.post('/:id/approve',
  *         description: Transaction not found
  */
 router.post('/:id/reject',
-  authorizeRoles('admin', 'super_admin'), // Only admin and super_admin can reject transactions
+  requireAdminPermission('transactions.reject'), // Dynamic permission check from database
   requirePermission('transactions.reject'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
