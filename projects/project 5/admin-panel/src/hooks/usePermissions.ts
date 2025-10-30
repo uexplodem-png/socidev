@@ -138,7 +138,74 @@ export const usePermissions = () => {
         return true;
       }
 
-      return permissions.includes(permissionKey);
+      // Check if user role has permission from JWT
+      if (permissions.includes(permissionKey)) {
+        return true;
+      }
+
+      // Fallback to frontend permission map (for admin roles)
+      const role = user.role?.toLowerCase();
+      if (role === 'super_admin' || role === 'admin' || role === 'moderator') {
+        // Permission mapping based on seeded data
+        const permissionMap: Record<string, Record<string, boolean>> = {
+          // User Management
+          'users.view': { super_admin: true, admin: true, moderator: true },
+          'users.create': { super_admin: true, admin: true, moderator: false },
+          'users.edit': { super_admin: true, admin: true, moderator: false },
+          'users.suspend': { super_admin: true, admin: true, moderator: true },
+          'users.ban': { super_admin: true, admin: true, moderator: false },
+          
+          // Financial Management
+          'transactions.view': { super_admin: true, admin: true, moderator: true },
+          'transactions.approve': { super_admin: true, admin: true, moderator: false },
+          'transactions.reject': { super_admin: true, admin: true, moderator: false },
+          'transactions.adjust': { super_admin: true, admin: true, moderator: false },
+          'withdrawals.view': { super_admin: true, admin: true, moderator: true },
+          'withdrawals.approve': { super_admin: true, admin: true, moderator: false },
+          'withdrawals.reject': { super_admin: true, admin: true, moderator: false },
+          'refunds.view': { super_admin: true, admin: true, moderator: true },
+          'refunds.process': { super_admin: true, admin: true, moderator: false },
+          'balance.view': { super_admin: true, admin: true, moderator: true },
+          
+          // Task Management
+          'tasks.view': { super_admin: true, admin: true, moderator: true },
+          'tasks.edit': { super_admin: true, admin: true, moderator: false },
+          'tasks.approve': { super_admin: true, admin: true, moderator: true },
+          'tasks.reject': { super_admin: true, admin: true, moderator: true },
+          'tasks.delete': { super_admin: true, admin: true, moderator: false },
+          
+          // Order Management
+          'orders.view': { super_admin: true, admin: true, moderator: true },
+          'orders.edit': { super_admin: true, admin: true, moderator: false },
+          'orders.cancel': { super_admin: true, admin: true, moderator: true },
+          'orders.refund': { super_admin: true, admin: true, moderator: false },
+          
+          // System Management
+          'system.settings': { super_admin: true, admin: false, moderator: false },
+          'system.maintenance': { super_admin: true, admin: true, moderator: false },
+          'roles.view': { super_admin: true, admin: true, moderator: false },
+          'roles.manage': { super_admin: true, admin: false, moderator: false },
+          'audit.view': { super_admin: true, admin: true, moderator: true },
+          'audit.export': { super_admin: true, admin: true, moderator: false },
+          'audit_logs.view': { super_admin: true, admin: true, moderator: true }, // Alias
+          'analytics.view': { super_admin: true, admin: true, moderator: true },
+          'analytics.export': { super_admin: true, admin: true, moderator: false },
+          'platforms.manage': { super_admin: true, admin: true, moderator: false },
+          'platforms.view': { super_admin: true, admin: true, moderator: true }, // Alias
+          'services.manage': { super_admin: true, admin: true, moderator: false },
+          'social_accounts.view': { super_admin: true, admin: true, moderator: true },
+          'social_accounts.manage': { super_admin: true, admin: true, moderator: false },
+          'devices.view': { super_admin: true, admin: true, moderator: true },
+          'settings.view': { super_admin: true, admin: true, moderator: false },
+        };
+
+        const perms = permissionMap[permissionKey];
+        if (perms && perms[role]) {
+          return true;
+        }
+      }
+
+      return false;
     },
     [permissions, roles, user]
   );

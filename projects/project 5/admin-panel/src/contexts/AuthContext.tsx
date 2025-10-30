@@ -6,7 +6,8 @@ interface User {
   firstName: string;
   lastName: string;
   username: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'super_admin' | 'moderator';
+  adminRole?: 'super_admin' | 'admin' | 'moderator';
   avatar?: string;
 }
 
@@ -47,7 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (response.ok) {
             const data = await response.json();
-            setUser(data.user);
+            // Map role to adminRole for backward compatibility
+            const userData = {
+              ...data.user,
+              adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator' 
+                ? data.user.role 
+                : undefined
+            };
+            setUser(userData);
             setToken(storedToken);
           } else {
             localStorage.removeItem('auth-token');
@@ -87,8 +95,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.clear();
       sessionStorage.clear();
 
+      // Map role to adminRole for backward compatibility
+      const userData = {
+        ...data.user,
+        adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator' 
+          ? data.user.role 
+          : undefined
+      };
+
       // Set new auth data
-      setUser(data.user);
+      setUser(userData);
       setToken(data.token);
       localStorage.setItem('auth-token', data.token);
     } catch (error) {

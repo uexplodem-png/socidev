@@ -29,6 +29,7 @@ import {
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import { ProtectedPage } from '../components/ProtectedPage';
 import { mockDataAPI, ordersAPI } from '../services/api';
 
 interface Order {
@@ -552,12 +553,13 @@ export const Orders: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 mt-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage and track all orders and their status</p>
-        </div>
+    <ProtectedPage requiredPermission="orders.view" pageName="Orders Management">
+      <div className="space-y-6 mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders Management</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage and track all orders and their status</p>
+          </div>
         <div className="flex space-x-2">
           <Button onClick={() => {
             // Remove the mock data reset since we're using real data now
@@ -1162,7 +1164,8 @@ export const Orders: React.FC = () => {
           </div>
         )}
       </Modal>
-    </div>
+      </div>
+    </ProtectedPage>
   );
 };
 

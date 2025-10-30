@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { tasksAPI } from '../services/api';
+import { ProtectedPage } from '../components/ProtectedPage';
 
 interface Task {
   id: string;
@@ -420,12 +421,13 @@ export const Tasks: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 mt-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Task Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage user tasks, approvals, and status</p>
-        </div>
+    <ProtectedPage requiredPermission="tasks.view" pageName="Task Management">
+      <div className="space-y-6 mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Task Management</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage user tasks, approvals, and status</p>
+          </div>
         <div className="flex space-x-2">
           <Button
             onClick={handleBulkApprove}
@@ -639,7 +641,8 @@ export const Tasks: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedPage>
   );
 };
 

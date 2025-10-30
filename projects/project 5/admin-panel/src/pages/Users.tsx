@@ -12,6 +12,7 @@ import DataTable from '../components/ui/DataTable';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { cn } from '../utils/cn';
+import { ProtectedPage } from '../components/ProtectedPage';
 
 const Users: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -1143,16 +1144,17 @@ const Users: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 mt-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Users Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage user accounts, roles, and permissions
-          </p>
-        </div>
+    <ProtectedPage requiredPermission="users.view" pageName="User Management">
+      <div className="space-y-6 mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Users Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage user accounts, roles, and permissions
+            </p>
+          </div>
         {canAccess('users', 'edit') && (
           <Button onClick={() => setShowAddUserModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -1874,7 +1876,8 @@ const Users: React.FC = () => {
           </div>
         )}
       </Modal>
-    </div>
+      </div>
+    </ProtectedPage>
   );
 };
 
