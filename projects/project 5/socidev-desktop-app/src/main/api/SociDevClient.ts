@@ -114,27 +114,34 @@ class SociDevClient {
   // Authenticate with API key and secret
   async authenticate(apiKey: string, apiSecret: string): Promise<ApiResponse<UserInfo>> {
     try {
-      this.setCredentials(apiKey, apiSecret);
+      // Use desktop authentication endpoint
+      const response = await axios.post(`${API_BASE_URL}/desktop/authenticate`, {
+        apiKey,
+        apiSecret,
+      });
 
-      // Verify credentials by fetching user info
-      const response = await this.getUserInfo();
+      if (response.data.success && response.data.data) {
+        // Set credentials for future requests
+        this.setCredentials(apiKey, apiSecret);
 
-      if (response.success && response.data) {
         // Save credentials to secure storage
         secureStore.saveApiCredentials(apiKey, apiSecret);
-        return response;
+
+        return {
+          success: true,
+          data: response.data.data,
+        };
       } else {
-        this.clearCredentials();
         return {
           success: false,
-          error: 'Invalid API credentials',
+          error: response.data.error || 'Invalid API credentials',
         };
       }
-    } catch (error) {
-      this.clearCredentials();
+    } catch (error: any) {
+      console.error('Authentication error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed',
+        error: error.response?.data?.error || error.message || 'Authentication failed',
       };
     }
   }
@@ -142,7 +149,7 @@ class SociDevClient {
   // Get authenticated user info
   async getUserInfo(): Promise<ApiResponse<UserInfo>> {
     try {
-      const response = await this.client.get('/user/profile');
+      const response = await this.client.get('/desktop/me');
       return {
         success: true,
         data: response.data.data || response.data,

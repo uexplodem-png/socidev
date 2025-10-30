@@ -82,9 +82,7 @@ class InstagramBot {
   // Random scroll to mimic browsing
   private async randomScroll(): Promise<void> {
     const scrollAmount = Math.random() * 500 + 200;
-    await this.page!.evaluate((amount) => {
-      window.scrollBy({ top: amount, behavior: 'smooth' });
-    }, scrollAmount);
+    await this.page!.evaluate(`window.scrollBy({ top: ${scrollAmount}, behavior: 'smooth' })`);
     await this.randomDelay(1000, 2000);
   }
 
@@ -176,14 +174,16 @@ class InstagramBot {
 
       // Get username from page
       await this.randomDelay(2000, 3000);
-      const username = await this.page!.evaluate(() => {
-        const profileLink = document.querySelector('a[href*="/"][aria-label*="Profile"]');
-        if (profileLink) {
-          const href = profileLink.getAttribute('href');
-          return href?.replace(/\//g, '') || '';
-        }
-        return '';
-      });
+      const username = await this.page!.evaluate(`
+        (() => {
+          const profileLink = document.querySelector('a[href*="/"][aria-label*="Profile"]');
+          if (profileLink) {
+            const href = profileLink.getAttribute('href');
+            return href ? href.replace(/\\//g, '') : '';
+          }
+          return '';
+        })()
+      `) as string;
 
       if (!username) {
         throw new Error('Could not extract username');
