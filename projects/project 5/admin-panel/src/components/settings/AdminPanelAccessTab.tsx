@@ -275,16 +275,28 @@ const AdminPanelAccessTab: React.FC = () => {
                 },
             });
 
-            if (!response.ok) throw new Error('Failed to fetch permissions');
+            // Handle 403 Forbidden - user doesn't have permission
+            if (response.status === 403) {
+                console.warn('Access denied: Only super_admin can view admin permissions');
+                setLoading(false);
+                return; // Exit gracefully, the read-only banner will be shown
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch permissions: ${response.statusText}`);
+            }
 
             const data = await response.json();
             
-            // Convert API response to state format
+            // Handle new API response format (grouped by role)
             const permissionsMap: PermissionsState = {};
-            ['super_admin', 'admin', 'moderator'].forEach(role => {
-                const roleData = data.permissions.find((r: any) => r.role === role);
-                if (roleData) {
-                    roleData.permissions.forEach((perm: any) => {
+            
+            if (data.data && data.data.permissions) {
+                // New format: { data: { permissions: { super_admin: [], admin: [], moderator: [] } } }
+                const grouped = data.data.permissions;
+                
+                Object.keys(grouped).forEach(role => {
+                    grouped[role].forEach((perm: any) => {
                         if (!permissionsMap[perm.permissionKey]) {
                             permissionsMap[perm.permissionKey] = {
                                 superAdmin: false,
@@ -296,14 +308,36 @@ const AdminPanelAccessTab: React.FC = () => {
                         if (role === 'admin') permissionsMap[perm.permissionKey].admin = perm.allow;
                         if (role === 'moderator') permissionsMap[perm.permissionKey].moderator = perm.allow;
                     });
-                }
-            });
+                });
+            } else if (data.permissions) {
+                // Old format: { permissions: [{ role, permissions: [] }] }
+                ['super_admin', 'admin', 'moderator'].forEach(role => {
+                    const roleData = data.permissions.find((r: any) => r.role === role);
+                    if (roleData) {
+                        roleData.permissions.forEach((perm: any) => {
+                            if (!permissionsMap[perm.permissionKey]) {
+                                permissionsMap[perm.permissionKey] = {
+                                    superAdmin: false,
+                                    admin: false,
+                                    moderator: false,
+                                };
+                            }
+                            if (role === 'super_admin') permissionsMap[perm.permissionKey].superAdmin = perm.allow;
+                            if (role === 'admin') permissionsMap[perm.permissionKey].admin = perm.allow;
+                            if (role === 'moderator') permissionsMap[perm.permissionKey].moderator = perm.allow;
+                        });
+                    }
+                });
+            }
 
             setPermissions(permissionsMap);
             setOriginalPermissions(JSON.parse(JSON.stringify(permissionsMap)));
         } catch (error) {
             console.error('Error fetching permissions:', error);
-            toast.error('Failed to load permissions');
+            // Don't show error toast for 403 - it's expected for non-super-admins
+            if (error instanceof Error && !error.message.includes('403')) {
+                toast.error('Failed to load permissions from server');
+            }
         } finally {
             setLoading(false);
         }
@@ -539,8 +573,8 @@ const AdminPanelAccessTab: React.FC = () => {
                                 Read-Only Mode
                             </h3>
                             <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                                You do not have permission to edit admin permissions. Only Super Admins can modify
-                                these settings.
+                                You do not have permission to view or edit admin permissions. Only Super Admins can access
+                                this functionality. Showing default permission structure below.
                             </p>
                         </div>
                     </div>
