@@ -60,6 +60,18 @@ export class AuthController {
         throw new ApiError(400, 'User with this email or username already exists');
       }
 
+      // Check if email verification is required
+      const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
+      
+      // Generate email verification token
+      const verificationToken = requireEmailVerification 
+        ? emailVerificationService.generateVerificationToken(null, email) 
+        : null;
+      
+      const verificationExpires = requireEmailVerification 
+        ? new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        : null;
+
       // Create user with selected role
       const user = await User.create({
         email,
@@ -69,10 +81,21 @@ export class AuthController {
         username,
         phone,
         role: userType || 'task_doer', // Use selected userType or default to task_doer
-        accountType: userType || 'task_doer' // Also set accountType field
+        accountType: userType || 'task_doer', // Also set accountType field
+        emailVerified: !requireEmailVerification, // If verification not required, mark as verified
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+        status: requireEmailVerification ? 'pending' : 'active' // Set status based on verification requirement
       });
       
-      logger.info('User registered successfully', { userId: user.id, email, username });
+      logger.info('User registered successfully', { 
+        userId: user.id, 
+        email, 
+        username, 
+        requireEmailVerification,
+        emailVerified: user.emailVerified,
+        status: user.status
+      });
 
       // Assign selected role to user in user_roles table
       try {
@@ -109,14 +132,31 @@ export class AuthController {
         // Don't throw error, user is already created
       }
       
-      // Send welcome email (async, don't wait for it)
-      try {
-        const { emailService } = await import('../services/email.service.js');
-        emailService.sendWelcomeEmail(user).catch(err => {
-          logger.error('Failed to send welcome email', { userId: user.id, error: err.message });
-        });
-      } catch (emailError) {
-        logger.error('Failed to load email service', { error: emailError.message });
+      // Send verification email if required, otherwise send welcome email
+      if (requireEmailVerification) {
+        try {
+          const { emailService } = await import('../services/email.service.js');
+          const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+          const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+          
+          await emailService.sendVerificationEmail(user, verificationUrl).catch(err => {
+            logger.error('Failed to send verification email', { userId: user.id, error: err.message });
+          });
+          
+          logger.info('Verification email sent', { userId: user.id, email });
+        } catch (emailError) {
+          logger.error('Failed to send verification email', { error: emailError.message });
+        }
+      } else {
+        // Send welcome email (async, don't wait for it)
+        try {
+          const { emailService } = await import('../services/email.service.js');
+          emailService.sendWelcomeEmail(user).catch(err => {
+            logger.error('Failed to send welcome email', { userId: user.id, error: err.message });
+          });
+        } catch (emailError) {
+          logger.error('Failed to load email service', { error: emailError.message });
+        }
       }
       
       // Log successful registration
@@ -137,12 +177,14 @@ export class AuthController {
         logger.error('Failed to log activity for successful registration', { error: activityError.message });
       }
 
-      // Generate tokens
-      const token = await authService.generateToken(user.id);
+      // Generate tokens only if email verification is not required
+      const token = !requireEmailVerification ? await authService.generateToken(user.id) : null;
 
       res.status(201).json({
         success: true,
-        message: 'User registered successfully',
+        message: requireEmailVerification 
+          ? 'Registration successful! Please check your email to verify your account.' 
+          : 'User registered successfully',
         data: {
           user: {
             id: user.id,
@@ -151,9 +193,12 @@ export class AuthController {
             lastName: user.lastName,
             username: user.username,
             phone: user.phone,
-            role: user.role
+            role: user.role,
+            emailVerified: user.emailVerified,
+            status: user.status
           },
-          token
+          token,
+          requireEmailVerification
         }
       });
     } catch (error) {
@@ -219,6 +264,34 @@ export class AuthController {
           logger.error('Failed to log activity for login failure', { error: activityError.message });
         }
         throw new ApiError(401, 'Invalid credentials');
+      }
+
+      // Check if email verification is required
+      const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
+      if (requireEmailVerification && !user.emailVerified) {
+        logger.warn('Login failed: Email not verified', { email, userId: user.id });
+        // Log failed login attempt
+        try {
+          await activityService.logActivity(
+            user.id,
+            'auth',
+            'login_failed',
+            { 
+              reason: 'Email not verified',
+              email: email
+            },
+            req
+          );
+        } catch (activityError) {
+          logger.error('Failed to log activity for login failure', { error: activityError.message });
+        }
+        throw new ApiError(403, 'Please verify your email address before logging in. Check your inbox for the verification link.');
+      }
+
+      // Check if account is pending activation
+      if (user.status === 'pending') {
+        logger.warn('Login failed: Account pending activation', { email, userId: user.id });
+        throw new ApiError(403, 'Your account is pending activation. Please verify your email address.');
       }
 
       // Check maintenance mode - only allow privileged users to login
@@ -603,29 +676,196 @@ export class AuthController {
 
   async verifyEmail(req, res, next) {
     try {
-      // Implementation depends on your needs
-      // This is a simplified example
-      
-      // Log email verification if user info is available
-      if (req.user) {
-        try {
-          await activityService.logActivity(
-            req.user.id,
-            'auth',
-            'email_verified',
-            {},
-            req
-          );
-        } catch (activityError) {
-          logger.error('Failed to log activity for email verification', { error: activityError.message });
+      const { token } = req.body;
+
+      if (!token) {
+        throw new ApiError(400, 'Verification token is required');
+      }
+
+      logger.info('Email verification attempt', { token: token.substring(0, 20) + '...' });
+
+      // Verify the token
+      const decoded = emailVerificationService.verifyToken(token);
+
+      // Find user
+      const user = await User.findOne({ 
+        where: { 
+          email: decoded.email,
+          emailVerificationToken: token
         }
+      });
+
+      if (!user) {
+        logger.warn('Email verification failed: User not found or token mismatch', { email: decoded.email });
+        throw new ApiError(404, 'Invalid or expired verification token');
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        logger.info('Email already verified', { userId: user.id, email: user.email });
+        return res.json({
+          success: true,
+          message: 'Email address is already verified. You can now log in.',
+          data: {
+            alreadyVerified: true
+          }
+        });
+      }
+
+      // Check if token is expired
+      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+        logger.warn('Email verification failed: Token expired', { userId: user.id, email: user.email });
+        throw new ApiError(400, 'Verification token has expired. Please request a new one.');
+      }
+
+      // Update user as verified
+      await user.update({
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        status: 'active' // Activate account
+      });
+
+      logger.info('Email verified successfully', { userId: user.id, email: user.email });
+
+      // Send welcome email now that email is verified
+      try {
+        const { emailService } = await import('../services/email.service.js');
+        emailService.sendWelcomeEmail(user).catch(err => {
+          logger.error('Failed to send welcome email', { userId: user.id, error: err.message });
+        });
+      } catch (emailError) {
+        logger.error('Failed to send welcome email', { error: emailError.message });
+      }
+
+      // Log email verification
+      try {
+        await activityService.logActivity(
+          user.id,
+          'auth',
+          'email_verified',
+          { email: user.email },
+          req
+        );
+
+        // Log audit trail
+        await logAudit({
+          actorId: user.id,
+          actorName: `${user.firstName} ${user.lastName}`,
+          actorEmail: user.email,
+          action: 'EMAIL_VERIFIED',
+          resource: 'user',
+          resourceId: user.id.toString(),
+          description: `User verified their email address`,
+          metadata: { email: user.email },
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('user-agent')
+        });
+      } catch (activityError) {
+        logger.error('Failed to log activity for email verification', { error: activityError.message });
       }
       
       res.json({
         success: true,
-        message: 'Email verified successfully'
+        message: 'Email verified successfully! You can now log in to your account.',
+        data: {
+          email: user.email,
+          firstName: user.firstName,
+          verified: true
+        }
       });
     } catch (error) {
+      logger.error('Email verification error', { error: error.message, stack: error.stack });
+      next(error);
+    }
+  }
+
+  async resendVerificationEmail(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        throw new ApiError(400, 'Email address is required');
+      }
+
+      logger.info('Resend verification email request', { email });
+
+      // Find user
+      const user = await User.findOne({ where: { email } });
+
+      if (!user) {
+        // Don't reveal if user exists or not
+        logger.warn('Resend verification failed: User not found', { email });
+        return res.json({
+          success: true,
+          message: 'If an account exists with this email, a verification link has been sent.'
+        });
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        logger.info('Resend verification skipped: Email already verified', { userId: user.id, email });
+        return res.json({
+          success: true,
+          message: 'This email address is already verified. You can log in now.'
+        });
+      }
+
+      // Check rate limiting - don't allow resend more than once every 5 minutes
+      if (user.emailVerificationExpires) {
+        const lastSentTime = new Date(user.emailVerificationExpires).getTime() - (24 * 60 * 60 * 1000);
+        const timeSinceLastSent = Date.now() - lastSentTime;
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (timeSinceLastSent < fiveMinutes) {
+          const remainingSeconds = Math.ceil((fiveMinutes - timeSinceLastSent) / 1000);
+          throw new ApiError(429, `Please wait ${remainingSeconds} seconds before requesting another verification email.`);
+        }
+      }
+
+      // Generate new verification token
+      const verificationToken = emailVerificationService.generateVerificationToken(user.id, user.email);
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Update user with new token
+      await user.update({
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires
+      });
+
+      // Send verification email
+      try {
+        const { emailService } = await import('../services/email.service.js');
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+        const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+        
+        await emailService.sendVerificationEmail(user, verificationUrl);
+        
+        logger.info('Verification email resent', { userId: user.id, email });
+      } catch (emailError) {
+        logger.error('Failed to send verification email', { error: emailError.message });
+        throw new ApiError(500, 'Failed to send verification email. Please try again later.');
+      }
+
+      // Log activity
+      try {
+        await activityService.logActivity(
+          user.id,
+          'auth',
+          'verification_email_resent',
+          { email: user.email },
+          req
+        );
+      } catch (activityError) {
+        logger.error('Failed to log activity for resend verification', { error: activityError.message });
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification email has been resent. Please check your inbox.'
+      });
+    } catch (error) {
+      logger.error('Resend verification email error', { error: error.message, stack: error.stack });
       next(error);
     }
   }

@@ -35,6 +35,9 @@ router.post('/reset-password', strictRateLimiter, authController.resetPassword);
 // Verify email
 router.post('/verify-email', authController.verifyEmail);
 
+// Resend verification email
+router.post('/resend-verification', strictRateLimiter, authController.resendVerificationEmail);
+
 // 2FA routes
 router.post('/2fa/setup', authenticateToken, authController.setup2FA);
 router.post('/2fa/enable', authenticateToken, authController.enable2FA);
