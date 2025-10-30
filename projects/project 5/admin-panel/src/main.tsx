@@ -11,13 +11,11 @@ if (savedTheme === 'dark') {
 
 // Initialize the msw worker
 async function enableMocking() {
-  // Check if MSW is disabled via environment variable
-  if (import.meta.env.MODE !== 'development' || import.meta.env.VITE_DISABLE_MSW === 'true') {
-    return;
-  }
-
-  const { worker } = await import('./lib/msw/browser');
-  return worker.start();
+  // MSW is currently disabled - using real backend API
+  // Uncomment to enable MSW for mocking:
+  // const { worker } = await import('./lib/msw/browser');
+  // return worker.start();
+  return Promise.resolve();
 }
 
 enableMocking().then(() => {
@@ -26,4 +24,13 @@ enableMocking().then(() => {
       <App />
     </StrictMode>
   );
+}).catch(error => {
+  console.error('Failed to initialize app:', error);
+  document.getElementById('root')!.innerHTML = `
+    <div style="padding: 20px; text-align: center;">
+      <h1>Failed to initialize application</h1>
+      <p>Error: ${error.message}</p>
+      <p>Please check the console for more details.</p>
+    </div>
+  `;
 });

@@ -44,7 +44,7 @@ function AppRoutes() {
   // Allow login/register pages to be accessible so admins can login
   const currentPath = window.location.pathname;
   const isPublicAuthPage = currentPath === '/login' || currentPath === '/register';
-  
+
   if (isMaintenanceMode() && !isPublicAuthPage) {
     // If user is authenticated, check their role
     if (isAuthenticated) {

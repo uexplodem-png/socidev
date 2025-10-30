@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const canUsePermission = (permission: string): { canUse: boolean; isRestricted: boolean } => {
     const hasIt = hasPermission(permission);
     const isRestricted = isPermissionRestricted(permission);
-    
+
     return {
       canUse: hasIt && !isRestricted,
       isRestricted: hasIt && isRestricted
@@ -149,13 +149,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      isLoading, 
-      login, 
-      logout, 
-      user, 
-      permissions, 
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      isLoading,
+      login,
+      logout,
+      user,
+      permissions,
       restrictedPermissions,
       hasPermission,
       isPermissionRestricted,
