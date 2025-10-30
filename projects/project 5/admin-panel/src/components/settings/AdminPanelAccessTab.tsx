@@ -269,52 +269,29 @@ const AdminPanelAccessTab: React.FC = () => {
     const fetchPermissions = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:3000/api/admin/admin-permissions', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
-
-            // Handle 403 Forbidden - user doesn't have permission
-            if (response.status === 403) {
-                console.warn('Access denied: Only super_admin can view admin permissions');
-                setLoading(false);
-                return; // Exit gracefully, the read-only banner will be shown
-            }
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch permissions: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            // Handle new API response format (grouped by role)
             const permissionsMap: PermissionsState = {};
-            
-            if (data.data && data.data.permissions) {
-                // New format: { data: { permissions: { super_admin: [], admin: [], moderator: [] } } }
-                const grouped = data.data.permissions;
-                
-                Object.keys(grouped).forEach(role => {
-                    grouped[role].forEach((perm: any) => {
-                        if (!permissionsMap[perm.permissionKey]) {
-                            permissionsMap[perm.permissionKey] = {
-                                superAdmin: false,
-                                admin: false,
-                                moderator: false,
-                            };
-                        }
-                        if (role === 'super_admin') permissionsMap[perm.permissionKey].superAdmin = perm.allow;
-                        if (role === 'admin') permissionsMap[perm.permissionKey].admin = perm.allow;
-                        if (role === 'moderator') permissionsMap[perm.permissionKey].moderator = perm.allow;
-                    });
+
+            // If user can manage permissions, fetch all roles' permissions
+            if (canEditPermissions) {
+                const response = await fetch('http://localhost:3000/api/admin/admin-permissions', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
                 });
-            } else if (data.permissions) {
-                // Old format: { permissions: [{ role, permissions: [] }] }
-                ['super_admin', 'admin', 'moderator'].forEach(role => {
-                    const roleData = data.permissions.find((r: any) => r.role === role);
-                    if (roleData) {
-                        roleData.permissions.forEach((perm: any) => {
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch permissions: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Handle new API response format (grouped by role)
+                if (data.data && data.data.permissions) {
+                    // New format: { data: { permissions: { super_admin: [], admin: [], moderator: [] } } }
+                    const grouped = data.data.permissions;
+
+                    Object.keys(grouped).forEach(role => {
+                        grouped[role].forEach((perm: any) => {
                             if (!permissionsMap[perm.permissionKey]) {
                                 permissionsMap[perm.permissionKey] = {
                                     superAdmin: false,
@@ -326,7 +303,50 @@ const AdminPanelAccessTab: React.FC = () => {
                             if (role === 'admin') permissionsMap[perm.permissionKey].admin = perm.allow;
                             if (role === 'moderator') permissionsMap[perm.permissionKey].moderator = perm.allow;
                         });
-                    }
+                    });
+                } else if (data.permissions) {
+                    // Old format: { permissions: [{ role, permissions: [] }] }
+                    ['super_admin', 'admin', 'moderator'].forEach(role => {
+                        const roleData = data.permissions.find((r: any) => r.role === role);
+                        if (roleData) {
+                            roleData.permissions.forEach((perm: any) => {
+                                if (!permissionsMap[perm.permissionKey]) {
+                                    permissionsMap[perm.permissionKey] = {
+                                        superAdmin: false,
+                                        admin: false,
+                                        moderator: false,
+                                    };
+                                }
+                                if (role === 'super_admin') permissionsMap[perm.permissionKey].superAdmin = perm.allow;
+                                if (role === 'admin') permissionsMap[perm.permissionKey].admin = perm.allow;
+                                if (role === 'moderator') permissionsMap[perm.permissionKey].moderator = perm.allow;
+                            });
+                        }
+                    });
+                }
+            } else {
+                // For non-super-admins, fetch only their role's permissions using my-permissions endpoint
+                const response = await fetch('http://localhost:3000/api/admin/admin-permissions/my-permissions', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch permissions: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const userRole = data.data?.role; // 'super_admin', 'admin', or 'moderator'
+                const userPermissions = data.data?.permissions || {}; // { 'users.view': true, 'users.edit': false, ... }
+
+                // Build permissions map showing only current user's role
+                Object.keys(userPermissions).forEach(permKey => {
+                    permissionsMap[permKey] = {
+                        superAdmin: userRole === 'super_admin' ? userPermissions[permKey] : false,
+                        admin: userRole === 'admin' ? userPermissions[permKey] : false,
+                        moderator: userRole === 'moderator' ? userPermissions[permKey] : false,
+                    };
                 });
             }
 
@@ -417,7 +437,7 @@ const AdminPanelAccessTab: React.FC = () => {
 
             const data = await response.json();
             toast.success(`Successfully updated ${data.updated} permissions`);
-            
+
             // Refresh permissions from backend
             await fetchPermissions();
         } catch (error) {
@@ -471,16 +491,14 @@ const AdminPanelAccessTab: React.FC = () => {
                                         type="button"
                                         onClick={() => handleToggle(perm.permission, 'superAdmin')}
                                         disabled={!canEditPermissions || loading}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            currentPermission.superAdmin
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${currentPermission.superAdmin
                                                 ? 'bg-purple-600'
                                                 : 'bg-gray-300 dark:bg-gray-600'
-                                        }`}
+                                            }`}
                                     >
                                         <span
-                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                currentPermission.superAdmin ? 'translate-x-6' : 'translate-x-1'
-                                            }`}
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentPermission.superAdmin ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
                                         />
                                     </button>
                                 </label>
@@ -494,16 +512,14 @@ const AdminPanelAccessTab: React.FC = () => {
                                         type="button"
                                         onClick={() => handleToggle(perm.permission, 'admin')}
                                         disabled={!canEditPermissions || loading}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            currentPermission.admin
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${currentPermission.admin
                                                 ? 'bg-blue-600'
                                                 : 'bg-gray-300 dark:bg-gray-600'
-                                        }`}
+                                            }`}
                                     >
                                         <span
-                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                currentPermission.admin ? 'translate-x-6' : 'translate-x-1'
-                                            }`}
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentPermission.admin ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
                                         />
                                     </button>
                                 </label>
@@ -517,16 +533,14 @@ const AdminPanelAccessTab: React.FC = () => {
                                         type="button"
                                         onClick={() => handleToggle(perm.permission, 'moderator')}
                                         disabled={!canEditPermissions || loading}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            currentPermission.moderator
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${currentPermission.moderator
                                                 ? 'bg-green-600'
                                                 : 'bg-gray-300 dark:bg-gray-600'
-                                        }`}
+                                            }`}
                                     >
                                         <span
-                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                currentPermission.moderator ? 'translate-x-6' : 'translate-x-1'
-                                            }`}
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentPermission.moderator ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
                                         />
                                     </button>
                                 </label>

@@ -560,610 +560,610 @@ export const Orders: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders Management</h1>
             <p className="text-gray-600 dark:text-gray-400">Manage and track all orders and their status</p>
           </div>
-        <div className="flex space-x-2">
-          <Button onClick={() => {
-            // Remove the mock data reset since we're using real data now
-            fetchOrders();
-            toast.success('Data refreshed successfully');
-          }} variant="outline">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
-          <Button onClick={() => setShowAddOrderModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Order
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="refunded">Refunded</option>
-          </select>
-
-          <select
-            value={platformFilter}
-            onChange={(e) => setPlatformFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">All Platforms</option>
-            <option value="instagram">Instagram</option>
-            <option value="youtube">YouTube</option>
-            <option value="twitter">Twitter</option>
-            <option value="tiktok">TikTok</option>
-          </select>
-
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {orders.length} orders found
-            </span>
+          <div className="flex space-x-2">
+            <Button onClick={() => {
+              // Remove the mock data reset since we're using real data now
+              fetchOrders();
+              toast.success('Data refreshed successfully');
+            }} variant="outline">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Refresh Data
+            </Button>
+            <Button onClick={() => setShowAddOrderModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Order
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Orders Table */}
-      <div className="bg-white shadow border border-gray-200 rounded-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none dark:text-gray-300"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center space-x-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && (
-                          <div className="flex flex-col">
-                            <ChevronUp className={`h-3 w-3 ${header.column.getIsSorted() === 'asc' ? 'text-blue-600' : 'text-gray-400'} dark:text-gray-300`} />
-                            <ChevronDown className={`h-3 w-3 -mt-1 ${header.column.getIsSorted() === 'desc' ? 'text-blue-600' : 'text-gray-400'} dark:text-gray-300`} />
-                          </div>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Showing page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                ({orders.length} orders)
-              </p>
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
             </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="refunded">Refunded</option>
+            </select>
+
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            >
+              <option value="">All Platforms</option>
+              <option value="instagram">Instagram</option>
+              <option value="youtube">YouTube</option>
+              <option value="twitter">Twitter</option>
+              <option value="tiktok">TikTok</option>
+            </select>
+
             <div className="flex items-center space-x-2">
-              <button
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <ChevronLeft className="h-4 w-4 -ml-1" />
-              </button>
+              <Filter className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {orders.length} orders found
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Orders Table */}
+        <div className="bg-white shadow border border-gray-200 rounded-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none dark:text-gray-300"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <div className="flex items-center space-x-1">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.column.getCanSort() && (
+                            <div className="flex flex-col">
+                              <ChevronUp className={`h-3 w-3 ${header.column.getIsSorted() === 'asc' ? 'text-blue-600' : 'text-gray-400'} dark:text-gray-300`} />
+                              <ChevronDown className={`h-3 w-3 -mt-1 ${header.column.getIsSorted() === 'desc' ? 'text-blue-600' : 'text-gray-400'} dark:text-gray-300`} />
+                            </div>
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 dark:bg-gray-800 dark:border-gray-700">
+            <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               >
-                <ChevronLeft className="h-4 w-4" />
+                Previous
               </button>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               >
-                <ChevronRight className="h-4 w-4" />
+                Next
               </button>
-              <button
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-                className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                <ChevronRight className="h-4 w-4" />
-                <ChevronRight className="h-4 w-4 -ml-1" />
-              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                  ({orders.length} orders)
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 -ml-1" />
+                </button>
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                  className="p-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 -ml-1" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Add Order Modal */}
-      <Modal
-        isOpen={showAddOrderModal}
-        onClose={() => setShowAddOrderModal(false)}
-        title="Add New Order"
-        size="lg"
-      >
-        <form onSubmit={handleAddOrderSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User ID
-              </label>
-              <input
-                type="text"
-                name="userId"
-                value={newOrder.userId}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Name
-              </label>
-              <input
-                type="text"
-                name="userName"
-                value={newOrder.userName}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Email
-              </label>
-              <input
-                type="email"
-                name="userEmail"
-                value={newOrder.userEmail}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Platform
-              </label>
-              <select
-                name="platform"
-                value={newOrder.platform}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="instagram">Instagram</option>
-                <option value="youtube">YouTube</option>
-                <option value="twitter">Twitter</option>
-                <option value="tiktok">TikTok</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Service
-              </label>
-              <input
-                type="text"
-                name="service"
-                value={newOrder.service}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Target URL
-              </label>
-              <input
-                type="url"
-                name="targetUrl"
-                value={newOrder.targetUrl}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                name="quantity"
-                value={newOrder.quantity}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Amount
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={newOrder.amount}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={newOrder.status}
-                onChange={handleAddOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowAddOrderModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              Add Order
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Edit Order Modal */}
-      <Modal
-        isOpen={showEditOrderModal}
-        onClose={() => setShowEditOrderModal(false)}
-        title="Edit Order"
-        size="lg"
-      >
-        <form onSubmit={handleEditOrderSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User ID
-              </label>
-              <input
-                type="text"
-                name="userId"
-                value={editOrder.userId}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Name
-              </label>
-              <input
-                type="text"
-                name="userName"
-                value={editOrder.userName}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Email
-              </label>
-              <input
-                type="email"
-                name="userEmail"
-                value={editOrder.userEmail}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Platform
-              </label>
-              <select
-                name="platform"
-                value={editOrder.platform}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="instagram">Instagram</option>
-                <option value="youtube">YouTube</option>
-                <option value="twitter">Twitter</option>
-                <option value="tiktok">TikTok</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Service
-              </label>
-              <input
-                type="text"
-                name="service"
-                value={editOrder.service}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Target URL
-              </label>
-              <input
-                type="url"
-                name="targetUrl"
-                value={editOrder.targetUrl}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                name="quantity"
-                value={editOrder.quantity}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Amount
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={editOrder.amount}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={editOrder.status}
-                onChange={handleEditOrderChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowEditOrderModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              Save Changes
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Order Detail Modal */}
-      <Modal
-        isOpen={showOrderDetailModal}
-        onClose={() => setShowOrderDetailModal(false)}
-        title="Order Details"
-        size="lg"
-      >
-        {selectedOrder && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Order Information</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Order ID:</span>
-                    <span className="text-gray-900 dark:text-white font-mono">#{selectedOrder.id}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Service:</span>
-                    <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.service}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Platform:</span>
-                    <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.platform}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                    <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.status}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Amount:</span>
-                    <span className="text-gray-900 dark:text-white">${selectedOrder.amount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Created:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {new Date(selectedOrder.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Last Updated:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {new Date(selectedOrder.updatedAt).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
+        {/* Add Order Modal */}
+        <Modal
+          isOpen={showAddOrderModal}
+          onClose={() => setShowAddOrderModal(false)}
+          title="Add New Order"
+          size="lg"
+        >
+          <form onSubmit={handleAddOrderSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User ID
+                </label>
+                <input
+                  type="text"
+                  name="userId"
+                  value={newOrder.userId}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
               </div>
-
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Target Information</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Target URL:</span>
-                    <a
-                      href={selectedOrder.targetUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline truncate max-w-[150px]"
-                      title={selectedOrder.targetUrl}
-                    >
-                      {(() => {
-                        try {
-                          return new URL(selectedOrder.targetUrl).hostname.replace('www.', '');
-                        } catch (e) {
-                          return 'View Link';
-                        }
-                      })()}
-                    </a>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
-                    <span className="text-gray-900 dark:text-white">{selectedOrder.quantity.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Completed:</span>
-                    <span className="text-gray-900 dark:text-white">{selectedOrder.completed.toLocaleString()}</span>
-                  </div>
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                      <span>Progress</span>
-                      <span>{selectedOrder.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300 dark:bg-blue-500"
-                        style={{ width: `${selectedOrder.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User Name
+                </label>
+                <input
+                  type="text"
+                  name="userName"
+                  value={newOrder.userName}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
               </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Customer Information</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">User ID:</span>
-                  <span className="text-gray-900 dark:text-white">{selectedOrder.userId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">User Name:</span>
-                  <span className="text-gray-900 dark:text-white">{selectedOrder.userName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">User Email:</span>
-                  <span className="text-gray-900 dark:text-white">{selectedOrder.userEmail}</span>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User Email
+                </label>
+                <input
+                  type="email"
+                  name="userEmail"
+                  value={newOrder.userEmail}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
               </div>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowOrderDetailModal(false)}
-              >
-                Close
-              </Button>
-              {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    // In a real app, you would implement refund functionality here
-                    toast.success('Refund functionality would be implemented here');
-                  }}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Platform
+                </label>
+                <select
+                  name="platform"
+                  value={newOrder.platform}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
-                  Refund Order
-                </Button>
-              )}
+                  <option value="instagram">Instagram</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="twitter">Twitter</option>
+                  <option value="tiktok">TikTok</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Service
+                </label>
+                <input
+                  type="text"
+                  name="service"
+                  value={newOrder.service}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Target URL
+                </label>
+                <input
+                  type="url"
+                  name="targetUrl"
+                  value={newOrder.targetUrl}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={newOrder.quantity}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  min="0"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={newOrder.amount}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={newOrder.status}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
             </div>
-          </div>
-        )}
-      </Modal>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddOrderModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                Add Order
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Edit Order Modal */}
+        <Modal
+          isOpen={showEditOrderModal}
+          onClose={() => setShowEditOrderModal(false)}
+          title="Edit Order"
+          size="lg"
+        >
+          <form onSubmit={handleEditOrderSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User ID
+                </label>
+                <input
+                  type="text"
+                  name="userId"
+                  value={editOrder.userId}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User Name
+                </label>
+                <input
+                  type="text"
+                  name="userName"
+                  value={editOrder.userName}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User Email
+                </label>
+                <input
+                  type="email"
+                  name="userEmail"
+                  value={editOrder.userEmail}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Platform
+                </label>
+                <select
+                  name="platform"
+                  value={editOrder.platform}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="twitter">Twitter</option>
+                  <option value="tiktok">TikTok</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Service
+                </label>
+                <input
+                  type="text"
+                  name="service"
+                  value={editOrder.service}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Target URL
+                </label>
+                <input
+                  type="url"
+                  name="targetUrl"
+                  value={editOrder.targetUrl}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={editOrder.quantity}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  min="0"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={editOrder.amount}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={editOrder.status}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditOrderModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Order Detail Modal */}
+        <Modal
+          isOpen={showOrderDetailModal}
+          onClose={() => setShowOrderDetailModal(false)}
+          title="Order Details"
+          size="lg"
+        >
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Order Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Order ID:</span>
+                      <span className="text-gray-900 dark:text-white font-mono">#{selectedOrder.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Service:</span>
+                      <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.service}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Platform:</span>
+                      <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.platform}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                      <span className="text-gray-900 dark:text-white capitalize">{selectedOrder.status}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Amount:</span>
+                      <span className="text-gray-900 dark:text-white">${selectedOrder.amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                      <span className="text-gray-900 dark:text-white">
+                        {new Date(selectedOrder.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Last Updated:</span>
+                      <span className="text-gray-900 dark:text-white">
+                        {new Date(selectedOrder.updatedAt).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Target Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Target URL:</span>
+                      <a
+                        href={selectedOrder.targetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline truncate max-w-[150px]"
+                        title={selectedOrder.targetUrl}
+                      >
+                        {(() => {
+                          try {
+                            return new URL(selectedOrder.targetUrl).hostname.replace('www.', '');
+                          } catch (e) {
+                            return 'View Link';
+                          }
+                        })()}
+                      </a>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Quantity:</span>
+                      <span className="text-gray-900 dark:text-white">{selectedOrder.quantity.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                      <span className="text-gray-900 dark:text-white">{selectedOrder.completed.toLocaleString()}</span>
+                    </div>
+                    <div className="pt-2">
+                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <span>Progress</span>
+                        <span>{selectedOrder.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300 dark:bg-blue-500"
+                          style={{ width: `${selectedOrder.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Customer Information</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">User ID:</span>
+                    <span className="text-gray-900 dark:text-white">{selectedOrder.userId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">User Name:</span>
+                    <span className="text-gray-900 dark:text-white">{selectedOrder.userName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">User Email:</span>
+                    <span className="text-gray-900 dark:text-white">{selectedOrder.userEmail}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOrderDetailModal(false)}
+                >
+                  Close
+                </Button>
+                {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      // In a real app, you would implement refund functionality here
+                      toast.success('Refund functionality would be implemented here');
+                    }}
+                  >
+                    Refund Order
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </ProtectedPage>
   );

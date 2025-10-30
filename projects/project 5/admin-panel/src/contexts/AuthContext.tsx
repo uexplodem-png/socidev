@@ -51,8 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Map role to adminRole for backward compatibility
             const userData = {
               ...data.user,
-              adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator' 
-                ? data.user.role 
+              adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator'
+                ? data.user.role
                 : undefined
             };
             setUser(userData);
@@ -98,8 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Map role to adminRole for backward compatibility
       const userData = {
         ...data.user,
-        adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator' 
-          ? data.user.role 
+        adminRole: data.user.role === 'super_admin' || data.user.role === 'admin' || data.user.role === 'moderator'
+          ? data.user.role
           : undefined
       };
 

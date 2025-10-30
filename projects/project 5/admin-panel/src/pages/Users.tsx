@@ -1155,374 +1155,208 @@ const Users: React.FC = () => {
               Manage user accounts, roles, and permissions
             </p>
           </div>
-        {canAccess('users', 'edit') && (
-          <Button onClick={() => setShowAddUserModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        )}
-      </div>
-
-      <DataTable
-        data={users}
-        columns={columns}
-        searchPlaceholder="Search users..."
-        loading={loading}
-        onRowClick={handleViewUser}
-        onSearch={handleSearch}
-        pagination={{
-          pageIndex: pagination.pageIndex,
-          pageSize: pagination.pageSize,
-          pageCount: pagination.pageCount,
-          onPaginationChange: (newPagination) => {
-            setPagination(prev => ({
-              ...prev,
-              ...newPagination
-            }));
-          },
-        }}
-      />
-
-      {/* User Detail Modal */}
-      <Modal
-        isOpen={showUserModal}
-        onClose={() => setShowUserModal(false)}
-        title="User Details"
-        size="xl"
-      >
-        {selectedUser && (
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center">
-                <span className="text-xl font-medium text-white">
-                  {selectedUser.firstName[0]}{selectedUser.lastName[0]}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {selectedUser.firstName} {selectedUser.lastName}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  @{selectedUser.username}
-                </p>
-                <div className="flex items-center space-x-2 mt-2">
-                  {getRoleBadge(selectedUser.role)}
-                  {getStatusBadge(selectedUser.status)}
-                </div>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <nav className="-mb-px flex space-x-8">
-                {[
-                  { id: 'overview', name: 'Overview' },
-                  { id: 'orders', name: 'Orders' },
-                  { id: 'balance', name: 'Balance History' },
-                  { id: 'withdrawals', name: 'Withdrawals' },
-                  { id: 'social', name: 'Social Media' },
-                  { id: 'devices', name: 'Devices' },
-                  { id: 'tasks', name: 'Tasks' },
-                  { id: 'analytics', name: 'Analytics' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                    )}
-                  >
-                    {tab.name}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div className="py-4">
-              {activeTab === 'overview' && renderOverviewTab()}
-              {activeTab === 'orders' && (
-                <div>
-                  <pre style={{ display: 'none' }}>{JSON.stringify({ ordersCount: userOrders.length, ordersData: userOrders }, null, 2)}</pre>
-                  {renderOrdersTab()}
-                </div>
-              )}
-              {activeTab === 'balance' && renderBalanceHistoryTab()}
-              {activeTab === 'withdrawals' && renderWithdrawalsTab()}
-              {activeTab === 'social' && renderSocialMediaTab()}
-              {activeTab === 'devices' && renderDevicesTab()}
-              {activeTab === 'tasks' && renderTasksTab()}
-              {activeTab === 'analytics' && renderAnalyticsTab()}
-            </div>
-
-            {canAccess('users', 'edit') && (
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAdjustBalanceModal(true)}
-                >
-                  Adjust Balance
-                </Button>
-                <Button variant="outline" onClick={() => handleEditUser(selectedUser)}>
-                  Edit User
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleUserAction(selectedUser.id, 'suspend')}
-                >
-                  Suspend User
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleUserAction(selectedUser.id, 'ban')}
-                >
-                  Ban User
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
-
-      {/* Add User Modal */}
-      <Modal
-        isOpen={showAddUserModal}
-        onClose={() => setShowAddUserModal(false)}
-        title="Add New User"
-        size="lg"
-      >
-        <form onSubmit={handleAddUserSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                First Name
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                value={newUser.firstName}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Last Name
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={newUser.lastName}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={newUser.username}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={newUser.email}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Role
-              </label>
-              <select
-                name="role"
-                value={newUser.role}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="task_doer">Task Doer</option>
-                <option value="task_giver">Task Giver</option>
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="moderator">Moderator</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={newUser.status}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                <option value="banned">Banned</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Balance
-              </label>
-              <input
-                type="number"
-                name="balance"
-                value={newUser.balance}
-                onChange={handleAddUserChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowAddUserModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
+          {canAccess('users', 'edit') && (
+            <Button onClick={() => setShowAddUserModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               Add User
             </Button>
-          </div>
-        </form>
-      </Modal>
+          )}
+        </div>
 
-      {/* Edit User Modal */}
-      <Modal
-        isOpen={showEditUserModal}
-        onClose={() => setShowEditUserModal(false)}
-        title="Edit User"
-        size="lg"
-      >
-        <form onSubmit={handleEditUserSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto">
-          {/* Personal Information Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-blue-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-              Personal Information
-            </h3>
+        <DataTable
+          data={users}
+          columns={columns}
+          searchPlaceholder="Search users..."
+          loading={loading}
+          onRowClick={handleViewUser}
+          onSearch={handleSearch}
+          pagination={{
+            pageIndex: pagination.pageIndex,
+            pageSize: pagination.pageSize,
+            pageCount: pagination.pageCount,
+            onPaginationChange: (newPagination) => {
+              setPagination(prev => ({
+                ...prev,
+                ...newPagination
+              }));
+            },
+          }}
+        />
+
+        {/* User Detail Modal */}
+        <Modal
+          isOpen={showUserModal}
+          onClose={() => setShowUserModal(false)}
+          title="User Details"
+          size="xl"
+        >
+          {selectedUser && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <div className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-xl font-medium text-white">
+                    {selectedUser.firstName[0]}{selectedUser.lastName[0]}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {selectedUser.firstName} {selectedUser.lastName}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    @{selectedUser.username}
+                  </p>
+                  <div className="flex items-center space-x-2 mt-2">
+                    {getRoleBadge(selectedUser.role)}
+                    {getStatusBadge(selectedUser.status)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <nav className="-mb-px flex space-x-8">
+                  {[
+                    { id: 'overview', name: 'Overview' },
+                    { id: 'orders', name: 'Orders' },
+                    { id: 'balance', name: 'Balance History' },
+                    { id: 'withdrawals', name: 'Withdrawals' },
+                    { id: 'social', name: 'Social Media' },
+                    { id: 'devices', name: 'Devices' },
+                    { id: 'tasks', name: 'Tasks' },
+                    { id: 'analytics', name: 'Analytics' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                        activeTab === tab.id
+                          ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      )}
+                    >
+                      {tab.name}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Tab Content */}
+              <div className="py-4">
+                {activeTab === 'overview' && renderOverviewTab()}
+                {activeTab === 'orders' && (
+                  <div>
+                    <pre style={{ display: 'none' }}>{JSON.stringify({ ordersCount: userOrders.length, ordersData: userOrders }, null, 2)}</pre>
+                    {renderOrdersTab()}
+                  </div>
+                )}
+                {activeTab === 'balance' && renderBalanceHistoryTab()}
+                {activeTab === 'withdrawals' && renderWithdrawalsTab()}
+                {activeTab === 'social' && renderSocialMediaTab()}
+                {activeTab === 'devices' && renderDevicesTab()}
+                {activeTab === 'tasks' && renderTasksTab()}
+                {activeTab === 'analytics' && renderAnalyticsTab()}
+              </div>
+
+              {canAccess('users', 'edit') && (
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAdjustBalanceModal(true)}
+                  >
+                    Adjust Balance
+                  </Button>
+                  <Button variant="outline" onClick={() => handleEditUser(selectedUser)}>
+                    Edit User
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleUserAction(selectedUser.id, 'suspend')}
+                  >
+                    Suspend User
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleUserAction(selectedUser.id, 'ban')}
+                  >
+                    Ban User
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal>
+
+        {/* Add User Modal */}
+        <Modal
+          isOpen={showAddUserModal}
+          onClose={() => setShowAddUserModal(false)}
+          title="Add New User"
+          size="lg"
+        >
+          <form onSubmit={handleAddUserSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  First Name <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  First Name
                 </label>
                 <input
                   type="text"
                   name="firstName"
-                  value={editUser.firstName}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.firstName}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Last Name <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Last Name
                 </label>
                 <input
                   type="text"
                   name="lastName"
-                  value={editUser.lastName}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.lastName}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Username <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Username
                 </label>
                 <input
                   type="text"
                   name="username"
-                  value={editUser.username}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.username}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
                 </label>
                 <input
                   type="email"
                   name="email"
-                  value={editUser.email}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.email}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Security Section */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-amber-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="w-2 h-2 bg-amber-500 rounded-full mr-3"></span>
-              Security
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={editUser.password}
-                  onChange={handleEditUserChange}
-                  placeholder="Enter new password (min 6 characters)"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
-                />
-                <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                  💡 Leave empty to keep the current password
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Settings Section */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-green-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-              Account Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Role <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Role
                 </label>
                 <select
                   name="role"
-                  value={editUser.role}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.role}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="task_doer">Task Doer</option>
                   <option value="task_giver">Task Giver</option>
@@ -1532,14 +1366,14 @@ const Users: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Status <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status
                 </label>
                 <select
                   name="status"
-                  value={editUser.status}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.status}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
@@ -1548,334 +1382,500 @@ const Users: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Balance
                 </label>
                 <input
                   type="number"
                   name="balance"
-                  value={editUser.balance}
-                  onChange={handleEditUserChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  value={newUser.balance}
+                  onChange={handleAddUserChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   min="0"
                   step="0.01"
                 />
               </div>
             </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowEditUserModal(false)}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="px-6 bg-blue-600 hover:bg-blue-700">
-              Save Changes
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Adjust Balance Modal */}
-      <Modal
-        isOpen={showAdjustBalanceModal}
-        onClose={() => setShowAdjustBalanceModal(false)}
-        title="Adjust User Balance"
-        size="md"
-      >
-        <form onSubmit={handleAdjustBalanceSubmit} className="space-y-4">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Adjustment Type
-              </label>
-              <select
-                name="type"
-                value={adjustBalanceData.type}
-                onChange={handleAdjustBalanceChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="add">Add Funds</option>
-                <option value="subtract">Subtract Funds</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Amount
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={adjustBalanceData.amount}
-                onChange={handleAdjustBalanceChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Reason
-              </label>
-              <textarea
-                name="reason"
-                value={adjustBalanceData.reason}
-                onChange={handleAdjustBalanceChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                rows={3}
-                required
-              />
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowAdjustBalanceModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              Adjust Balance
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Activity Log Details Modal */}
-      <Modal
-        isOpen={showActivityLogModal}
-        onClose={() => setShowActivityLogModal(false)}
-        title="Activity Log Details"
-        size="xl"
-      >
-        {selectedActivityLog && (
-          <div className="space-y-5 max-h-[80vh] overflow-y-auto">
-            {/* Header Info - Action & Resource */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">ACTION</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {selectedActivityLog.action?.replace(/_/g, ' ') || 'Unknown'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">RESOURCE TYPE</p>
-                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 capitalize">
-                    {selectedActivityLog.resource || 'Unknown'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            {selectedActivityLog.description && (
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">DESCRIPTION</p>
-                <p className="text-sm text-gray-900 dark:text-white leading-relaxed">
-                  {selectedActivityLog.description}
-                </p>
-              </div>
-            )}
-
-            {/* Actor Information */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-lg border border-purple-200 dark:border-purple-800">
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-3">PERFORMED BY</p>
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {selectedActivityLog.actor_name || selectedActivityLog.actorName ||
-                    (selectedActivityLog.actor ? `${selectedActivityLog.actor.first_name} ${selectedActivityLog.actor.last_name}` : 'System')}
-                </p>
-                <p className="text-sm text-purple-600 dark:text-purple-300">
-                  {selectedActivityLog.actor_email || selectedActivityLog.actor?.email || 'system@internal'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-2">
-                  <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                  {new Date(selectedActivityLog.createdAt || selectedActivityLog.created_at).toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Resource Details */}
-            {(selectedActivityLog.resource_id || selectedActivityLog.target_user_id) && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-3">RESOURCE DETAILS</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {selectedActivityLog.resource_id && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Resource ID</p>
-                      <p className="font-mono text-green-600 dark:text-green-400 break-all bg-white dark:bg-gray-800 p-2 rounded text-xs">
-                        {selectedActivityLog.resource_id}
-                      </p>
-                    </div>
-                  )}
-                  {selectedActivityLog.target_user_id && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Target User ID</p>
-                      <p className="font-mono text-green-600 dark:text-green-400 break-all bg-white dark:bg-gray-800 p-2 rounded text-xs">
-                        {selectedActivityLog.target_user_id}
-                      </p>
-                    </div>
-                  )}
-                  {selectedActivityLog.target_user_name && (
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Target User</p>
-                      <p className="text-green-600 dark:text-green-400 font-medium">
-                        {selectedActivityLog.target_user_name}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Metadata */}
-            {selectedActivityLog.metadata && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
-                  <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                  Operation Details
-                </h4>
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
-                  {selectedActivityLog.metadata.type && (
-                    <div className="flex justify-between items-start">
-                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Type</span>
-                      <span className="text-sm text-gray-900 dark:text-white capitalize font-medium">
-                        {selectedActivityLog.metadata.type}
-                      </span>
-                    </div>
-                  )}
-                  {selectedActivityLog.metadata.amount && (
-                    <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
-                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Amount</span>
-                      <span className="text-sm text-gray-900 dark:text-white font-semibold">
-                        ${selectedActivityLog.metadata.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  {selectedActivityLog.metadata.method && (
-                    <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
-                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Method</span>
-                      <span className="text-sm text-gray-900 dark:text-white capitalize font-medium">
-                        {selectedActivityLog.metadata.method.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  )}
-                  {selectedActivityLog.metadata.status && (
-                    <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
-                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Status</span>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${selectedActivityLog.metadata.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' :
-                        selectedActivityLog.metadata.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
-                          selectedActivityLog.metadata.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200' :
-                            'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
-                        }`}>
-                        {selectedActivityLog.metadata.status}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Changes - Before and After */}
-            {selectedActivityLog.metadata?.changes && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
-                  <span className="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
-                  Changes Made
-                </h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Field</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Before</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">After</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {Object.entries(selectedActivityLog.metadata.changes.before || {}).map(
-                        ([field, beforeValue]: any) => {
-                          const afterValue = selectedActivityLog.metadata.changes?.after?.[field];
-                          if (beforeValue === afterValue) return null;
-                          return (
-                            <tr key={field} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize">
-                                {field.replace(/_/g, ' ')}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                                <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1.5 rounded-md text-xs font-medium inline-block break-words max-w-xs">
-                                  {String(beforeValue || 'N/A').substring(0, 50)}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                                <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-medium inline-block break-words max-w-xs">
-                                  {String(afterValue || 'N/A').substring(0, 50)}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        }
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Network Information */}
-            <div className="bg-gradient-to-r from-slate-50 to-zinc-50 dark:from-slate-900/20 dark:to-zinc-900/20 p-5 rounded-lg border border-slate-200 dark:border-slate-700">
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-4">NETWORK & DEVICE INFO</p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">IP Address</p>
-                  <p className="text-sm text-gray-900 dark:text-white font-mono bg-white dark:bg-gray-800 px-3 py-2 rounded">
-                    {selectedActivityLog.ip_address || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">User Agent</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 break-words bg-white dark:bg-gray-800 px-3 py-2 rounded font-mono max-h-20 overflow-y-auto">
-                    {selectedActivityLog.user_agent || 'N/A'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Timestamp */}
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-300 dark:border-gray-700">
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">EVENT TIMESTAMP</p>
-              <p className="text-sm text-gray-900 dark:text-white font-medium">
-                {new Date(selectedActivityLog.createdAt || selectedActivityLog.created_at).toLocaleString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit'
-                })}
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end space-x-3 pt-4">
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setShowActivityLogModal(false)}
+                onClick={() => setShowAddUserModal(false)}
               >
-                Close
+                Cancel
+              </Button>
+              <Button type="submit">
+                Add User
               </Button>
             </div>
-          </div>
-        )}
-      </Modal>
+          </form>
+        </Modal>
+
+        {/* Edit User Modal */}
+        <Modal
+          isOpen={showEditUserModal}
+          onClose={() => setShowEditUserModal(false)}
+          title="Edit User"
+          size="lg"
+        >
+          <form onSubmit={handleEditUserSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto">
+            {/* Personal Information Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-blue-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={editUser.firstName}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={editUser.lastName}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Username <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={editUser.username}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editUser.email}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Security Section */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-amber-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="w-2 h-2 bg-amber-500 rounded-full mr-3"></span>
+                Security
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={editUser.password}
+                    onChange={handleEditUserChange}
+                    placeholder="Enter new password (min 6 characters)"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    💡 Leave empty to keep the current password
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Settings Section */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-750 rounded-lg p-4 border border-green-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                Account Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="role"
+                    value={editUser.role}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  >
+                    <option value="task_doer">Task Doer</option>
+                    <option value="task_giver">Task Giver</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                    <option value="moderator">Moderator</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="status"
+                    value={editUser.status}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                  >
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="banned">Banned</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Balance
+                  </label>
+                  <input
+                    type="number"
+                    name="balance"
+                    value={editUser.balance}
+                    onChange={handleEditUserChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditUserModal(false)}
+                className="px-6"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="px-6 bg-blue-600 hover:bg-blue-700">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Adjust Balance Modal */}
+        <Modal
+          isOpen={showAdjustBalanceModal}
+          onClose={() => setShowAdjustBalanceModal(false)}
+          title="Adjust User Balance"
+          size="md"
+        >
+          <form onSubmit={handleAdjustBalanceSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Adjustment Type
+                </label>
+                <select
+                  name="type"
+                  value={adjustBalanceData.type}
+                  onChange={handleAdjustBalanceChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="add">Add Funds</option>
+                  <option value="subtract">Subtract Funds</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={adjustBalanceData.amount}
+                  onChange={handleAdjustBalanceChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reason
+                </label>
+                <textarea
+                  name="reason"
+                  value={adjustBalanceData.reason}
+                  onChange={handleAdjustBalanceChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAdjustBalanceModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                Adjust Balance
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Activity Log Details Modal */}
+        <Modal
+          isOpen={showActivityLogModal}
+          onClose={() => setShowActivityLogModal(false)}
+          title="Activity Log Details"
+          size="xl"
+        >
+          {selectedActivityLog && (
+            <div className="space-y-5 max-h-[80vh] overflow-y-auto">
+              {/* Header Info - Action & Resource */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">ACTION</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {selectedActivityLog.action?.replace(/_/g, ' ') || 'Unknown'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">RESOURCE TYPE</p>
+                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 capitalize">
+                      {selectedActivityLog.resource || 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedActivityLog.description && (
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">DESCRIPTION</p>
+                  <p className="text-sm text-gray-900 dark:text-white leading-relaxed">
+                    {selectedActivityLog.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Actor Information */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-lg border border-purple-200 dark:border-purple-800">
+                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-3">PERFORMED BY</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {selectedActivityLog.actor_name || selectedActivityLog.actorName ||
+                      (selectedActivityLog.actor ? `${selectedActivityLog.actor.first_name} ${selectedActivityLog.actor.last_name}` : 'System')}
+                  </p>
+                  <p className="text-sm text-purple-600 dark:text-purple-300">
+                    {selectedActivityLog.actor_email || selectedActivityLog.actor?.email || 'system@internal'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-2">
+                    <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                    {new Date(selectedActivityLog.createdAt || selectedActivityLog.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Resource Details */}
+              {(selectedActivityLog.resource_id || selectedActivityLog.target_user_id) && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-3">RESOURCE DETAILS</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {selectedActivityLog.resource_id && (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Resource ID</p>
+                        <p className="font-mono text-green-600 dark:text-green-400 break-all bg-white dark:bg-gray-800 p-2 rounded text-xs">
+                          {selectedActivityLog.resource_id}
+                        </p>
+                      </div>
+                    )}
+                    {selectedActivityLog.target_user_id && (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Target User ID</p>
+                        <p className="font-mono text-green-600 dark:text-green-400 break-all bg-white dark:bg-gray-800 p-2 rounded text-xs">
+                          {selectedActivityLog.target_user_id}
+                        </p>
+                      </div>
+                    )}
+                    {selectedActivityLog.target_user_name && (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Target User</p>
+                        <p className="text-green-600 dark:text-green-400 font-medium">
+                          {selectedActivityLog.target_user_name}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              {selectedActivityLog.metadata && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                    <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                    Operation Details
+                  </h4>
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                    {selectedActivityLog.metadata.type && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Type</span>
+                        <span className="text-sm text-gray-900 dark:text-white capitalize font-medium">
+                          {selectedActivityLog.metadata.type}
+                        </span>
+                      </div>
+                    )}
+                    {selectedActivityLog.metadata.amount && (
+                      <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Amount</span>
+                        <span className="text-sm text-gray-900 dark:text-white font-semibold">
+                          ${selectedActivityLog.metadata.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedActivityLog.metadata.method && (
+                      <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Method</span>
+                        <span className="text-sm text-gray-900 dark:text-white capitalize font-medium">
+                          {selectedActivityLog.metadata.method.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                    )}
+                    {selectedActivityLog.metadata.status && (
+                      <div className="flex justify-between items-start border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase">Status</span>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${selectedActivityLog.metadata.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                          selectedActivityLog.metadata.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
+                            selectedActivityLog.metadata.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200' :
+                              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
+                          }`}>
+                          {selectedActivityLog.metadata.status}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Changes - Before and After */}
+              {selectedActivityLog.metadata?.changes && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                    <span className="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
+                    Changes Made
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Field</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Before</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">After</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {Object.entries(selectedActivityLog.metadata.changes.before || {}).map(
+                          ([field, beforeValue]: any) => {
+                            const afterValue = selectedActivityLog.metadata.changes?.after?.[field];
+                            if (beforeValue === afterValue) return null;
+                            return (
+                              <tr key={field} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white capitalize">
+                                  {field.replace(/_/g, ' ')}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                                  <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1.5 rounded-md text-xs font-medium inline-block break-words max-w-xs">
+                                    {String(beforeValue || 'N/A').substring(0, 50)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                                  <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-medium inline-block break-words max-w-xs">
+                                    {String(afterValue || 'N/A').substring(0, 50)}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          }
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Network Information */}
+              <div className="bg-gradient-to-r from-slate-50 to-zinc-50 dark:from-slate-900/20 dark:to-zinc-900/20 p-5 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-4">NETWORK & DEVICE INFO</p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">IP Address</p>
+                    <p className="text-sm text-gray-900 dark:text-white font-mono bg-white dark:bg-gray-800 px-3 py-2 rounded">
+                      {selectedActivityLog.ip_address || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">User Agent</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 break-words bg-white dark:bg-gray-800 px-3 py-2 rounded font-mono max-h-20 overflow-y-auto">
+                      {selectedActivityLog.user_agent || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timestamp */}
+              <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-300 dark:border-gray-700">
+                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase tracking-wide mb-2">EVENT TIMESTAMP</p>
+                <p className="text-sm text-gray-900 dark:text-white font-medium">
+                  {new Date(selectedActivityLog.createdAt || selectedActivityLog.created_at).toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowActivityLogModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </ProtectedPage>
   );

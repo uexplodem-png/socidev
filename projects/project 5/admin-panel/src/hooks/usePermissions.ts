@@ -104,12 +104,19 @@ export const usePermissions = () => {
         if (response.ok) {
           const data = await response.json();
           const permissionMap = data.data?.permissions || {};
-          
+
           // Convert permission map to array of permission keys that are true
           const userPermissions = Object.keys(permissionMap).filter(key => permissionMap[key]);
-          
+
           // Set role based on user data
           const userRoles = user?.role ? [{ id: 1, key: user.role, label: user.role }] : [];
+
+          console.log('✅ Permissions loaded from backend:', {
+            role: user?.role,
+            permissionCount: userPermissions.length,
+            hasUsersView: userPermissions.includes('users.view'),
+            samplePermissions: userPermissions.slice(0, 5)
+          });
 
           setPermissions(userPermissions);
           setRoles(userRoles);
@@ -156,8 +163,15 @@ export const usePermissions = () => {
 
   // Load permissions on mount or when token changes
   useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+    if (user) {
+      fetchPermissions();
+    } else {
+      // Clear permissions when user logs out
+      setPermissions([]);
+      setRoles([]);
+      sessionStorage.removeItem(CACHE_KEY);
+    }
+  }, [fetchPermissions, user]);
 
   // Check if user has a specific permission
   const hasPermission = useCallback(
@@ -169,12 +183,16 @@ export const usePermissions = () => {
         return true;
       }
 
-      // Check if user role has permission from JWT
-      if (permissions.includes(permissionKey)) {
-        return true;
+      // Check if user has permission from backend API
+      // permissions array contains only the permission keys that are true
+      const hasPermissionFromBackend = permissions.includes(permissionKey);
+
+      // If we have loaded permissions from backend (permissions.length > 0), trust them
+      if (permissions.length > 0) {
+        return hasPermissionFromBackend;
       }
 
-      // Fallback to frontend permission map (for admin roles)
+      // Fallback to hardcoded map only if backend fetch failed (permissions.length === 0)
       const role = user.role?.toLowerCase();
       if (role === 'super_admin' || role === 'admin' || role === 'moderator') {
         // Permission mapping based on seeded data
@@ -185,7 +203,7 @@ export const usePermissions = () => {
           'users.edit': { super_admin: true, admin: true, moderator: false },
           'users.suspend': { super_admin: true, admin: true, moderator: true },
           'users.ban': { super_admin: true, admin: true, moderator: false },
-          
+
           // Financial Management
           'transactions.view': { super_admin: true, admin: true, moderator: true },
           'transactions.approve': { super_admin: true, admin: true, moderator: false },
@@ -197,20 +215,20 @@ export const usePermissions = () => {
           'refunds.view': { super_admin: true, admin: true, moderator: true },
           'refunds.process': { super_admin: true, admin: true, moderator: false },
           'balance.view': { super_admin: true, admin: true, moderator: true },
-          
+
           // Task Management
           'tasks.view': { super_admin: true, admin: true, moderator: true },
           'tasks.edit': { super_admin: true, admin: true, moderator: false },
           'tasks.approve': { super_admin: true, admin: true, moderator: true },
           'tasks.reject': { super_admin: true, admin: true, moderator: true },
           'tasks.delete': { super_admin: true, admin: true, moderator: false },
-          
+
           // Order Management
           'orders.view': { super_admin: true, admin: true, moderator: true },
           'orders.edit': { super_admin: true, admin: true, moderator: false },
           'orders.cancel': { super_admin: true, admin: true, moderator: true },
           'orders.refund': { super_admin: true, admin: true, moderator: false },
-          
+
           // System Management
           'system.settings': { super_admin: true, admin: false, moderator: false },
           'system.maintenance': { super_admin: true, admin: true, moderator: false },
