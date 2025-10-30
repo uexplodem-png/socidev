@@ -1002,7 +1002,7 @@ class RealApiService {
         if (params?.search) queryParams.append('search', params.search);
         if (params?.category) queryParams.append('category', params.category);
         if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-        
+
         const query = queryParams.toString();
         return this.request<any>(`/admin/emails/templates${query ? `?${query}` : ''}`);
     }
@@ -1066,7 +1066,7 @@ class RealApiService {
         if (params?.search) queryParams.append('search', params.search);
         if (params?.status) queryParams.append('status', params.status);
         if (params?.templateId) queryParams.append('templateId', params.templateId.toString());
-        
+
         const query = queryParams.toString();
         return this.request<any>(`/admin/emails/logs${query ? `?${query}` : ''}`);
     }
@@ -1096,6 +1096,48 @@ class RealApiService {
         return this.request<any>('/admin/emails/settings/test', {
             method: 'POST',
             body: JSON.stringify(data),
+        });
+    }
+
+    // Social Accounts API
+    async getSocialAccounts(params?: { page?: number; limit?: number; search?: string; platform?: string; status?: string; sortBy?: string; sortOrder?: string }): Promise<any> {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.platform) queryParams.append('platform', params.platform);
+        if (params?.status) queryParams.append('status', params.status);
+        if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+        if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+        const query = queryParams.toString();
+        return this.request<any>(`/admin/social-accounts${query ? `?${query}` : ''}`);
+    }
+
+    async getSocialAccountStats(): Promise<any> {
+        return this.request<any>('/admin/social-accounts/stats');
+    }
+
+    async getSocialAccountById(id: string): Promise<any> {
+        return this.request<any>(`/admin/social-accounts/${id}`);
+    }
+
+    async updateSocialAccountStatus(id: string, status: string): Promise<any> {
+        return this.request<any>(`/admin/social-accounts/${id}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status }),
+        });
+    }
+
+    async deleteSocialAccount(id: string): Promise<any> {
+        return this.request<any>(`/admin/social-accounts/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async refreshSocialAccount(id: string): Promise<any> {
+        return this.request<any>(`/admin/social-accounts/${id}/refresh`, {
+            method: 'POST',
         });
     }
 }

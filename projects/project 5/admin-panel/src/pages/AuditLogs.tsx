@@ -258,8 +258,8 @@ export const AuditLogs: React.FC = () => {
           <button
             onClick={() => setActiveTab('audit')}
             className={`${activeTab === 'audit'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
           >
             <Shield className="h-5 w-5 mr-2" />
@@ -268,8 +268,8 @@ export const AuditLogs: React.FC = () => {
           <button
             onClick={() => setActiveTab('combined')}
             className={`${activeTab === 'combined'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
           >
             <FileText className="h-5 w-5 mr-2" />
@@ -278,8 +278,8 @@ export const AuditLogs: React.FC = () => {
           <button
             onClick={() => setActiveTab('error')}
             className={`${activeTab === 'error'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } flex items-center whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
           >
             <AlertTriangle className="h-5 w-5 mr-2" />
@@ -475,11 +475,11 @@ export const AuditLogs: React.FC = () => {
 
           {/* Details Modal */}
           {showDetailsModal && selectedLog && (
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
               onClick={() => setShowDetailsModal(false)}
             >
-              <div 
+              <div
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
