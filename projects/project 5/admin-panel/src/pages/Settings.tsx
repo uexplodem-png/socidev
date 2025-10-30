@@ -33,41 +33,59 @@ const Settings: React.FC = () => {
       id: 'general',
       label: 'General',
       icon: <Globe className="h-5 w-5" />,
-      component: <GeneralTab />,
+      component: null, // Will be rendered conditionally below
     },
     {
       id: 'flags',
       label: 'Feature Flags',
       icon: <Zap className="h-5 w-5" />,
-      component: <FeatureFlagsTab />,
+      component: null,
     },
     {
       id: 'adminAccess',
       label: 'Admin Panel Access',
       icon: <Shield className="h-5 w-5" />,
-      component: <AdminPanelAccessTab />,
+      component: null,
     },
     {
       id: 'memberAccess',
       label: 'Member Panel Access',
       icon: <Users className="h-5 w-5" />,
-      component: <AccessControlTab />,
+      component: null,
     },
     {
       id: 'modes',
       label: 'Modes',
       icon: <Sliders className="h-5 w-5" />,
-      component: <ModesTab />,
+      component: null,
     },
     {
       id: 'security',
       label: 'Security',
       icon: <Lock className="h-5 w-5" />,
-      component: <SecurityTab />,
+      component: null,
     },
   ];
 
-  const activeTabComponent = tabs.find((tab) => tab.id === activeTab)?.component;
+  // Render only the active tab component
+  const renderActiveTabComponent = () => {
+    switch (activeTab) {
+      case 'general':
+        return <GeneralTab />;
+      case 'flags':
+        return <FeatureFlagsTab />;
+      case 'adminAccess':
+        return <AdminPanelAccessTab />;
+      case 'memberAccess':
+        return <AccessControlTab />;
+      case 'modes':
+        return <ModesTab />;
+      case 'security':
+        return <SecurityTab />;
+      default:
+        return <GeneralTab />;
+    }
+  };
 
   return (
     <WithPermissionCheck permission="canViewSettings">
@@ -115,7 +133,7 @@ const Settings: React.FC = () => {
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTabComponent}
+          {renderActiveTabComponent()}
         </div>
       </div>
     </div>
