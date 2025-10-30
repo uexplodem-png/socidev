@@ -6,14 +6,16 @@ import {
   Globe,
   Lock,
   Sliders,
+  Users,
 } from 'lucide-react';
 import FeatureFlagsTab from '../components/settings/FeatureFlagsTab';
 import AccessControlTab from '../components/settings/AccessControlTab';
+import AdminPanelAccessTab from '../components/settings/AdminPanelAccessTab';
 import GeneralTab from '../components/settings/GeneralTab';
 import ModesTab from '../components/settings/ModesTab';
 import SecurityTab from '../components/settings/SecurityTab';
 
-type TabId = 'general' | 'flags' | 'access' | 'modes' | 'security';
+type TabId = 'general' | 'flags' | 'adminAccess' | 'memberAccess' | 'modes' | 'security';
 
 interface Tab {
   id: TabId;
@@ -39,9 +41,15 @@ const Settings: React.FC = () => {
       component: <FeatureFlagsTab />,
     },
     {
-      id: 'access',
-      label: 'Access Control',
+      id: 'adminAccess',
+      label: 'Admin Panel Access',
       icon: <Shield className="h-5 w-5" />,
+      component: <AdminPanelAccessTab />,
+    },
+    {
+      id: 'memberAccess',
+      label: 'Member Panel Access',
+      icon: <Users className="h-5 w-5" />,
       component: <AccessControlTab />,
     },
     {
