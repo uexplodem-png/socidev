@@ -211,11 +211,10 @@ export const RegisterPage = () => {
                   <button
                     type='button'
                     onClick={() => setFormData(prev => ({ ...prev, userType: 'task_doer' }))}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      formData.userType === 'task_doer'
+                    className={`p-4 rounded-lg border-2 transition-all ${formData.userType === 'task_doer'
                         ? 'border-emerald-500 bg-emerald-500/10'
                         : 'border-gray-700 bg-white/5 hover:bg-white/10'
-                    }`}>
+                      }`}>
                     <div className='text-2xl mb-2'>💼</div>
                     <div className='text-sm font-semibold text-white'>Do Tasks</div>
                     <div className='text-xs text-gray-400 mt-1'>Earn money by completing tasks</div>
@@ -223,11 +222,10 @@ export const RegisterPage = () => {
                   <button
                     type='button'
                     onClick={() => setFormData(prev => ({ ...prev, userType: 'task_giver' }))}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      formData.userType === 'task_giver'
+                    className={`p-4 rounded-lg border-2 transition-all ${formData.userType === 'task_giver'
                         ? 'border-cyan-500 bg-cyan-500/10'
                         : 'border-gray-700 bg-white/5 hover:bg-white/10'
-                    }`}>
+                      }`}>
                     <div className='text-2xl mb-2'>🎯</div>
                     <div className='text-sm font-semibold text-white'>Give Tasks</div>
                     <div className='text-xs text-gray-400 mt-1'>Create tasks for others to complete</div>

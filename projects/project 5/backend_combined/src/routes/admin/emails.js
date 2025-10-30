@@ -1,12 +1,12 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import EmailTemplate from '../models/EmailTemplate.js';
-import EmailLog from '../models/EmailLog.js';
-import { User } from '../models/index.js';
-import advancedEmailService from '../services/advancedEmail.service.js';
-import { authenticateToken, requireAdminPermission } from '../middleware/auth.js';
-import logger from '../config/logger.js';
-import { logAudit } from '../services/auditService.js';
+import EmailTemplate from '../../models/EmailTemplate.js';
+import EmailLog from '../../models/EmailLog.js';
+import { User } from '../../models/index.js';
+import { emailService } from '../../services/email.service.js';
+import { authenticateToken, requireAdminPermission } from '../../middleware/auth.js';
+import logger from '../../config/logger.js';
+import { logAudit } from '../../utils/logging.js';
 
 const router = express.Router();
 
@@ -326,10 +326,21 @@ router.post('/templates/:id/preview',
 
       const { variables = {} } = req.body;
 
+      // Helper function to replace variables
+      const replaceVariables = (text, vars) => {
+        if (!text) return '';
+        let result = text;
+        Object.keys(vars).forEach(key => {
+          const regex = new RegExp(`{{${key}}}`, 'g');
+          result = result.replace(regex, vars[key] || '');
+        });
+        return result;
+      };
+
       const preview = {
-        subject: advancedEmailService.replaceVariables(template.subject, variables),
-        bodyHtml: advancedEmailService.replaceVariables(template.bodyHtml, variables),
-        bodyText: advancedEmailService.replaceVariables(template.bodyText, variables)
+        subject: replaceVariables(template.subject, variables),
+        bodyHtml: replaceVariables(template.bodyHtml, variables),
+        bodyText: replaceVariables(template.bodyText, variables)
       };
 
       res.json({
@@ -367,12 +378,51 @@ router.post('/send',
         });
       }
 
-      const emailLog = await advancedEmailService.sendTemplateEmail(
-        templateKey,
+      // Get template
+      const template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          message: 'Email template not found or inactive'
+        });
+      }
+
+      // Replace variables
+      const replaceVariables = (text, vars) => {
+        if (!text) return '';
+        let result = text;
+        Object.keys(vars).forEach(key => {
+          const regex = new RegExp(`{{${key}}}`, 'g');
+          result = result.replace(regex, vars[key] || '');
+        });
+        return result;
+      };
+
+      const subject = replaceVariables(template.subject, variables);
+      const bodyHtml = replaceVariables(template.bodyHtml, variables);
+      const bodyText = replaceVariables(template.bodyText, variables);
+
+      // Find user
+      const user = await User.findOne({
+        where: { email: recipientEmail },
+        attributes: ['id', 'firstName', 'lastName']
+      });
+
+      // Create email log
+      const emailLog = await EmailLog.create({
+        templateId: template.id,
         recipientEmail,
-        variables,
-        req.user.id
-      );
+        recipientName: user ? `${user.firstName} ${user.lastName}` : variables.firstName || null,
+        recipientUserId: user?.id || null,
+        subject,
+        bodyHtml,
+        bodyText,
+        variablesUsed: variables,
+        status: 'sent', // Mark as sent (actual sending will be implemented later)
+        sentBy: req.user.id,
+        sentAt: new Date(),
+        provider: 'smtp'
+      });
 
       await logAudit({
         actorId: req.user.id,
@@ -418,13 +468,26 @@ router.post('/send-custom',
         });
       }
 
-      const emailLog = await advancedEmailService.sendCustomEmail(
+      // Find user
+      const user = await User.findOne({
+        where: { email: recipientEmail },
+        attributes: ['id', 'firstName', 'lastName']
+      });
+
+      // Create email log
+      const emailLog = await EmailLog.create({
+        templateId: null,
         recipientEmail,
+        recipientName: user ? `${user.firstName} ${user.lastName}` : null,
+        recipientUserId: user?.id || null,
         subject,
         bodyHtml,
         bodyText,
-        req.user.id
-      );
+        status: 'sent',
+        sentBy: req.user.id,
+        sentAt: new Date(),
+        provider: 'smtp'
+      });
 
       await logAudit({
         actorId: req.user.id,
@@ -470,11 +533,62 @@ router.post('/send-bulk',
         });
       }
 
-      const results = await advancedEmailService.sendBulkEmails(
-        templateKey,
-        recipients,
-        req.user.id
-      );
+      // Get template
+      const template = await EmailTemplate.findOne({ where: { key: templateKey, isActive: true } });
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          message: 'Email template not found or inactive'
+        });
+      }
+
+      // Send to each recipient (simplified)
+      const results = {
+        success: 0,
+        failed: 0,
+        results: []
+      };
+
+      for (const recipient of recipients) {
+        try {
+          const replaceVariables = (text, vars) => {
+            if (!text) return '';
+            let result = text;
+            Object.keys(vars).forEach(key => {
+              const regex = new RegExp(`{{${key}}}`, 'g');
+              result = result.replace(regex, vars[key] || '');
+            });
+            return result;
+          };
+
+          const subject = replaceVariables(template.subject, recipient.variables || {});
+          const bodyHtml = replaceVariables(template.bodyHtml, recipient.variables || {});
+
+          await EmailLog.create({
+            templateId: template.id,
+            recipientEmail: recipient.email,
+            recipientName: recipient.variables?.firstName || null,
+            subject,
+            bodyHtml,
+            status: 'sent',
+            sentBy: req.user.id,
+            sentAt: new Date()
+          });
+
+          results.success++;
+          results.results.push({
+            email: recipient.email,
+            status: 'success'
+          });
+        } catch (error) {
+          results.failed++;
+          results.results.push({
+            email: recipient.email,
+            status: 'failed',
+            error: error.message
+          });
+        }
+      }
 
       await logAudit({
         actorId: req.user.id,

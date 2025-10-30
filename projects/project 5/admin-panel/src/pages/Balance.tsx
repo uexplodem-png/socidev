@@ -99,7 +99,7 @@ const Balance: React.FC = () => {
 
             // Extract unique users from transactions (no need for separate users API call)
             const userMap = new Map<string, User>();
-            
+
             transactionsResponse.data.forEach((tx: any) => {
                 if (tx.user && !userMap.has(tx.userId)) {
                     userMap.set(tx.userId, {
@@ -111,7 +111,7 @@ const Balance: React.FC = () => {
                     } as User);
                 }
             });
-            
+
             const extractedUsers = Array.from(userMap.values());
             setUsers(extractedUsers);
             setFilteredUsers(extractedUsers);
