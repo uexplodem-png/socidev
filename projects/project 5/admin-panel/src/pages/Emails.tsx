@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Plus, Search, Edit, Trash2, Send } from 'lucide-react';
 import { emailAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
+import CreateTemplateModal from '../components/emails/CreateTemplateModal';
 
 interface EmailTemplate {
   id: number;
@@ -26,6 +27,7 @@ const Emails: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -112,7 +114,7 @@ const Emails: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => toast('Create template modal coming soon!')}
+          onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -290,7 +292,12 @@ const Emails: React.FC = () => {
         )}
       </div>
 
-      {/* Modals will be added here */}
+      {/* Modals */}
+      <CreateTemplateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadTemplates}
+      />
     </div>
   );
 };
