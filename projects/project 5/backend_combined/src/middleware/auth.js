@@ -128,54 +128,11 @@ export const requireSuperAdmin = (req, res, next) => {
 };
 
 // Check specific permissions using RBAC
+// DEPRECATED: Legacy permission check - now redirects to requireAdminPermission
+// Kept for backward compatibility but uses the new admin permission system
 export const requirePermission = (permissionKey) => {
-  return async (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        error: 'Authentication required',
-        code: 'AUTH_REQUIRED',
-      });
-    }
-
-    try {
-      // Super admin has all permissions
-      if (req.user.role === 'super_admin') {
-        return next();
-      }
-
-      // Determine user mode from request or user object
-      const mode = req.user.user_mode || req.user.userMode || 'all';
-
-      // Check permission via PermissionsService
-      const hasPermission = await permissionsService.userHasPermission(
-        req.user.id,
-        permissionKey,
-        mode
-      );
-
-      if (!hasPermission) {
-        logger.warn('Permission denied', {
-          userId: req.user.id,
-          permission: permissionKey,
-          mode,
-          url: req.url
-        });
-
-        return res.status(403).json({
-          error: `Permission '${permissionKey}' required`,
-          code: 'INSUFFICIENT_PERMISSIONS',
-        });
-      }
-
-      next();
-    } catch (error) {
-      logger.error('Permission check error:', error);
-      return res.status(500).json({
-        error: 'Permission check failed',
-        code: 'PERMISSION_CHECK_ERROR',
-      });
-    }
-  };
+  // Simply redirect to the new admin permission system
+  return requireAdminPermission(permissionKey);
 };
 
 // Optional authentication (for public endpoints that can benefit from user context)

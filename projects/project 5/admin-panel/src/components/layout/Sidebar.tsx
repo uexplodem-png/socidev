@@ -44,7 +44,7 @@ const navigation = [
     name: 'Balance Management',
     href: '/balance',
     icon: DollarSign,
-    permission: 'balance.view',
+    permission: 'transactions.view',
   },
   {
     name: 'Withdrawals',

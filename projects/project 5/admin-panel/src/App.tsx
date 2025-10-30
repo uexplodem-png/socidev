@@ -96,9 +96,9 @@ function App() {
               </ProtectedRouteWithPermission>
             } />
 
-            {/* Balance - requires balance.view */}
+            {/* Balance - requires transactions.view */}
             <Route path="balance" element={
-              <ProtectedRouteWithPermission permission="balance.view">
+              <ProtectedRouteWithPermission permission="transactions.view">
                 <Balance />
               </ProtectedRouteWithPermission>
             } />

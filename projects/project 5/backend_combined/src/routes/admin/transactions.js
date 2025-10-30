@@ -426,7 +426,6 @@ router.get('/stats',
  */
 router.post('/:id/approve',
   requireAdminPermission('transactions.approve'), // Dynamic permission check from database
-  requirePermission('transactions.approve'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
@@ -536,7 +535,6 @@ router.post('/:id/approve',
  */
 router.post('/:id/reject',
   requireAdminPermission('transactions.reject'), // Dynamic permission check from database
-  requirePermission('transactions.reject'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;

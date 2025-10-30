@@ -212,7 +212,6 @@ router.get('/:id',
  */
 router.post('/:id/status',
   requireAdminPermission('withdrawals.approve'), // Dynamic permission check from database
-  requirePermission('withdrawals.process'),
   validate(schemas.updateWithdrawalStatus),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -425,7 +424,6 @@ router.get('/stats',
  */
 router.post('/bulk-process',
   requireAdminPermission('withdrawals.approve'), // Dynamic permission check from database
-  requirePermission('withdrawals.process'),
   validate(Joi.object({
     withdrawal_ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
     action: Joi.string().valid('approve', 'reject', 'complete').required(),
