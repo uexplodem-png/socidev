@@ -16,7 +16,6 @@ import { YoutubeAccountsPage } from "./pages/my-accounts/youtube";
 import { YoutubeAccountDetailsPage } from "./pages/my-accounts/youtube/[id]";
 import ProfilePage from "./pages/profile/index";
 import SettingsPage from "./pages/settings/index";
-import ApiPage from "./pages/api/index";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { UserModeProvider } from "./context/UserModeContext";
@@ -255,16 +254,6 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <SettingsPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/api'
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ApiPage />
             </Layout>
           </ProtectedRoute>
         }
