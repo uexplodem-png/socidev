@@ -411,10 +411,7 @@ export class AuthController {
         );
 
         // Log audit trail
-        await logAudit({
-          actorId: user.id,
-          actorName: `${user.firstName} ${user.lastName}`,
-          actorEmail: user.email,
+        await logAudit(req, {
           action: 'ADMIN_LOGIN',
           resource: 'admin_auth',
           resourceId: user.id.toString(),
