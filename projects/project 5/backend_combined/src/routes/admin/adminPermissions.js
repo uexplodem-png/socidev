@@ -13,6 +13,54 @@ import Joi from 'joi';
 const router = express.Router();
 
 /**
+ * GET /api/admin/admin-permissions/my-permissions
+ * Get current user's permissions (for frontend permission checking)
+ */
+router.get('/my-permissions',
+  asyncHandler(async (req, res) => {
+    const user = req.user;
+    if (!user || !user.role) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+      });
+    }
+
+    const role = user.role.toLowerCase();
+    
+    // Check if user has admin role
+    if (!['super_admin', 'admin', 'moderator'].includes(role)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required',
+        code: 'INSUFFICIENT_PERMISSIONS',
+      });
+    }
+
+    // Get all permissions for this role from database
+    const permissions = await AdminRolePermission.findAll({
+      where: { role },
+      attributes: ['permissionKey', 'allow'],
+      raw: true,
+    });
+
+    // Convert to object map { permissionKey: boolean }
+    const permissionMap = {};
+    for (const perm of permissions) {
+      permissionMap[perm.permissionKey] = Boolean(perm.allow);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        role,
+        permissions: permissionMap,
+      },
+    });
+  })
+);
+
+/**
  * GET /api/admin/admin-permissions
  * Get all admin role permissions
  */

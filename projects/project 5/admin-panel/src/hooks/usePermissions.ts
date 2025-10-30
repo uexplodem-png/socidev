@@ -70,7 +70,7 @@ export const usePermissions = () => {
     }
   }, []);
 
-  // Fetch permissions from the token
+  // Fetch permissions from the backend API
   const fetchPermissions = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -83,34 +83,65 @@ export const usePermissions = () => {
         return;
       }
 
-      // Extract from JWT token if present
       const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // Decode JWT (simple base64 decode, not verification)
-          const base64Url = token.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(
-            atob(base64)
-              .split('')
-              .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-              .join('')
-          );
-          const payload = JSON.parse(jsonPayload);
+      if (!token) {
+        setPermissions([]);
+        setRoles([]);
+        setIsLoading(false);
+        return;
+      }
 
-          // Extract permissions and roles from token
-          const userPermissions = payload.permissions || [];
-          const userRoles = payload.roles || [];
+      // Fetch permissions from backend API
+      try {
+        const response = await fetch('http://localhost:3000/api/admin/admin-permissions/my-permissions', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const permissionMap = data.data?.permissions || {};
+          
+          // Convert permission map to array of permission keys that are true
+          const userPermissions = Object.keys(permissionMap).filter(key => permissionMap[key]);
+          
+          // Set role based on user data
+          const userRoles = user?.role ? [{ id: 1, key: user.role, label: user.role }] : [];
 
           setPermissions(userPermissions);
           setRoles(userRoles);
           saveToCache(userPermissions, userRoles);
-        } catch (error) {
-          console.error('Failed to decode token:', error);
-          setPermissions([]);
-          setRoles([]);
+        } else {
+          // Fallback to JWT decode if API fails
+          console.warn('Failed to fetch permissions from API, falling back to JWT');
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split('')
+                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+            );
+            const payload = JSON.parse(jsonPayload);
+
+            const userPermissions = payload.permissions || [];
+            const userRoles = payload.roles || [];
+
+            setPermissions(userPermissions);
+            setRoles(userRoles);
+            saveToCache(userPermissions, userRoles);
+          } catch (error) {
+            console.error('Failed to decode token:', error);
+            setPermissions([]);
+            setRoles([]);
+          }
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to fetch permissions:', error);
         setPermissions([]);
         setRoles([]);
       }
@@ -121,7 +152,7 @@ export const usePermissions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadFromCache, saveToCache]);
+  }, [loadFromCache, saveToCache, user]);
 
   // Load permissions on mount or when token changes
   useEffect(() => {
