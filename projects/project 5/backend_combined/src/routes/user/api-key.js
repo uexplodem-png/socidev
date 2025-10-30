@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { ApiKey, ApiLog, User } from '../../models/index.js';
 import { authenticateToken } from '../../middleware/auth.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
-import { logAction } from '../../utils/logging.js';
+import { logAction, logAudit } from '../../utils/logging.js';
 
 const router = express.Router();
 
@@ -107,12 +107,27 @@ router.post(
       totalRequests: 0,
     });
 
-    // Log the action
+    // Log to action logs
     await logAction(req, {
       userId: req.user.id,
       type: 'API_KEY_GENERATED',
       action: 'create',
       details: 'User generated new API key',
+    });
+
+    // Log to audit logs
+    await logAudit(req, {
+      action: 'api_key_generated',
+      resource: 'api_key',
+      resourceId: newApiKey.id,
+      targetUserId: req.user.id,
+      targetUserName: `${req.user.firstName} ${req.user.lastName}`,
+      description: `User generated new API key`,
+      metadata: {
+        apiKey: newApiKey.apiKey,
+        rateLimit: newApiKey.rateLimit,
+        status: newApiKey.status,
+      },
     });
 
     res.status(201).json({
@@ -166,12 +181,25 @@ router.post(
       apiSecret,
     });
 
-    // Log the action
+    // Log to action logs
     await logAction(req, {
       userId: req.user.id,
       type: 'API_SECRET_REGENERATED',
       action: 'update',
       details: 'User regenerated API secret',
+    });
+
+    // Log to audit logs
+    await logAudit(req, {
+      action: 'api_secret_regenerated',
+      resource: 'api_key',
+      resourceId: apiKey.id,
+      targetUserId: req.user.id,
+      targetUserName: `${req.user.firstName} ${req.user.lastName}`,
+      description: `User regenerated API secret`,
+      metadata: {
+        apiKey: apiKey.apiKey,
+      },
     });
 
     res.json({

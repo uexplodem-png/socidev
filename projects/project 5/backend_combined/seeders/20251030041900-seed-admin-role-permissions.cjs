@@ -60,6 +60,11 @@ module.exports = {
       'emails.delete': { superAdmin: true, admin: false, moderator: false },
       'emails.send': { superAdmin: true, admin: true, moderator: true },
       'emails.send_bulk': { superAdmin: true, admin: true, moderator: false },
+
+      // API Management
+      'api.view': { superAdmin: true, admin: true, moderator: true },
+      'api.edit': { superAdmin: true, admin: true, moderator: false },
+      'api.delete': { superAdmin: true, admin: false, moderator: false },
     };
 
     const records = [];

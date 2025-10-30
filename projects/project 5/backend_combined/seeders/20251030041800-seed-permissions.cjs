@@ -57,6 +57,11 @@ module.exports = {
       { key: 'emails.delete', label: 'Delete Email Templates', group: 'emails' },
       { key: 'emails.send', label: 'Send Emails', group: 'emails' },
       { key: 'emails.send_bulk', label: 'Send Bulk Emails', group: 'emails' },
+
+      // API Management
+      { key: 'api.view', label: 'View API Keys', group: 'api' },
+      { key: 'api.edit', label: 'Edit API Keys', group: 'api' },
+      { key: 'api.delete', label: 'Delete API Keys', group: 'api' },
     ];
 
     const records = permissions.map(perm => ({
