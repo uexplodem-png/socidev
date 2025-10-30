@@ -8,7 +8,7 @@ interface EmailTemplate {
   name: string;
   key: string;
   subject: string;
-  variables: string[];
+  variables: string[] | string; // Can be array or JSON string
 }
 
 interface SendEmailModalProps {
@@ -28,6 +28,25 @@ const SendEmailModal: React.FC<SendEmailModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   if (!isOpen || !template) return null;
+
+  // Parse variables - handle both string and array
+  const getVariables = (): string[] => {
+    if (!template.variables) return [];
+    if (typeof template.variables === 'string') {
+      try {
+        return JSON.parse(template.variables);
+      } catch (e) {
+        console.error('Failed to parse variables:', e);
+        return [];
+      }
+    }
+    if (Array.isArray(template.variables)) {
+      return template.variables;
+    }
+    return [];
+  };
+
+  const variables = getVariables();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +161,7 @@ const SendEmailModal: React.FC<SendEmailModalProps> = ({
           </div>
 
           {/* Template Variables */}
-          {template.variables && template.variables.length > 0 && (
+          {variables && variables.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Template Variables
@@ -152,7 +171,7 @@ const SendEmailModal: React.FC<SendEmailModalProps> = ({
               </p>
               
               <div className="space-y-3">
-                {template.variables.map((variable) => (
+                {variables.map((variable) => (
                   <div key={variable}>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {'{{'}{variable}{'}}'}

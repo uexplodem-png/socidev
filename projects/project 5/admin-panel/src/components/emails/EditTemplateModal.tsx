@@ -10,7 +10,7 @@ interface EmailTemplate {
   subject: string;
   bodyHtml: string;
   bodyText: string;
-  variables: string[];
+  variables: string[] | string; // Can be array or JSON string
   category: string;
   isActive: boolean;
 }
@@ -52,7 +52,22 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
         category: template.category,
         isActive: template.isActive,
       });
-      setVariables(template.variables || []);
+      
+      // Handle variables - might be string or array
+      let vars: string[] = [];
+      if (template.variables) {
+        if (typeof template.variables === 'string') {
+          try {
+            vars = JSON.parse(template.variables);
+          } catch (e) {
+            console.error('Failed to parse variables:', e);
+            vars = [];
+          }
+        } else if (Array.isArray(template.variables)) {
+          vars = template.variables;
+        }
+      }
+      setVariables(vars);
     }
   }, [template]);
 

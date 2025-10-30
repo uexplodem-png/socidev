@@ -13,7 +13,7 @@ interface EmailTemplate {
   subject: string;
   bodyHtml: string;
   bodyText: string;
-  variables: string[];
+  variables: string[] | string; // Can be array or JSON string
   category: string;
   isActive: boolean;
   createdBy: number;
