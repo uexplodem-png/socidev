@@ -1,8 +1,12 @@
 {
-  "extends": "./tsconfig.main.json",
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.main.json" },
-    { "path": "./tsconfig.renderer.json" }
-  ]
+    "extends": "./tsconfig.main.json",
+    "files": [],
+    "references": [
+        {
+            "path": "./tsconfig.main.json"
+        },
+        {
+            "path": "./tsconfig.renderer.json"
+        }
+    ]
 }
