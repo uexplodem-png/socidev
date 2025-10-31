@@ -112,8 +112,8 @@ export class AuthController {
         
         if (roleRecord) {
           await UserRole.create({
-            user_id: user.id,
-            role_id: roleRecord.id
+            userId: user.id,  // Use camelCase (Sequelize model field names)
+            roleId: roleRecord.id
           });
           logger.info('User role assigned successfully', { 
             userId: user.id, 
