@@ -680,7 +680,8 @@ export class AuthController {
 
   async verifyEmail(req, res, next) {
     try {
-      const { token } = req.body;
+      // Accept token from both body and query params
+      const token = req.body.token || req.query.token;
 
       if (!token) {
         throw new ApiError(400, 'Verification token is required');

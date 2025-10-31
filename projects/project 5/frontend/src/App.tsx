@@ -4,6 +4,7 @@ import HomePage from "./pages/home/index";
 import DashboardPage from "./pages/dashboard/index";
 import { LoginPage } from "./pages/login/index";
 import { RegisterPage } from "./pages/register/index";
+import VerifyEmail from "./pages/verify-email/index";
 import { NewOrderPage } from "./pages/new-order/index";
 import { MyOrdersPage } from "./pages/my-orders/index";
 import { AddBalancePage } from "./pages/add-balance/index";
@@ -96,6 +97,7 @@ function AppRoutes() {
           )
         }
       />
+      <Route path='/verify-email' element={<VerifyEmail />} />
       <Route
         path='/test'
         element={
