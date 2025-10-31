@@ -28,6 +28,7 @@ import { apiRouter } from './routes/index.js';
 
 // Import schedulers
 import { taskScheduler } from './services/task.scheduler.js';
+import { startTaskExpiryScheduler } from './jobs/taskExpiryScheduler.js'; // **PART 5**
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -147,6 +148,9 @@ const startServer = async () => {
     
     // Start task auto-release scheduler
     taskScheduler.start();
+
+    // **PART 5: Start task execution expiry scheduler (15-minute timer)**
+    startTaskExpiryScheduler();
     
     app.listen(PORT, () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);

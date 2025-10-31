@@ -11,6 +11,7 @@ import { platformsRouter } from "./platforms.js";
 import { settingsRouter } from "./settings.js";
 import permissionRestrictionsRouter from "./permissionRestrictions.routes.js";
 import desktopRouter from "./desktop.js";
+import taskExecutionsRouter from "./taskExecutions.js"; // **PART 5**
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.use("/instagram-accounts", instagramAccountRouter);
 router.use("/social-accounts", socialAccountRouter);
 router.use("/user", userRouter);
 router.use("/tasks", taskRouter);
+router.use("/", taskExecutionsRouter); // **PART 5: Task execution routes**
 
 // Admin routes (require authentication and admin role)
 router.use("/admin", adminRouter);
