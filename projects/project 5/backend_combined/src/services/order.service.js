@@ -773,14 +773,15 @@ export class OrderService {
   }
 
   /**
-   * PART 2: Update order status (for processing/completing)
+   * PART 2 & 4: Update order status (for processing/completing)
+   * PART 4: Auto-creates task when status changes to 'processing'
    */
   async updateOrderStatus(orderId, newStatus, adminId) {
     const dbTransaction = await sequelize.transaction();
 
     try {
       const order = await Order.findByPk(orderId, {
-        attributes: ['id', 'userId', 'status', 'service', 'platform', 'quantity'],
+        attributes: ['id', 'userId', 'status', 'service', 'platform', 'quantity', 'amount', 'targetUrl', 'speed'],
         transaction: dbTransaction
       });
 
@@ -795,6 +796,74 @@ export class OrderService {
         status: newStatus,
         lastStatusChange: new Date()
       }, { transaction: dbTransaction });
+
+      // **PART 4: If status changed to 'processing', create a task**
+      if (newStatus === 'processing' && oldStatus !== 'processing') {
+        // Map service to task type
+        const serviceTypeMap = {
+          'like': 'like',
+          'likes': 'like',
+          'follow': 'follow',
+          'followers': 'follow',
+          'view': 'view',
+          'views': 'view',
+          'subscribe': 'subscribe',
+          'subscribers': 'subscribe',
+          'comment': 'comment',
+          'comments': 'comment',
+          'share': 'share'
+        };
+        
+        const taskType = serviceTypeMap[order.service.toLowerCase()] || 'like';
+        const ratePerUnit = parseFloat(order.amount) / order.quantity;
+        
+        // Map speed to priority
+        const priorityMap = {
+          'express': 'urgent',
+          'fast': 'high',
+          'normal': 'medium'
+        };
+        const priority = priorityMap[order.speed] || 'medium';
+
+        // Create task with order owner exclusion
+        const task = await Task.create({
+          userId: null,
+          orderId: order.id,
+          excludedUserId: order.userId, // **PART 4: Order owner cannot do this task**
+          title: `${order.platform.charAt(0).toUpperCase() + order.platform.slice(1)} - ${order.service}`,
+          description: `Complete ${order.quantity} ${order.service} for order #${order.id.substring(0, 8).toUpperCase()}`,
+          type: taskType,
+          platform: order.platform,
+          targetUrl: order.targetUrl,
+          quantity: order.quantity,
+          remainingQuantity: order.quantity,
+          completedQuantity: 0,
+          rate: ratePerUnit,
+          priority: priority,
+          requirements: `Complete ${order.service} task on ${order.platform}`,
+          status: 'pending',
+          adminStatus: 'approved' // Auto-approve tasks from orders
+        }, { transaction: dbTransaction });
+
+        // Log task creation
+        await AuditLog.log(
+          adminId,
+          'task_auto_created',
+          'Task',
+          task.id,
+          order.userId,
+          `Task auto-created from order #${order.id.substring(0, 8).toUpperCase()}`,
+          {
+            orderId: order.id,
+            taskId: task.id,
+            excludedUserId: order.userId,
+            quantity: order.quantity,
+            ratePerUnit,
+            priority
+          },
+          null
+        );
+      }
 
       // Log status change
       await AuditLog.log(

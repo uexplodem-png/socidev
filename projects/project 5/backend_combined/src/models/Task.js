@@ -28,6 +28,16 @@ const Task = sequelize.define(
       },
       field: "order_id",
     },
+    excludedUserId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "users",
+        key: "id",
+      },
+      field: "excluded_user_id",
+      comment: "User who cannot do this task (typically the order owner)",
+    },
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,

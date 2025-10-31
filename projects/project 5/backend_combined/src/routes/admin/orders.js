@@ -255,10 +255,11 @@ router.post('/:id/status',
         const ratePerUnit = parseFloat(order.amount) / order.quantity;
         console.log(`[TASK CREATION] Rate: ${ratePerUnit}, Quantity: ${order.quantity}`);
         
-        // Create a task for task doers
+        // **PART 4: Create a task for task doers with order owner exclusion**
         const task = await Task.create({
           userId: null, // No specific user assigned yet
           orderId: order.id,
+          excludedUserId: order.userId, // **PART 4: Order owner cannot do this task**
           title: `${order.platform.charAt(0).toUpperCase() + order.platform.slice(1)} - ${order.service}`,
           description: `Complete ${order.quantity} ${order.service} on ${order.targetUrl}`,
           type: taskType,
@@ -266,6 +267,7 @@ router.post('/:id/status',
           targetUrl: order.targetUrl,
           quantity: order.quantity,
           remainingQuantity: order.quantity,
+          completedQuantity: 0, // **PART 4: Initialize completed count**
           rate: ratePerUnit,
           priority: order.speed === 'express' ? 'urgent' : order.speed === 'fast' ? 'high' : 'medium',
           requirements: `Complete ${order.quantity} ${order.service} on the target URL`,
@@ -275,40 +277,46 @@ router.post('/:id/status',
 
         console.log(`[TASK CREATION] Task created successfully: ${task.id}`);
 
-        // Log the task creation
-        await ActivityLog.log(
-          req.user.id,
-          'TASK_CREATED_FROM_ORDER',
-          'task',
-          task.id,
-          null,
-          `Task created from order - ${order.quantity} ${order.service} on ${order.platform}`,
-          {
+        // **PART 4: Comprehensive audit logging for task creation**
+        await logAudit(req, {
+          action: 'TASK_AUTO_CREATED',
+          resource: 'task',
+          resourceId: task.id,
+          targetUserId: order.userId,
+          description: `Task auto-created from order #${order.id.substring(0, 8).toUpperCase()} - ${order.quantity} ${order.service} on ${order.platform}`,
+          metadata: {
             orderId: order.id,
             taskId: task.id,
             service: order.service,
             quantity: order.quantity,
             platform: order.platform,
-          },
-          req
-        );
+            excludedUserId: order.userId,
+            ratePerUnit,
+            priority: task.priority
+          }
+        });
       } catch (taskError) {
         console.error('[TASK CREATION ERROR]', taskError.message);
         console.error('[TASK CREATION ERROR]', taskError);
-        // Don't fail the entire request if task creation fails
-        await ActivityLog.log(
-          req.user.id,
-          'TASK_CREATION_FAILED',
-          'order',
-          order.id,
-          null,
-          `Failed to create task from order: ${taskError.message}`,
-          {
+        
+        // **PART 4: Log task creation failure with audit**
+        await logAudit(req, {
+          action: 'TASK_AUTO_CREATION_FAILED',
+          resource: 'order',
+          resourceId: order.id,
+          targetUserId: order.userId,
+          description: `Failed to auto-create task from order #${order.id.substring(0, 8).toUpperCase()}: ${taskError.message}`,
+          metadata: {
             error: taskError.message,
+            stack: taskError.stack,
             orderId: order.id,
-          },
-          req
-        );
+            service: order.service,
+            platform: order.platform
+          }
+        });
+        
+        // Don't fail the entire request if task creation fails
+        console.warn('[TASK CREATION] Task creation failed but order status was still updated');
       }
     } else {
       console.log(`[TASK CREATION] Skipping task creation: status === 'processing'? ${status === 'processing'}, originalStatus !== 'processing'? ${originalStatus !== 'processing'}`);
