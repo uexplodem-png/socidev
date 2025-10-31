@@ -116,6 +116,16 @@ export const schemas = {
     amount: Joi.number().min(0.01).required(),
   }),
 
+  updateOrder: Joi.object({
+    platform: Joi.string().valid('instagram', 'youtube', 'twitter', 'tiktok').optional(),
+    service: Joi.string().min(2).max(100).optional(),
+    target_url: Joi.string().uri().optional(),
+    quantity: Joi.number().integer().min(1).max(1000000).optional(),
+    speed: Joi.string().valid('normal', 'fast', 'express').optional(),
+    amount: Joi.number().min(0.01).optional(),
+    notes: Joi.string().max(1000).optional(),
+  }).min(1),
+
   updateOrderStatus: Joi.object({
     status: Joi.string().valid('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded').required(),
     notes: Joi.string().max(500).optional(),

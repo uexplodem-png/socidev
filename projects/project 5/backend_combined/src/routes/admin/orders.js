@@ -331,6 +331,97 @@ router.post('/:id/status',
 
 /**
  * @swagger
+ * /api/admin/orders/{id}:
+ *   put:
+ *     summary: Update order fields (admin only)
+ *     tags: [Admin Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateOrder'
+ *     responses:
+ *       200:
+ *         description: Order updated successfully
+ *       404:
+ *         description: Order not found
+ */
+router.put('/:id',
+  requirePermission('orders.edit'),
+  validate(schemas.updateOrder),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const order = await Order.findByPk(id, {
+      attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'speed', 'notes', 'status'],
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'username'] },
+      ],
+    });
+
+    if (!order) {
+      throw new NotFoundError('Order');
+    }
+
+    // Map snake_case to model fields
+    const mapped = {
+      ...(updates.platform ? { platform: updates.platform } : {}),
+      ...(updates.service ? { service: updates.service } : {}),
+      ...(updates.target_url ? { targetUrl: updates.target_url } : {}),
+      ...(typeof updates.quantity !== 'undefined' ? { quantity: updates.quantity } : {}),
+      ...(typeof updates.amount !== 'undefined' ? { amount: updates.amount } : {}),
+      ...(updates.speed ? { speed: updates.speed } : {}),
+      ...(typeof updates.notes !== 'undefined' ? { notes: updates.notes } : {}),
+    };
+
+    // Compute changed fields for audit
+    const changed = {};
+    Object.entries(mapped).forEach(([key, value]) => {
+      const before = order.get(key);
+      const after = value;
+      if (String(before) !== String(after)) {
+        changed[key] = { before, after };
+      }
+    });
+
+    await order.update(mapped);
+
+    // Audit log
+    await logAudit(req, {
+      action: 'ORDER_UPDATED',
+      resource: 'order',
+      resourceId: order.id,
+      targetUserId: order.userId,
+      targetUserName: order.user ? `${order.user.firstName} ${order.user.lastName}` : null,
+      description: `Order updated by admin` + (Object.keys(changed).length ? ` (${Object.keys(changed).join(', ')})` : ''),
+      metadata: { changed },
+    });
+
+    // Refetch with consistent attributes for client
+    const updated = await Order.findByPk(id, {
+      attributes: ['id', 'userId', 'platform', 'service', 'targetUrl', 'quantity', 'amount', 'status', 'remainingCount', 'completedCount', 'speed', 'createdAt', 'updatedAt', 'startedAt', 'completedAt'],
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'username'] },
+      ],
+    });
+
+    res.json({ order: updated });
+  })
+);
+
+/**
+ * @swagger
  * /api/admin/orders/{id}/refund:
  *   post:
  *     summary: Refund an order
