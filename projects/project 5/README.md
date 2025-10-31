@@ -4,16 +4,35 @@ A comprehensive full-stack social media management platform with advanced securi
 
 ## 🚀 Features
 
+### Core Features
 - **Multi-Platform Support**: Instagram, YouTube, TikTok, Facebook, X (Twitter)
 - **Task Management**: Create, assign, and track social media tasks
-- **Order System**: Place orders for social media services
+- **Order System**: Place orders for social media services with smart refunds
 - **Balance Management**: Deposits, withdrawals, and transaction tracking
 - **RBAC**: Role-based access control with mode-specific permissions
-- **Security**: 2FA, email verification, account lockout, rate limiting
+- **Security**: 2FA, email verification, account lockout, rate limiting, XSS protection
 - **Admin Panel**: Comprehensive admin dashboard with settings management
 - **Audit Logs**: Track all admin actions and user activities
 - **Feature Flags**: Enable/disable modules dynamically
 - **Maintenance Mode**: Put system in maintenance with admin bypass
+
+### 🎉 NEW: Order & Task Management System v2.0
+- **Smart Refund System**: Automatic partial/full refund calculations based on completed work
+- **Duplicate Order Prevention**: Users cannot create duplicate active orders
+- **Order Issue Reporting**: Secure messaging system between users and admins (XSS protected, rate limited)
+- **Task Auto-Creation**: Orders automatically convert to tasks when processed
+- **15-Minute Task Reservation**: Workers have 15 minutes to complete reserved tasks
+- **Automatic Expiry**: Cron job returns expired reservations to available pool
+- **Task Exclusion**: Order owners cannot complete their own order's tasks
+- **Real-Time Progress Tracking**: Accurate progress bars showing completed/total percentages
+- **Priority-Based Sorting**: Urgent orders processed first
+- **Transaction Safety**: All multi-step operations use database transactions
+- **Comprehensive Security**: OWASP Top 10 compliant, production-ready
+
+📖 **Full Documentation**: 
+- [Order & Task System Features](ORDER_TASK_SYSTEM.md)
+- [End-to-End Testing Guide](E2E_TESTING_GUIDE.md)
+- [Security Audit Report](SECURITY_AUDIT_REPORT.md)
 
 ## 📋 Tech Stack
 
@@ -288,6 +307,41 @@ https://github.com/uexplodem-png/socidev
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: October 28, 2025  
-**Status**: Production Ready ✅
+## 📚 Additional Documentation
+
+### System Documentation
+- [**ORDER_TASK_SYSTEM.md**](ORDER_TASK_SYSTEM.md) - Complete Order & Task Management System documentation
+  - Architecture overview
+  - Database schema with new tables
+  - API endpoints reference
+  - Business logic explanations
+  - Security features
+  - Deployment guide
+  - Troubleshooting
+
+### Testing & Quality Assurance
+- [**E2E_TESTING_GUIDE.md**](E2E_TESTING_GUIDE.md) - Comprehensive testing guide
+  - 7 detailed test cases
+  - Manual testing procedures
+  - Automated test scripts
+  - Browser compatibility checklist
+  - Test data cleanup procedures
+
+### Security
+- [**SECURITY_AUDIT_REPORT.md**](SECURITY_AUDIT_REPORT.md) - Complete security audit
+  - OWASP Top 10 compliance
+  - XSS protection verification
+  - Rate limiting configuration
+  - Database query optimization
+  - Production readiness assessment
+
+### Maintenance & Operations
+- [**DEPLOYMENT_GUIDE.md**](DEPLOYMENT_GUIDE.md) - Production deployment instructions
+- [**MAINTENANCE_MODE_GUIDE.md**](MAINTENANCE_MODE_GUIDE.md) - Maintenance mode setup
+- [**PRODUCTION_CHECKLIST.md**](PRODUCTION_CHECKLIST.md) - Pre-launch checklist
+
+---
+
+**Version**: 2.0.0  
+**Last Updated**: October 31, 2025  
+**Status**: Production Ready ✅ (OWASP Compliant)
