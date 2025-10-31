@@ -102,14 +102,14 @@ export class BalanceService {
         }
 
         await AuditLog.create({
-          actor_id: userId,
-          actor_name: actorName || 'Unknown User',
-          actor_email: userData.email || 'unknown@system.local',
+          actorId: userId,
+          actorName: actorName || 'Unknown User',
+          actorEmail: userData.email || 'unknown@system.local',
           action: 'BALANCE_DEPOSIT',
           resource: 'transaction',
-          resource_id: depositTransaction.id,
-          target_user_id: userId,
-          target_user_name: actorName || 'Unknown User',
+          resourceId: depositTransaction.id,
+          targetUserId: userId,
+          targetUserName: actorName || 'Unknown User',
           description: `Deposit request for $${amount} via ${method}`,
           metadata: {
             type: 'deposit',
@@ -117,8 +117,8 @@ export class BalanceService {
             method,
             status: depositTransaction.status,
           },
-          ip_address: ipAddress,
-          user_agent: userAgent,
+          ipAddress: ipAddress,
+          userAgent: userAgent,
         });
         logger.info('Balance deposit logged', { userId, amount, method, transactionId: depositTransaction.id });
       } catch (logError) {
@@ -203,14 +203,14 @@ export class BalanceService {
         }
 
         await AuditLog.create({
-          actor_id: userId,
-          actor_name: actorName || 'Unknown User',
-          actor_email: userData.email || 'unknown@system.local',
+          actorId: userId,
+          actorName: actorName || 'Unknown User',
+          actorEmail: userData.email || 'unknown@system.local',
           action: 'BALANCE_WITHDRAWAL',
           resource: 'transaction',
-          resource_id: withdrawalTransaction.id,
-          target_user_id: userId,
-          target_user_name: actorName || 'Unknown User',
+          resourceId: withdrawalTransaction.id,
+          targetUserId: userId,
+          targetUserName: actorName || 'Unknown User',
           description: `Withdrawal request for $${amount} via ${method}`,
           metadata: {
             type: 'withdrawal',
@@ -218,8 +218,8 @@ export class BalanceService {
             method,
             status: withdrawalTransaction.status,
           },
-          ip_address: ipAddress,
-          user_agent: userAgent,
+          ipAddress: ipAddress,
+          userAgent: userAgent,
         });
         logger.info('Balance withdrawal logged', { userId, amount, method, transactionId: withdrawalTransaction.id });
       } catch (logError) {
@@ -293,22 +293,22 @@ export class BalanceService {
         }
 
         await AuditLog.create({
-          actor_id: transaction.userId,
-          actor_name: actorName || 'Unknown User',
-          actor_email: userData.email || 'unknown@system.local',
+          actorId: transaction.userId,
+          actorName: actorName || 'Unknown User',
+          actorEmail: userData.email || 'unknown@system.local',
           action: 'WITHDRAWAL_APPROVED',
           resource: 'transaction',
-          resource_id: transaction.id,
-          target_user_id: transaction.userId,
-          target_user_name: actorName || 'Unknown User',
+          resourceId: transaction.id,
+          targetUserId: transaction.userId,
+          targetUserName: actorName || 'Unknown User',
           description: `Withdrawal approved for $${Math.abs(transaction.amount)} via ${transaction.method}`,
           metadata: {
             status: 'completed',
             amount: transaction.amount,
             method: transaction.method,
           },
-          ip_address: '0.0.0.0',
-          user_agent: null,
+          ipAddress: '0.0.0.0',
+          userAgent: null,
         });
       } catch (logError) {
         logger.error('Failed to log withdrawal approval:', logError);
@@ -394,14 +394,14 @@ export class BalanceService {
         }
 
         await AuditLog.create({
-          actor_id: transaction.userId,
-          actor_name: actorName || 'Unknown User',
-          actor_email: userData.email || 'unknown@system.local',
+          actorId: transaction.userId,
+          actorName: actorName || 'Unknown User',
+          actorEmail: userData.email || 'unknown@system.local',
           action: 'WITHDRAWAL_REJECTED',
           resource: 'transaction',
-          resource_id: transaction.id,
-          target_user_id: transaction.userId,
-          target_user_name: actorName || 'Unknown User',
+          resourceId: transaction.id,
+          targetUserId: transaction.userId,
+          targetUserName: actorName || 'Unknown User',
           description: `Withdrawal rejected for $${Math.abs(transaction.amount)} via ${transaction.method} - Refunded to balance`,
           metadata: {
             status: 'rejected',
@@ -409,8 +409,8 @@ export class BalanceService {
             method: transaction.method,
             refunded: true,
           },
-          ip_address: '0.0.0.0',
-          user_agent: null,
+          ipAddress: '0.0.0.0',
+          userAgent: null,
         });
       } catch (logError) {
         logger.error('Failed to log withdrawal rejection:', logError);
