@@ -18,7 +18,7 @@ const activityService = new ActivityService();
 export class AuthController {
   async register(req, res, next) {
     try {
-      const { email, password, firstName, lastName, username, phone, userType } = req.body;
+  const { email, password, firstName, lastName, username, phone, userType, role: roleInput } = req.body;
       
       logger.info('Registration attempt', { email, username });
 
@@ -60,6 +60,15 @@ export class AuthController {
         throw new ApiError(400, 'User with this email or username already exists');
       }
 
+      // Determine desired role from userType/role and normalize
+      const desiredRole = (() => {
+        const rawBase = (userType || roleInput || '').toString().trim();
+        const raw = rawBase.toLowerCase().replace(/\s+/g, '_'); // normalize spaces
+        if (raw.includes('giver')) return 'task_giver'; // covers task_giver, task giver, taskGiver
+        if (raw.includes('doer')) return 'task_doer';
+        return 'task_doer'; // default
+      })();
+
       // Check if email verification is required
       const requireEmailVerification = await settingsService.get('security.requireEmailVerification', true);
 
@@ -71,8 +80,8 @@ export class AuthController {
         lastName,
         username,
         phone,
-        role: userType || 'task_doer', // Use selected userType or default to task_doer
-        accountType: userType || 'task_doer', // Also set accountType field
+  role: desiredRole, // normalized role
+  userMode: desiredRole, // keep user experience in sync
         emailVerified: !requireEmailVerification, // If verification not required, mark as verified
         emailVerificationToken: null, // Will be updated after generation
         emailVerificationExpires: null, // Will be updated after generation
@@ -106,9 +115,7 @@ export class AuthController {
         const { Role, UserRole } = await import('../models/index.js');
         
         // Get the role ID based on selected userType
-        const roleRecord = await Role.findOne({ 
-          where: { key: userType || 'task_doer' } 
-        });
+  const roleRecord = await Role.findOne({ where: { key: desiredRole } });
         
         if (roleRecord) {
           await UserRole.create({
@@ -117,14 +124,14 @@ export class AuthController {
           });
           logger.info('User role assigned successfully', { 
             userId: user.id, 
-            userType: userType,
+            userType: userType || roleInput,
             role: user.role,
             roleId: roleRecord.id 
           });
         } else {
           logger.warn('Role not found in database, skipping user_roles assignment', { 
             userId: user.id, 
-            userType: userType,
+            userType: userType || roleInput,
             role: user.role 
           });
         }
@@ -172,7 +179,7 @@ export class AuthController {
           { 
             email: email,
             username: username,
-            userType: userType,
+            userType: userType || roleInput,
             role: user.role
           },
           req
@@ -196,8 +203,8 @@ export class AuthController {
             firstName: user.firstName,
             lastName: user.lastName,
             username: user.username,
-            phone: user.phone,
             role: user.role,
+            userMode: user.userMode,
             emailVerified: user.emailVerified,
             status: user.status
           },
@@ -366,6 +373,7 @@ export class AuthController {
             username: user.username,
             phone: user.phone,
             role: user.role,
+            userMode: user.userMode,
             lastLogin: user.lastLogin
           },
           token

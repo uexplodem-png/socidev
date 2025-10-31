@@ -63,6 +63,10 @@ const Transaction = sequelize.define(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
+    notes: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
     balanceBefore: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,

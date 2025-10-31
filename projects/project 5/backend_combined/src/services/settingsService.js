@@ -21,33 +21,47 @@ class SettingsService {
         return cached;
       }
 
-      // Fetch from DB (without raw to let Sequelize parse JSON)
-      const setting = await SystemSettings.findOne({
+      // Try exact key match first (without raw to let Sequelize parse JSON)
+      const exact = await SystemSettings.findOne({
         where: { key },
         attributes: ['key', 'value']
       });
 
-      if (!setting) {
-        return defaultValue;
+      if (exact) {
+        let value = exact.value;
+        if (typeof value === 'string') {
+          try { value = JSON.parse(value); } catch (e) { logger.warn(`Failed to parse JSON for setting ${key}:`, e.message); }
+        }
+        this._setCache(key, value);
+        return value;
       }
 
-      // Get the value - Sequelize should have already parsed the JSON
-      let value = setting.value;
-      
-      // If it's still a string, parse it manually (fallback for MariaDB/MySQL)
-      if (typeof value === 'string') {
-        try {
-          value = JSON.parse(value);
-        } catch (e) {
-          // If parsing fails, return as-is
-          logger.warn(`Failed to parse JSON for setting ${key}:`, e.message);
+      // If not found and key is dotted (e.g., "security.requireEmailVerification"),
+      // load the root object (e.g., key "security") and resolve the nested path
+      if (key.includes('.')) {
+        const [rootKey, ...pathParts] = key.split('.');
+        const root = await SystemSettings.findOne({
+          where: { key: rootKey },
+          attributes: ['key', 'value']
+        });
+
+        if (root) {
+          let rootValue = root.value;
+          if (typeof rootValue === 'string') {
+            try { rootValue = JSON.parse(rootValue); } catch (e) { logger.warn(`Failed to parse JSON for setting ${rootKey}:`, e.message); }
+          }
+
+          // Resolve nested path safely
+          const nested = this._resolvePath(rootValue, pathParts);
+          if (nested !== undefined) {
+            // Cache the nested value under the full dotted key for fast subsequent access
+            this._setCache(key, nested);
+            return nested;
+          }
         }
       }
-      
-      // Cache the result
-      this._setCache(key, value);
-      
-      return value;
+
+      return defaultValue;
     } catch (error) {
       logger.error(`SettingsService.get error for key ${key}:`, error);
       return defaultValue;
@@ -229,6 +243,18 @@ class SettingsService {
    */
   _invalidateCache(key) {
     this.cache.delete(key);
+  }
+
+  /**
+   * Resolve a nested value from an object via path parts
+   * @private
+   */
+  _resolvePath(obj, parts) {
+    try {
+      return parts.reduce((acc, part) => (acc != null ? acc[part] : undefined), obj);
+    } catch (_) {
+      return undefined;
+    }
   }
 }
 

@@ -55,11 +55,14 @@ export const schemas = {
       .messages({
         'string.pattern.base': 'Phone number format is invalid. It should be in international format (e.g., +1234567890) or local format (e.g., 01234567890).',
       }),
-    userType: Joi.string().valid('task_doer', 'task_giver').trim().required()
-      .messages({
-        'any.required': 'User type is required. Please select whether you want to do tasks or give tasks.',
-        'any.only': 'User type must be either task_doer or task_giver',
-      }),
+    userType: Joi.string().valid('task_doer', 'task_giver').trim().optional(),
+    role: Joi.string().valid('task_doer', 'task_giver').trim().optional(),
+  }).custom((value, helpers) => {
+    // Enforce that either userType or role must be provided
+    if (!value.userType && !value.role) {
+      return helpers.error('any.custom', { message: 'User type is required. Please select whether you want to do tasks or give tasks.' });
+    }
+    return value;
   }),
 
   // User management schemas
