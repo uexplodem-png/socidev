@@ -22,7 +22,9 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ExternalLink,
+  User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
@@ -35,6 +37,8 @@ interface Task {
   userId: string;
   userName: string;
   userEmail: string;
+  orderId?: string; // **PART 7: Link to order**
+  excludedUserId?: string; // **PART 7: Order owner ID**
   type: 'like' | 'follow' | 'view' | 'subscribe';
   platform: 'instagram' | 'youtube';
   targetUrl: string;
@@ -99,12 +103,22 @@ export const Tasks: React.FC = () => {
     }),
     columnHelper.accessor('userName', {
       header: 'Creator',
-      cell: ({ row }) => (
-        <div>
-          <div className="text-sm font-medium text-gray-900 dark:text-white">{row.original.userName}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">{row.original.userEmail}</div>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const task = row.original;
+        return (
+          <div>
+            {/* **PART 7: Clickable username linking to Users page** */}
+            <Link 
+              to={`/users?search=${task.userId}`}
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+            >
+              <User className="h-3 w-3 mr-1" />
+              {task.userName}
+            </Link>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{task.userEmail}</div>
+          </div>
+        );
+      },
     }),
     columnHelper.accessor('platform', {
       header: 'Platform',
@@ -214,28 +228,41 @@ export const Tasks: React.FC = () => {
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          {row.original.status === 'pending' && (
-            <>
-              <button
-                onClick={() => handleApproveTask(row.original.id)}
-                className="p-1 text-green-600 hover:text-green-800"
-                title="Approve task"
+      cell: ({ row }) => {
+        const task = row.original;
+        return (
+          <div className="flex items-center space-x-2">
+            {/* **PART 7: Go to Order button** */}
+            {task.orderId && (
+              <Link
+                to={`/orders?search=${task.orderId}`}
+                className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                title="Go to related order"
               >
-                <ThumbsUp className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => handleRejectTask(row.original.id)}
-                className="p-1 text-red-600 hover:text-red-800"
-                title="Reject task"
-              >
-                <ThumbsDown className="h-4 w-4" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            )}
+            {task.status === 'pending' && (
+              <>
+                <button
+                  onClick={() => handleApproveTask(task.id)}
+                  className="p-1 text-green-600 hover:text-green-800"
+                  title="Approve task"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleRejectTask(task.id)}
+                  className="p-1 text-red-600 hover:text-red-800"
+                  title="Reject task"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      },
       enableSorting: false,
       enableGlobalFilter: false,
     }),

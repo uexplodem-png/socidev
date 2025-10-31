@@ -316,7 +316,20 @@ export const tasksAPI = {
     return realApiService.getUncompletedTasks(params);
   },
 
-  // Screenshot submission approval
+  // **PART 7: Task Execution methods**
+  getTaskExecutions: async (params: FilterParams = {}) => {
+    return realApiService.getTaskExecutions(params);
+  },
+
+  approveTaskExecution: async (executionId: string, notes?: string) => {
+    return realApiService.approveTaskExecution(executionId, notes);
+  },
+
+  rejectTaskExecution: async (executionId: string, reason: string, notes?: string) => {
+    return realApiService.rejectTaskExecution(executionId, reason, notes);
+  },
+
+  // Screenshot submission approval (legacy)
   getSubmittedTasks: async (params?: any) => {
     return realApiService.getSubmittedTasks(params);
   },

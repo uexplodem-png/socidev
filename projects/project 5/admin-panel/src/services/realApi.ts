@@ -990,7 +990,37 @@ class RealApiService {
         return this.request<any>(`/admin/tasks/uncompleted?${queryParams}`);
     }
 
-    // Task Screenshot Submissions
+    // **PART 7: Task Execution methods**
+    async getTaskExecutions(params: FilterParams = {}): Promise<PaginatedResponse<any>> {
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                queryParams.append(key, String(value));
+            }
+        });
+        
+        const response = await this.request<{ executions: any[]; pagination: any }>(`/admin/task-executions?${queryParams}`);
+        return {
+            data: response.executions || [],
+            pagination: response.pagination
+        };
+    }
+
+    async approveTaskExecution(executionId: string, notes?: string): Promise<any> {
+        return this.request<any>(`/admin/executions/${executionId}/approve`, {
+            method: 'POST',
+            body: JSON.stringify({ notes }),
+        });
+    }
+
+    async rejectTaskExecution(executionId: string, reason: string, notes?: string): Promise<any> {
+        return this.request<any>(`/admin/executions/${executionId}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ reason, notes }),
+        });
+    }
+
+    // Task Screenshot Submissions (legacy - kept for compatibility)
     async getSubmittedTasks(params?: any): Promise<any> {
         const queryParams = new URLSearchParams(params).toString();
         return this.request<any>(`/tasks/admin/submitted?${queryParams}`);

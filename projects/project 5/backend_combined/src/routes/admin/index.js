@@ -17,6 +17,7 @@ import emailsRoutes from './emails.js';
 import socialAccountsRoutes from './social-accounts.js';
 import apiKeysRoutes from './api-keys.js';
 import orderIssuesRoutes from './orderIssues.js'; // **PART 3: Order Issues**
+import taskExecutionsRoutes from './taskExecutions.js'; // **PART 7: Task Executions**
 
 const router = express.Router();
 
@@ -42,6 +43,7 @@ router.use('/emails', emailsRoutes); // Email management system
 router.use('/social-accounts', socialAccountsRoutes); // Social accounts management
 router.use('/api-keys', apiKeysRoutes); // API key management
 router.use('/', orderIssuesRoutes); // **PART 3: Order Issues** (Secure messaging system)
+router.use('/task-executions', taskExecutionsRoutes); // **PART 7: Task Executions** (Admin submissions management)
 
 // Admin root endpoint
 router.get('/', (req, res) => {
