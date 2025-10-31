@@ -270,7 +270,7 @@ export class AuthController {
         throw new ApiError(401, 'Invalid credentials');
       }
 
-      // Check if email verification is required
+      // Check if email verification is required AND user hasn't verified email
       const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
       if (requireEmailVerification && !user.emailVerified) {
         logger.warn('Login failed: Email not verified', { email, userId: user.id });
@@ -292,10 +292,16 @@ export class AuthController {
         throw new ApiError(403, 'Please verify your email address before logging in. Check your inbox for the verification link.');
       }
 
-      // Check if account is pending activation
-      if (user.status === 'pending') {
+      // Check if account is pending activation (only if email verification is enabled)
+      if (requireEmailVerification && user.status === 'pending') {
         logger.warn('Login failed: Account pending activation', { email, userId: user.id });
         throw new ApiError(403, 'Your account is pending activation. Please verify your email address.');
+      }
+      
+      // If email verification is disabled but user status is still pending, activate them
+      if (!requireEmailVerification && user.status === 'pending') {
+        await user.update({ status: 'active', emailVerified: true });
+        logger.info('Auto-activated user (email verification disabled)', { email, userId: user.id });
       }
 
       // Check maintenance mode - only allow privileged users to login
