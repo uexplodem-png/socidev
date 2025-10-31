@@ -8,6 +8,11 @@ import AuditLog from "../models/AuditLog.js";
 import { ApiError } from "../utils/ApiError.js";
 import { sequelize } from "../config/database.js";
 import { StatisticsService } from "./statistics.service.js";
+import { 
+  calculateOrderProgress, 
+  checkDuplicateOrder, 
+  calculateRefundAmount 
+} from "../helpers/orderHelpers.js";
 
 export class OrderService {
   constructor() {
@@ -40,7 +45,7 @@ export class OrderService {
 
     const { rows: orders, count } = await Order.findAndCountAll({
       where,
-      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'startCount', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'platform', 'service', 'targetUrl', 'quantity', 'startCount', 'speed', 'amount', 'status', 'completedCount', 'remainingCount', 'createdAt', 'updatedAt'],
       limit,
       offset: (page - 1) * limit,
       order: [[sortBy, sortOrder.toUpperCase()]],
@@ -136,8 +141,27 @@ export class OrderService {
         throw new ApiError(400, "Invalid service");
       }
 
+      // **PART 2: Check for duplicate active orders**
+      const duplicateOrder = await checkDuplicateOrder(
+        Order,
+        userId,
+        orderData.platform,
+        service.name,
+        orderData.targetUrl
+      );
+
+      if (duplicateOrder) {
+        throw new ApiError(
+          400,
+          `You already have an active order for this service and URL (Order #${duplicateOrder.id.substring(0, 8).toUpperCase()})`
+        );
+      }
+
       // Calculate total cost
       const totalCost = await this.calculateOrderCost(orderData);
+
+      // **PART 2: Calculate unit price for refund calculations**
+      const unitPrice = totalCost / orderData.quantity;
 
       // Check if user has enough balance
       if (user.balance < totalCost) {
@@ -154,7 +178,10 @@ export class OrderService {
           quantity: orderData.quantity,
           speed: orderData.speed,
           amount: totalCost,
+          unitPrice: unitPrice, // **PART 2: Store unit price for refunds**
+          priority: orderData.priority || 'normal', // **PART 2: Store priority**
           status: "pending",
+          lastStatusChange: new Date(), // **PART 2: Track status changes**
           remainingCount: orderData.quantity,
           completedCount: 0,
         },
@@ -614,6 +641,182 @@ export class OrderService {
 
       await dbTransaction.commit();
       return newOrder;
+    } catch (error) {
+      await dbTransaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * PART 2: Refund Order with Partial Amount Support
+   * Calculates refund based on completed tasks
+   */
+  async refundOrder(orderId, adminId, reason = '') {
+    const dbTransaction = await sequelize.transaction();
+
+    try {
+      // Fetch order with user details
+      const order = await Order.findByPk(orderId, {
+        attributes: ['id', 'userId', 'amount', 'quantity', 'completedCount', 'status', 'unitPrice', 'service', 'platform'],
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'balance', 'firstName', 'lastName', 'email']
+          }
+        ],
+        transaction: dbTransaction
+      });
+
+      if (!order) {
+        throw new ApiError(404, "Order not found");
+      }
+
+      if (order.status === 'refunded') {
+        throw new ApiError(400, "Order already refunded");
+      }
+
+      // Calculate refund amount
+      const refundDetails = calculateRefundAmount(order);
+      const { refundAmount, completedCount, totalQuantity, isFullRefund } = refundDetails;
+
+      if (refundAmount <= 0) {
+        throw new ApiError(400, "No refundable amount (order fully completed)");
+      }
+
+      // Update user balance
+      await User.increment('balance', {
+        by: refundAmount,
+        where: { id: order.userId },
+        transaction: dbTransaction
+      });
+
+      // Get updated balance
+      const updatedUser = await User.findByPk(order.userId, {
+        attributes: ['balance'],
+        transaction: dbTransaction
+      });
+
+      // Update order status
+      await order.update({
+        status: 'refunded',
+        refundAmount: refundAmount,
+        lastStatusChange: new Date()
+      }, { transaction: dbTransaction });
+
+      // Create transaction record for refund
+      await Transaction.create({
+        userId: order.userId,
+        orderId: order.id,
+        type: 'refund',
+        amount: refundAmount,
+        status: 'completed',
+        method: 'balance',
+        reference: `REFUND-${order.id.substring(0, 8).toUpperCase()}`,
+        description: `Refund for ${order.service} order - ${isFullRefund ? 'Full' : 'Partial'} refund`,
+        balance_before: parseFloat(updatedUser.balance) - refundAmount,
+        balance_after: parseFloat(updatedUser.balance),
+        processed_at: new Date(),
+        processed_by: adminId,
+        details: {
+          orderId: order.id,
+          platform: order.platform,
+          service: order.service,
+          completedCount,
+          totalQuantity,
+          remainingQuantity: totalQuantity - completedCount,
+          isFullRefund,
+          refundReason: reason
+        }
+      }, { transaction: dbTransaction });
+
+      // Create audit log
+      const admin = await User.findByPk(adminId, {
+        attributes: ['id', 'firstName', 'lastName', 'email'],
+        transaction: dbTransaction
+      });
+
+      await AuditLog.log(
+        adminId,
+        'order_refunded',
+        'Order',
+        order.id,
+        order.userId,
+        `Refunded $${refundAmount.toFixed(2)} for order #${order.id.substring(0, 8).toUpperCase()} (${isFullRefund ? 'Full' : 'Partial'} refund)`,
+        {
+          orderId: order.id,
+          userId: order.userId,
+          refundAmount,
+          completedCount,
+          totalQuantity,
+          isFullRefund,
+          reason
+        },
+        null
+      );
+
+      await dbTransaction.commit();
+
+      return {
+        success: true,
+        refundAmount,
+        order: {
+          id: order.id,
+          status: 'refunded',
+          refundDetails
+        }
+      };
+    } catch (error) {
+      await dbTransaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * PART 2: Update order status (for processing/completing)
+   */
+  async updateOrderStatus(orderId, newStatus, adminId) {
+    const dbTransaction = await sequelize.transaction();
+
+    try {
+      const order = await Order.findByPk(orderId, {
+        attributes: ['id', 'userId', 'status', 'service', 'platform', 'quantity'],
+        transaction: dbTransaction
+      });
+
+      if (!order) {
+        throw new ApiError(404, "Order not found");
+      }
+
+      const oldStatus = order.status;
+
+      // Update order status
+      await order.update({
+        status: newStatus,
+        lastStatusChange: new Date()
+      }, { transaction: dbTransaction });
+
+      // Log status change
+      await AuditLog.log(
+        adminId,
+        'order_status_changed',
+        'Order',
+        order.id,
+        order.userId,
+        `Order status changed from ${oldStatus} to ${newStatus}`,
+        {
+          orderId: order.id,
+          oldStatus,
+          newStatus,
+          service: order.service,
+          platform: order.platform
+        },
+        null
+      );
+
+      await dbTransaction.commit();
+
+      return order;
     } catch (error) {
       await dbTransaction.rollback();
       throw error;

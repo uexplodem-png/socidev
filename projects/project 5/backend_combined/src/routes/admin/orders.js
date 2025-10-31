@@ -458,11 +458,15 @@ router.put('/:id',
  *       404:
  *         description: Order not found
  */
+/**
+ * PART 2: Updated refund endpoint with smart calculation
+ * Calculates refund based on completed tasks automatically
+ */
 router.post('/:id/refund',
   requirePermission('orders.refund'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { reason, partial = false, refundAmount } = req.body;
+    const { reason = '' } = req.body;
 
     // Check if order refunds are enabled
     const features = await settingsService.get('features.orders', {});
@@ -473,77 +477,63 @@ router.post('/:id/refund',
       });
     }
 
-    const order = await Order.findByPk(id, {
-      attributes: ['id', 'userId', 'amount', 'status', 'service', 'platform', 'targetUrl', 'quantity'],
-      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'balance'] }],
-    });
+    // Import OrderService
+    const { OrderService } = await import('../../services/order.service.js');
+    const orderService = new OrderService();
 
-    if (!order) {
-      throw new NotFoundError('Order');
-    }
-
-    // Check if order can be refunded
-    if (!order.canBeRefunded()) {
-      return res.status(400).json({
-        error: 'Order cannot be refunded',
-        code: 'CANNOT_REFUND',
-        currentStatus: order.status,
-      });
-    }
-
-    // Calculate refund amount
-    const orderAmount = parseFloat(order.amount);
-    const finalRefundAmount = partial && refundAmount 
-      ? Math.min(refundAmount, orderAmount)
-      : orderAmount;
-
-    // Update user balance
-    const user = order.user;
-    const currentBalance = parseFloat(user.balance);
-    const newBalance = currentBalance + finalRefundAmount;
-    await user.update({ balance: newBalance });
-
-    // Update order status
-    await order.update({ 
-      status: partial ? 'processing' : 'refunded',
-    });
-
-    // Create refund transaction
-    const transaction = await Transaction.create({
-      userId: order.userId,
-      orderId: order.id,
-      type: 'refund',
-      amount: finalRefundAmount,
-      status: 'completed',
-      method: 'balance',
-      details: {
-        reason,
-        partial,
-        originalAmount: order.amount,
-      },
-      reference: order.id,
-    });
-
-    // Log the refund
-    await logAudit(req, {
-      action: 'ORDER_REFUNDED',
-      resource: 'order',
-      resourceId: id,
-      targetUserId: order.userId,
-      targetUserName: order.user ? `${order.user.firstName} ${order.user.lastName}` : null,
-      description: `Order ${partial ? 'partially ' : ''}refunded - Amount: $${finalRefundAmount}${reason ? `, Reason: ${reason}` : ''}`,
-      metadata: {
-        refundAmount: finalRefundAmount,
-        originalAmount: order.amount,
-        partial,
-        reason,
-      }
-    });
+    // Use new refund method with automatic calculation
+    const result = await orderService.refundOrder(id, req.user.id, reason);
 
     res.json({
-      order,
-      transaction,
-      message: `Order ${partial ? 'partially ' : ''}refunded successfully`,
+      success: true,
+      message: `Order ${result.order.refundDetails.isFullRefund ? 'fully' : 'partially'} refunded`,
+      refundAmount: result.refundAmount,
+      refundDetails: result.order.refundDetails,
+      order: result.order
+    });
+  })
+);
+
+/**
+ * PART 2: Process order endpoint
+ * Changes order status to 'processing'
+ */
+router.post('/:id/process',
+  requirePermission('orders.edit'),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const { OrderService } = await import('../../services/order.service.js');
+    const orderService = new OrderService();
+
+    const order = await orderService.updateOrderStatus(id, 'processing', req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Order moved to processing',
+      order
+    });
+  })
+);
+
+/**
+ * PART 2: Complete order endpoint
+ * Changes order status to 'completed'
+ */
+router.post('/:id/complete',
+  requirePermission('orders.edit'),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const { OrderService } = await import('../../services/order.service.js');
+    const orderService = new OrderService();
+
+    const order = await orderService.updateOrderStatus(id, 'completed', req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Order marked as completed',
+      order
     });
   })
 );
