@@ -167,6 +167,15 @@ export class TaskService {
         userId: { [Op.ne]: userId } // Other users' direct tasks
       }
     ];
+    
+    // **PART 4: Exclude tasks where current user is explicitly excluded (order owner)**
+    where[Op.and] = where[Op.and] || [];
+    where[Op.and].push({
+      [Op.or]: [
+        { excludedUserId: null }, // No exclusion set
+        { excludedUserId: { [Op.ne]: userId } } // User is not the excluded one
+      ]
+    });
 
     // Add platform filter
     if (filters.platform) {
