@@ -28,6 +28,7 @@ import EmailTemplate from './EmailTemplate.js';
 import EmailLog from './EmailLog.js';
 import ApiKey from './ApiKey.js';
 import ApiLog from './ApiLog.js';
+import OrderIssue from './OrderIssue.js';
 
 // Define associations
 const defineAssociations = () => {
@@ -125,6 +126,14 @@ const defineAssociations = () => {
   EmailLog.belongsTo(EmailTemplate, { foreignKey: 'templateId', as: 'template' });
   EmailLog.belongsTo(User, { foreignKey: 'recipientUserId', as: 'recipient' });
   EmailLog.belongsTo(User, { foreignKey: 'sentBy', as: 'sender' });
+
+  // **PART 3: Order Issues associations**
+  OrderIssue.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
+  OrderIssue.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  OrderIssue.belongsTo(User, { foreignKey: 'adminId', as: 'admin' });
+  
+  Order.hasMany(OrderIssue, { foreignKey: 'orderId', as: 'issues' });
+  User.hasMany(OrderIssue, { foreignKey: 'userId', as: 'reportedIssues' });
 };
 
 // Initialize associations
@@ -161,4 +170,5 @@ export {
   EmailLog,
   ApiKey,
   ApiLog,
+  OrderIssue,
 };
