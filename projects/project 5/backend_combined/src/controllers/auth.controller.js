@@ -61,7 +61,7 @@ export class AuthController {
       }
 
       // Check if email verification is required
-      const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
+      const requireEmailVerification = await settingsService.get('security.requireEmailVerification', true);
 
       // Create user with selected role (token will be generated after user creation)
       const user = await User.create({
@@ -271,7 +271,7 @@ export class AuthController {
       }
 
       // Check if email verification is required AND user hasn't verified email
-      const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
+      const requireEmailVerification = await settingsService.get('security.requireEmailVerification', true);
       if (requireEmailVerification && !user.emailVerified) {
         logger.warn('Login failed: Email not verified', { email, userId: user.id });
         // Log failed login attempt
