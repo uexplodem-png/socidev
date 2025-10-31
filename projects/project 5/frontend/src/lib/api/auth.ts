@@ -19,6 +19,9 @@ export interface AuthUser {
   phone?: string;
   balance: number; // Ensure this is explicitly typed as number
   createdAt?: string;
+  // Backend-provided mode/role (snake_case). We'll map it in AuthContext.
+  userMode?: 'task_doer' | 'task_giver';
+  role?: 'task_doer' | 'task_giver' | string;
 }
 
 export interface AuthResponse {

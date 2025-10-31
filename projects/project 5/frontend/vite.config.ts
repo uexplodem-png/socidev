@@ -7,6 +7,7 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+    port: 5174,
     hmr: {
       timeout: 0 // Disable timeout
     },

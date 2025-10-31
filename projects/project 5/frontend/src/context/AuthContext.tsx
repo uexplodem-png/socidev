@@ -83,6 +83,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
           setIsAuthenticated(true);
 
+          // Map backend userMode ('task_doer' | 'task_giver') to frontend ('taskDoer' | 'taskGiver')
+          const backendMode = (response.data.user as any)?.userMode || (response.data.user as any)?.role;
+          if (backendMode === 'task_doer' || backendMode === 'task_giver') {
+            const mapped = backendMode === 'task_giver' ? 'taskGiver' : 'taskDoer';
+            localStorage.setItem('userMode', mapped);
+            // Notify listeners (e.g., menus) about mode change
+            window.dispatchEvent(new CustomEvent('userModeChange', { detail: mapped }));
+          }
+
           // Extract permissions and restrictions from JWT token
           try {
             const tokenPayload = JSON.parse(atob(token.split('.')[1]));
@@ -121,6 +130,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       setIsAuthenticated(true);
 
+      // Map backend userMode ('task_doer' | 'task_giver') to frontend ('taskDoer' | 'taskGiver') and persist
+      const backendMode = (response.data.user as any)?.userMode || (response.data.user as any)?.role;
+      if (backendMode === 'task_doer' || backendMode === 'task_giver') {
+        const mapped = backendMode === 'task_giver' ? 'taskGiver' : 'taskDoer';
+        localStorage.setItem('userMode', mapped);
+        window.dispatchEvent(new CustomEvent('userModeChange', { detail: mapped }));
+      }
+
       // Extract permissions and restrictions from JWT token
       try {
         const tokenPayload = JSON.parse(atob(response.data.token.split('.')[1]));
@@ -131,6 +148,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setPermissions([]);
         setRestrictedPermissions([]);
       }
+
+      // Notify other parts of the app that a login occurred
+      window.dispatchEvent(new CustomEvent('userLoggedIn'));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -139,6 +159,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    // Clear persisted userMode to avoid stale state for the next session
+    localStorage.removeItem('userMode');
     setIsAuthenticated(false);
     setUser(null);
     setPermissions([]);

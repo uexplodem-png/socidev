@@ -501,14 +501,20 @@ class RealApiService {
 
         const response = await this.request<OrdersResponse>(`/admin/orders?${queryParams}`);
 
-        // Convert amount strings to numbers
-        const ordersWithNumericAmounts = response.orders.map(order => ({
-            ...order,
-            amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount
-        }));
+        // Convert and flatten user fields
+        const ordersWithMappedFields = response.orders.map((order: any) => {
+            const user = order.user || {};
+            return {
+                ...order,
+                userId: order.userId || order.user_id || user.id,
+                userName: order.userName || order.user_name || (user.username || [user.firstName, user.lastName].filter(Boolean).join(' ')),
+                userEmail: order.userEmail || order.user_email || user.email,
+                amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount,
+            };
+        });
 
         return {
-            data: ordersWithNumericAmounts,
+            data: ordersWithMappedFields,
             pagination: response.pagination
         };
     }
@@ -539,12 +545,19 @@ class RealApiService {
     async getOrderById(id: string): Promise<Order> {
         const response = await this.request<OrderDetailResponse>(`/admin/orders/${id}`);
 
-        // Convert amount string to number if needed
-        if (typeof response.order.amount === 'string') {
-            response.order.amount = parseFloat(response.order.amount);
+        const order: any = response.order || {};
+        const user = order.user || {};
+
+        // Flatten user fields and normalize amount
+        order.userId = order.userId || order.user_id || user.id;
+        order.userName = order.userName || order.user_name || (user.username || [user.firstName, user.lastName].filter(Boolean).join(' '));
+        order.userEmail = order.userEmail || order.user_email || user.email;
+
+        if (typeof order.amount === 'string') {
+            order.amount = parseFloat(order.amount);
         }
 
-        return response.order;
+        return order as Order;
     }
 
     async updateOrderStatus(id: string, status: string, notes?: string): Promise<Order> {

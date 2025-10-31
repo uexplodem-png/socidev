@@ -18,9 +18,10 @@ const taskGiverOnlyRoutes = ['/new-order', '/my-orders', '/add-balance'];
 export const UserModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [userMode, setUserMode] = useState<UserMode>(() => 
-    (localStorage.getItem('userMode') as UserMode) || 'taskDoer'
-  );
+  const [userMode, setUserMode] = useState<UserMode>(() => {
+    const stored = localStorage.getItem('userMode') as UserMode | null;
+    return stored === 'taskGiver' || stored === 'taskDoer' ? stored : 'taskDoer';
+  });
 
   const isTaskGiver = userMode === 'taskGiver';
   const isTaskDoer = userMode === 'taskDoer';
@@ -39,6 +40,18 @@ export const UserModeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Dispatch custom event for other components to react
     window.dispatchEvent(new CustomEvent('userModeChange', { detail: newMode }));
   };
+
+  // Keep mode in sync when AuthContext updates it after login/validate
+  useEffect(() => {
+    const onModeChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as UserMode | undefined;
+      if (detail === 'taskGiver' || detail === 'taskDoer') {
+        setUserMode(detail);
+      }
+    };
+    window.addEventListener('userModeChange', onModeChange as EventListener);
+    return () => window.removeEventListener('userModeChange', onModeChange as EventListener);
+  }, []);
 
   const toggleUserMode = () => {
     const newMode = userMode === 'taskDoer' ? 'taskGiver' : 'taskDoer';

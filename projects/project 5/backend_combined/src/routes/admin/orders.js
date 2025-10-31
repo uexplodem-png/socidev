@@ -502,8 +502,6 @@ router.post('/',
       quantity: orderData.quantity,
       amount: orderData.amount,
       remainingCount: orderData.quantity,
-      user_name: `${user.first_name} ${user.last_name}`,
-      user_email: user.email,
     });
 
     // Log order creation
