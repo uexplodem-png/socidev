@@ -229,12 +229,25 @@ export const ordersAPI = {
     return realApiService.getOrderById(id);
   },
 
+  updateOrder: async (id: string, data: any) => {
+    return realApiService.updateOrder(id, data);
+  },
+
   updateOrderStatus: async (id: string, status: string, notes?: string) => {
     return realApiService.updateOrderStatus(id, status, notes);
   },
 
   refundOrder: async (id: string) => {
     return realApiService.refundOrder(id);
+  },
+
+  // **PART 6: Process and complete order methods**
+  processOrder: async (id: string) => {
+    return realApiService.processOrder(id);
+  },
+
+  completeOrder: async (id: string) => {
+    return realApiService.completeOrder(id);
   },
 };
 

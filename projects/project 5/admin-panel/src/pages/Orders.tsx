@@ -24,6 +24,9 @@ import {
   Plus,
   ChevronUp,
   ChevronDown,
+  Play,
+  Check,
+  DollarSign,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
@@ -42,6 +45,8 @@ interface Order {
   quantity: number;
   completed: number;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded';
+  speed?: 'normal' | 'fast' | 'express';
+  priority?: 'normal' | 'urgent' | 'critical'; // **PART 6: Priority field**
   amount: number;
   progress: number;
   createdAt: string;
@@ -61,11 +66,26 @@ export const Orders: React.FC = () => {
     pageSize: 10,
   });
   const [totalPages, setTotalPages] = useState(0);
-  const [sorting, setSorting] = useState<any[]>([]);
+  // **PART 6: Default sort by priority (urgent first) then newest**
+  const [sorting, setSorting] = useState<any[]>([
+    { id: 'priority', desc: true },
+    { id: 'createdAt', desc: true },
+  ]);
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [showEditOrderModal, setShowEditOrderModal] = useState(false);
   const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  
+  // **PART 6: Refund modal state**
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundCalculation, setRefundCalculation] = useState<{
+    orderId: string;
+    amount: number;
+    quantity: number;
+    completed: number;
+    unitPrice: number;
+    refundAmount: number;
+  } | null>(null);
 
   // New state for add order form
   const [newOrder, setNewOrder] = useState({
@@ -77,6 +97,7 @@ export const Orders: React.FC = () => {
     targetUrl: '',
     quantity: 0,
     amount: 0,
+    speed: 'normal' as 'normal' | 'fast' | 'express',
     status: 'pending' as 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded',
   });
 
@@ -90,6 +111,7 @@ export const Orders: React.FC = () => {
     targetUrl: '',
     quantity: 0,
     amount: 0,
+    speed: 'normal' as 'normal' | 'fast' | 'express',
     status: 'pending' as 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded',
   });
 
@@ -136,6 +158,22 @@ export const Orders: React.FC = () => {
         <div className="text-sm text-gray-900 dark:text-white capitalize">{getValue()}</div>
       ),
     }),
+    columnHelper.accessor('speed', {
+      header: 'Speed',
+      cell: ({ getValue }) => {
+        const speed = getValue();
+        const cls = speed === 'express'
+          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+          : speed === 'fast'
+            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+            {speed || 'normal'}
+          </span>
+        );
+      },
+    }),
     columnHelper.accessor('status', {
       header: 'Status',
       cell: ({ getValue }) => {
@@ -161,19 +199,22 @@ export const Orders: React.FC = () => {
     }),
     columnHelper.accessor('progress', {
       header: 'Progress',
-      cell: ({ getValue, row }) => {
-        const progress = getValue();
+      cell: ({ row }) => {
         const { completed, quantity } = row.original;
+        // **PART 6: Fix progress calculation** - Calculate from completed/quantity, not from backend field
+        const calculatedProgress = quantity > 0 ? Math.round((completed / quantity) * 100) : 0;
+        const safeProgress = Math.min(calculatedProgress, 100); // Cap at 100%
+        
         return (
           <div className="w-full">
             <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-              <span>{completed}/{quantity}</span>
-              <span>{progress}%</span>
+              <span className="font-medium">{completed}/{quantity}</span>
+              <span className="font-semibold">{safeProgress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
               <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300 dark:bg-blue-500"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${safeProgress}%` }}
               />
             </div>
           </div>
@@ -237,33 +278,57 @@ export const Orders: React.FC = () => {
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handleViewOrder(row.original.id)}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            title="View details"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleEditOrder(row.original)}
-            className="p-1 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
-            title="Edit order"
-          >
-            <Edit className="h-4 w-4" />
-          </button>
-          {row.original.status !== 'completed' && row.original.status !== 'cancelled' && (
+      cell: ({ row }) => {
+        const order = row.original;
+        return (
+          <div className="flex items-center space-x-1">
             <button
-              onClick={() => handleRefundOrder(row.original.id)}
-              className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-300"
-              title="Refund order"
+              onClick={() => handleViewOrder(order.id)}
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              title="View details"
             >
-              <RefreshCw className="h-4 w-4" />
+              <Eye className="h-4 w-4" />
             </button>
-          )}
-        </div>
-      ),
+            <button
+              onClick={() => handleEditOrder(order)}
+              className="p-1 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+              title="Edit order"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            {/* **PART 6: Process button - pending orders only** */}
+            {order.status === 'pending' && (
+              <button
+                onClick={() => handleProcessOrder(order.id)}
+                className="p-1 text-green-400 hover:text-green-600 dark:hover:text-green-300"
+                title="Process order (creates task)"
+              >
+                <Play className="h-4 w-4" />
+              </button>
+            )}
+            {/* **PART 6: Complete button - processing orders only** */}
+            {order.status === 'processing' && (
+              <button
+                onClick={() => handleCompleteOrder(order.id)}
+                className="p-1 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300"
+                title="Mark as completed"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+            )}
+            {/* **PART 6: Refund button with calculation preview** */}
+            {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'refunded' && (
+              <button
+                onClick={() => handleRefundOrder(order)}
+                className="p-1 text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                title="Refund order"
+              >
+                <DollarSign className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        );
+      },
       enableSorting: false,
       enableGlobalFilter: false,
     }),
@@ -291,14 +356,22 @@ export const Orders: React.FC = () => {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
+      const hasSort = sorting && sorting.length > 0;
+      const sortKeyMap: Record<string, string> = {
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
+        amount: 'amount',
+        quantity: 'quantity',
+      };
+      const mappedSortBy = hasSort ? (sortKeyMap[sorting[0].id] || 'created_at') : 'created_at';
       const params = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         search: globalFilter,
         status: statusFilter,
         platform: platformFilter,
-        sortBy: sorting[0]?.id || 'created_at',
-        sortOrder: (sorting[0]?.desc ? 'desc' : 'asc') as 'asc' | 'desc',
+        sortBy: mappedSortBy,
+        sortOrder: (hasSort ? (sorting[0].desc ? 'desc' : 'asc') : 'desc') as 'asc' | 'desc',
       };
 
       // Use the real API instead of mock data
@@ -323,12 +396,21 @@ export const Orders: React.FC = () => {
         startCount: order.startCount || order.start_count,
         remainingCount: order.remainingCount || order.remaining_count,
         completedCount: order.completedCount || order.completed_count,
-        speed: order.speed,
+        speed: order.speed || 'normal',
         startedAt: order.startedAt || order.started_at,
         completedAt: order.completedAt || order.completed_at,
       }));
 
-      setOrders(mappedOrders);
+      // If current sort is by speed, apply client-side priority (express > fast > normal)
+      const isSpeedSort = sorting?.[0]?.id === 'speed';
+      const sorted = isSpeedSort
+        ? [...mappedOrders].sort((a, b) => {
+          const rank = (s?: string) => (s === 'express' ? 3 : s === 'fast' ? 2 : 1);
+          const diff = rank(b.speed) - rank(a.speed);
+          return sorting?.[0]?.desc ? diff : -diff;
+        })
+        : mappedOrders;
+      setOrders(sorted);
       setTotalPages(response.pagination.totalPages);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
@@ -383,7 +465,7 @@ export const Orders: React.FC = () => {
         startCount: fetchedOrder.startCount,
         remainingCount: fetchedOrder.remainingCount,
         completedCount: fetchedOrder.completedCount,
-        speed: fetchedOrder.speed,
+        speed: fetchedOrder.speed || 'normal',
         startedAt: fetchedOrder.startedAt,
         completedAt: fetchedOrder.completedAt,
       };
@@ -396,17 +478,65 @@ export const Orders: React.FC = () => {
     }
   };
 
-  const handleRefundOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to refund this order?')) return;
+  // **PART 6: Show refund calculation modal**
+  const handleRefundOrder = (order: Order) => {
+    const unitPrice = order.amount / order.quantity;
+    const refundAmount = order.completed > 0 
+      ? unitPrice * (order.quantity - order.completed)
+      : order.amount;
+
+    setRefundCalculation({
+      orderId: order.id,
+      amount: order.amount,
+      quantity: order.quantity,
+      completed: order.completed,
+      unitPrice,
+      refundAmount
+    });
+    setShowRefundModal(true);
+  };
+
+  // **PART 6: Confirm and execute refund**
+  const handleConfirmRefund = async () => {
+    if (!refundCalculation) return;
 
     try {
-      // Use the real API to refund the order
-      await ordersAPI.refundOrder(orderId);
-      toast.success('Order refunded successfully');
+      await ordersAPI.refundOrder(refundCalculation.orderId);
+      toast.success(`Order refunded successfully! $${refundCalculation.refundAmount.toFixed(2)} returned to user.`);
+      setShowRefundModal(false);
+      setRefundCalculation(null);
       fetchOrders();
     } catch (error: any) {
       console.error('Failed to refund order:', error);
       toast.error(error.message || 'Failed to refund order');
+    }
+  };
+
+  // **PART 6: Process order (move to processing, create task)**
+  const handleProcessOrder = async (orderId: string) => {
+    if (!confirm('Move this order to processing status? This will create a task for workers.')) return;
+
+    try {
+      await ordersAPI.processOrder(orderId);
+      toast.success('Order moved to processing. Task created successfully.');
+      fetchOrders();
+    } catch (error: any) {
+      console.error('Failed to process order:', error);
+      toast.error(error.message || 'Failed to process order');
+    }
+  };
+
+  // **PART 6: Complete order**
+  const handleCompleteOrder = async (orderId: string) => {
+    if (!confirm('Mark this order as completed?')) return;
+
+    try {
+      await ordersAPI.completeOrder(orderId);
+      toast.success('Order marked as completed');
+      fetchOrders();
+    } catch (error: any) {
+      console.error('Failed to complete order:', error);
+      toast.error(error.message || 'Failed to complete order');
     }
   };
 
@@ -458,6 +588,7 @@ export const Orders: React.FC = () => {
         targetUrl: '',
         quantity: 0,
         amount: 0,
+        speed: 'normal',
         status: 'pending',
       });
       setShowAddOrderModal(false);
@@ -473,6 +604,28 @@ export const Orders: React.FC = () => {
     if (!selectedOrder) return;
 
     try {
+      // Send field updates first
+      const fieldUpdates: any = {
+        platform: editOrder.platform,
+        service: editOrder.service,
+        target_url: editOrder.targetUrl,
+        quantity: editOrder.quantity,
+        amount: editOrder.amount,
+        speed: editOrder.speed,
+      };
+      // Only send changed values
+      Object.keys(fieldUpdates).forEach(k => {
+        const current = (selectedOrder as any)[k === 'target_url' ? 'targetUrl' : k];
+        if (String(fieldUpdates[k]) === String(current)) {
+          delete fieldUpdates[k];
+        }
+      });
+
+      if (Object.keys(fieldUpdates).length > 0) {
+        // call backend update
+        await ordersAPI.updateOrder(selectedOrder.id, fieldUpdates);
+      }
+
       // If status has changed, update it via the API
       if (editOrder.status !== selectedOrder.status) {
         await ordersAPI.updateOrderStatus(selectedOrder.id, editOrder.status);
@@ -511,6 +664,7 @@ export const Orders: React.FC = () => {
       targetUrl: order.targetUrl,
       quantity: order.quantity,
       amount: order.amount,
+      speed: (order as any).speed || 'normal',
       status: order.status,
     });
     setShowEditOrderModal(true);
@@ -820,6 +974,21 @@ export const Orders: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Speed
+                </label>
+                <select
+                  name="speed"
+                  value={newOrder.speed}
+                  onChange={handleAddOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="fast">Fast</option>
+                  <option value="express">Express</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Status
                 </label>
                 <select
@@ -870,7 +1039,8 @@ export const Orders: React.FC = () => {
                   value={editOrder.userId}
                   onChange={handleEditOrderChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
+                  readOnly
+                  disabled
                 />
               </div>
               <div>
@@ -883,7 +1053,8 @@ export const Orders: React.FC = () => {
                   value={editOrder.userName}
                   onChange={handleEditOrderChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
+                  readOnly
+                  disabled
                 />
               </div>
               <div>
@@ -896,7 +1067,8 @@ export const Orders: React.FC = () => {
                   value={editOrder.userEmail}
                   onChange={handleEditOrderChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
+                  readOnly
+                  disabled
                 />
               </div>
               <div>
@@ -969,6 +1141,21 @@ export const Orders: React.FC = () => {
                   step="0.01"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Speed
+                </label>
+                <select
+                  name="speed"
+                  value={editOrder.speed}
+                  onChange={handleEditOrderChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="fast">Fast</option>
+                  <option value="express">Express</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1124,14 +1311,131 @@ export const Orders: React.FC = () => {
                 {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
                   <Button
                     variant="primary"
-                    onClick={() => {
-                      // In a real app, you would implement refund functionality here
-                      toast.success('Refund functionality would be implemented here');
+                    onClick={async () => {
+                      if (!selectedOrder) return;
+                      if (!confirm('Are you sure you want to refund this order?')) return;
+                      try {
+                        await ordersAPI.refundOrder(selectedOrder.id);
+                        toast.success('Order refunded successfully');
+                        setShowOrderDetailModal(false);
+                        fetchOrders();
+                      } catch (error: any) {
+                        console.error('Failed to refund order:', error);
+                        toast.error(error.message || 'Failed to refund order');
+                      }
                     }}
                   >
                     Refund Order
                   </Button>
                 )}
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* **PART 6: Refund Calculation Modal** */}
+        <Modal
+          isOpen={showRefundModal}
+          onClose={() => {
+            setShowRefundModal(false);
+            setRefundCalculation(null);
+          }}
+          title="Refund Order"
+        >
+          {refundCalculation && (
+            <div className="space-y-6">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3" />
+                  <div>
+                    <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                      Refund Calculation
+                    </h4>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                      This will credit the user's balance and mark the order as refunded.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                  Refund Details
+                </h3>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Order Amount:</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      ${refundCalculation.amount.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Total Quantity:</span>
+                    <span className="text-gray-900 dark:text-white">
+                      {refundCalculation.quantity.toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Completed:</span>
+                    <span className="text-gray-900 dark:text-white">
+                      {refundCalculation.completed.toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Unit Price:</span>
+                    <span className="text-gray-900 dark:text-white">
+                      ${refundCalculation.unitPrice.toFixed(4)}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Remaining Units:</span>
+                      <span className="text-gray-900 dark:text-white">
+                        {(refundCalculation.quantity - refundCalculation.completed).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3 mt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-800 dark:text-green-300 font-semibold">
+                        Refund Amount:
+                      </span>
+                      <span className="text-green-900 dark:text-green-200 text-xl font-bold">
+                        ${refundCalculation.refundAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                      {refundCalculation.completed === 0 
+                        ? 'Full refund (no work completed)'
+                        : `Partial refund (${refundCalculation.completed} units completed)`
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowRefundModal(false);
+                    setRefundCalculation(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleConfirmRefund}
+                >
+                  Confirm Refund
+                </Button>
               </div>
             </div>
           )}

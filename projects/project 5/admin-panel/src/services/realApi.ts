@@ -504,11 +504,13 @@ class RealApiService {
         // Convert and flatten user fields
         const ordersWithMappedFields = response.orders.map((order: any) => {
             const user = order.user || {};
+            const combinedName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+            const derivedName = user.username || combinedName || user.email || 'Unknown User';
             return {
                 ...order,
                 userId: order.userId || order.user_id || user.id,
-                userName: order.userName || order.user_name || (user.username || [user.firstName, user.lastName].filter(Boolean).join(' ')),
-                userEmail: order.userEmail || order.user_email || user.email,
+                userName: order.userName || order.user_name || derivedName,
+                userEmail: order.userEmail || order.user_email || user.email || '',
                 amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount,
             };
         });
@@ -530,14 +532,20 @@ class RealApiService {
 
         const response = await this.request<OrdersResponse>(`/admin/orders?${queryParams}`);
 
-        // Convert amount strings to numbers
-        const ordersWithNumericAmounts = response.orders.map(order => ({
-            ...order,
-            amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount
-        }));
+        // Convert amount and flatten user
+        const ordersWithMappedFields = response.orders.map((order: any) => {
+            const user = order.user || {};
+            return {
+                ...order,
+                userId: order.userId || order.user_id || user.id,
+                userName: order.userName || order.user_name || (user.username || [user.firstName, user.lastName].filter(Boolean).join(' ')),
+                userEmail: order.userEmail || order.user_email || user.email,
+                amount: typeof order.amount === 'string' ? parseFloat(order.amount) : order.amount,
+            };
+        });
 
         return {
-            data: ordersWithNumericAmounts,
+            data: ordersWithMappedFields,
             pagination: response.pagination
         };
     }
@@ -550,8 +558,10 @@ class RealApiService {
 
         // Flatten user fields and normalize amount
         order.userId = order.userId || order.user_id || user.id;
-        order.userName = order.userName || order.user_name || (user.username || [user.firstName, user.lastName].filter(Boolean).join(' '));
-        order.userEmail = order.userEmail || order.user_email || user.email;
+        const combinedName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+        const derivedName = user.username || combinedName || user.email || 'Unknown User';
+        order.userName = order.userName || order.user_name || derivedName;
+        order.userEmail = order.userEmail || order.user_email || user.email || '';
 
         if (typeof order.amount === 'string') {
             order.amount = parseFloat(order.amount);
@@ -574,9 +584,58 @@ class RealApiService {
         return response.order;
     }
 
+    async updateOrder(id: string, data: Partial<Order>): Promise<Order> {
+        const payload: any = { ...data };
+        // Map camelCase to API expectations where needed
+        if ((payload as any).targetUrl) {
+            payload.target_url = (payload as any).targetUrl;
+            delete (payload as any).targetUrl;
+        }
+
+        const response = await this.request<{ order: Order }>(`/admin/orders/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+
+        // Normalize amount
+        if (typeof response.order.amount === 'string') {
+            response.order.amount = parseFloat(response.order.amount);
+        }
+
+        return response.order;
+    }
+
     // Add the refundOrder method
     async refundOrder(id: string): Promise<Order> {
         const response = await this.request<{ order: Order }>(`/admin/orders/${id}/refund`, {
+            method: 'POST',
+        });
+
+        // Convert amount string to number if needed
+        if (typeof response.order.amount === 'string') {
+            response.order.amount = parseFloat(response.order.amount);
+        }
+
+        return response.order;
+    }
+
+    // **PART 6: Process order (move to processing status, creates task)**
+    async processOrder(id: string): Promise<Order> {
+        const response = await this.request<{ order: Order }>(`/admin/orders/${id}/process`, {
+            method: 'POST',
+        });
+
+        // Convert amount string to number if needed
+        if (typeof response.order.amount === 'string') {
+            response.order.amount = parseFloat(response.order.amount);
+        }
+
+        return response.order;
+    }
+
+    // **PART 6: Complete order (mark as completed)**
+    async completeOrder(id: string): Promise<Order> {
+        const response = await this.request<{ order: Order }>(`/admin/orders/${id}/complete`, {
             method: 'POST',
         });
 
