@@ -5,8 +5,8 @@
 
 import express from 'express';
 import { TaskExecution, Task, User, Order } from '../../models/index.js';
-import { authenticateToken, isAdmin } from '../../middleware/auth.js';
-import { logAudit } from '../../utils/auditLogger.js';
+import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { logAudit } from '../../utils/logging.js';
 
 const router = express.Router();
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -18,7 +18,7 @@ const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next
  */
 router.get('/',
   authenticateToken,
-  isAdmin,
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const { 
       status = 'submitted', 
@@ -119,7 +119,7 @@ router.get('/',
  */
 router.post('/:id/approve',
   authenticateToken,
-  isAdmin,
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
@@ -228,7 +228,7 @@ router.post('/:id/approve',
  */
 router.post('/:id/reject',
   authenticateToken,
-  isAdmin,
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { reason, notes } = req.body;
