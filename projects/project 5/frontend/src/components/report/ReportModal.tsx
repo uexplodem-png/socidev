@@ -3,6 +3,8 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useLanguage } from '../../context/LanguageContext';
 import { AlertCircle } from 'lucide-react';
+import { orderApi } from '../../lib/api/order';
+import { toast } from 'react-hot-toast';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -42,8 +44,10 @@ export const ReportModal = ({ isOpen, onClose, orderId }: ReportModalProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  // **PART 8: Submit report to backend**
+  const handleSubmit = async () => {
     if (!selectedSubject) {
       setError(t('selectSubject'));
       return;
@@ -54,11 +58,35 @@ export const ReportModal = ({ isOpen, onClose, orderId }: ReportModalProps) => {
       return;
     }
 
-    // Reset form and close modal
-    setSelectedSubject('');
-    setDescription('');
+    setIsSubmitting(true);
     setError('');
-    onClose();
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error(t('notAuthenticated'));
+        return;
+      }
+
+      await orderApi.reportIssue(token, orderId, {
+        type: selectedSubject,
+        description: description.trim()
+      });
+
+      toast.success(t('reportSubmittedSuccessfully') || 'Report submitted successfully');
+      
+      // Reset form and close modal
+      setSelectedSubject('');
+      setDescription('');
+      setError('');
+      onClose();
+    } catch (err: any) {
+      console.error('Failed to submit report:', err);
+      setError(err.message || t('reportSubmissionFailed') || 'Failed to submit report');
+      toast.error(t('reportSubmissionFailed') || 'Failed to submit report');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -110,14 +138,16 @@ export const ReportModal = ({ isOpen, onClose, orderId }: ReportModalProps) => {
           <Button
             variant="outline"
             onClick={onClose}
+            disabled={isSubmitting}
           >
             {t('cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
-            className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
+            disabled={isSubmitting}
+            className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white disabled:opacity-50"
           >
-            {t('submitReport')}
+            {isSubmitting ? t('submitting') || 'Submitting...' : t('submitReport')}
           </Button>
         </div>
       </div>

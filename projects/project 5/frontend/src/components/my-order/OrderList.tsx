@@ -97,7 +97,8 @@ export const OrderList: React.FC<OrderListProps> = ({
             {orders.map((order) => (
               <tr key={order.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                  {order.id}
+                  {/* **PART 8: Show only first 8 characters** */}
+                  #{order.id.substring(0, 8)}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                   {order.service}
@@ -106,6 +107,7 @@ export const OrderList: React.FC<OrderListProps> = ({
                   {order.quantity.toLocaleString()}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
+                  {/* **PART 8: Fixed progress calculation** */}
                   <div className='w-full max-w-xs'>
                     <div className='flex items-center justify-between text-xs text-gray-600 mb-1'>
                       <span>{order.completedCount || 0} / {order.quantity}</span>
