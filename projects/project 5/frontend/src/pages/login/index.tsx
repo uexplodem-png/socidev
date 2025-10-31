@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useNavigate, Link } from "react-router-dom";
 import { formatErrorMessage } from "../../utils/errorFormatter";
+import { authApi } from "../../lib/api/auth";
 import {
   Mail,
   Lock,
@@ -14,6 +15,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Sparkles,
+  Send,
 } from "lucide-react";
 
 export const LoginPage = () => {
@@ -23,6 +25,9 @@ export const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showResendButton, setShowResendButton] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const { login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -30,6 +35,8 @@ export const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setShowResendButton(false);
+    setResendSuccess(false);
     setIsLoading(true);
 
     try {
@@ -38,8 +45,36 @@ export const LoginPage = () => {
     } catch (err) {
       const formattedError = formatErrorMessage(err);
       setError(formattedError);
+      
+      // Check if error is about email verification
+      if (formattedError.toLowerCase().includes('verify') && 
+          formattedError.toLowerCase().includes('email')) {
+        setShowResendButton(true);
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    setResendLoading(true);
+    setResendSuccess(false);
+
+    try {
+      await authApi.resendVerificationEmail(email);
+      setResendSuccess(true);
+      setError("");
+      setTimeout(() => setResendSuccess(false), 5000);
+    } catch (err) {
+      const formattedError = formatErrorMessage(err);
+      setError(formattedError);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -147,8 +182,52 @@ export const LoginPage = () => {
             {error && (
               <FormError
                 error={error}
-                onDismiss={() => setError("")}
+                onDismiss={() => {
+                  setError("");
+                  setShowResendButton(false);
+                }}
               />
+            )}
+            
+            {showResendButton && (
+              <div className='bg-blue-500/10 border border-blue-500/30 rounded-lg p-4'>
+                <p className='text-sm text-blue-300 mb-3'>
+                  Need a new verification link?
+                </p>
+                <button
+                  type='button'
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className='w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2'>
+                  {resendLoading ? (
+                    <>
+                      <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className='w-4 h-4' />
+                      <span>Resend Verification Email</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {resendSuccess && (
+              <div className='bg-green-500/10 border border-green-500/30 rounded-lg p-4'>
+                <div className='flex items-start gap-3'>
+                  <CheckCircle2 className='w-5 h-5 text-green-400 flex-shrink-0 mt-0.5' />
+                  <div>
+                    <p className='text-sm text-green-300 font-medium mb-1'>
+                      Verification email sent!
+                    </p>
+                    <p className='text-xs text-green-400/80'>
+                      Please check your inbox and click the verification link.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Email */}

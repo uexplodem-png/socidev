@@ -72,4 +72,10 @@ export const authApi = {
       token: token,
     });
   },
+
+  resendVerificationEmail: (email: string): Promise<{ success: boolean; message: string }> =>
+    fetchApi("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
 };
