@@ -62,17 +62,8 @@ export class AuthController {
 
       // Check if email verification is required
       const requireEmailVerification = await settingsService.get('registration.requireEmailVerification', true);
-      
-      // Generate email verification token
-      const verificationToken = requireEmailVerification 
-        ? emailVerificationService.generateVerificationToken(null, email) 
-        : null;
-      
-      const verificationExpires = requireEmailVerification 
-        ? new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-        : null;
 
-      // Create user with selected role
+      // Create user with selected role (token will be generated after user creation)
       const user = await User.create({
         email,
         password,
@@ -83,10 +74,23 @@ export class AuthController {
         role: userType || 'task_doer', // Use selected userType or default to task_doer
         accountType: userType || 'task_doer', // Also set accountType field
         emailVerified: !requireEmailVerification, // If verification not required, mark as verified
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
+        emailVerificationToken: null, // Will be updated after generation
+        emailVerificationExpires: null, // Will be updated after generation
         status: requireEmailVerification ? 'pending' : 'active' // Set status based on verification requirement
       });
+      
+      // Generate email verification token AFTER user creation (so we have userId)
+      let verificationToken = null;
+      if (requireEmailVerification) {
+        verificationToken = emailVerificationService.generateVerificationToken(user.id, email);
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        // Update user with verification token and expiry
+        await user.update({
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires
+        });
+      }
       
       logger.info('User registered successfully', { 
         userId: user.id, 

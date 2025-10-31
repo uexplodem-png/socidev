@@ -7,9 +7,9 @@ export const validateInstagramAccount = [
     .withMessage("Username is required")
     .isLength({ min: 1, max: 30 })
     .withMessage("Username must be between 1 and 30 characters")
-    .matches(/^[a-zA-Z0-9._]+$/)
+    .matches(/^[a-zA-Z0-9._-]+$/)
     .withMessage(
-      "Username can only contain letters, numbers, dots and underscores"
+      "Username can only contain letters, numbers, dots, underscores, and hyphens"
     ),
 
   body("password")

@@ -47,9 +47,9 @@ export const schemas = {
       }),
     firstName: Joi.string().min(2).max(50).trim().required(),
     lastName: Joi.string().min(2).max(50).trim().required(),
-    username: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(3).max(30).trim().required()
+    username: Joi.string().pattern(/^[a-zA-Z0-9._-]+$/).min(3).max(30).trim().required()
       .messages({
-        'string.pattern.base': 'Username must only contain letters, numbers, underscores, and hyphens',
+        'string.pattern.base': 'Username must only contain letters, numbers, dots, underscores, and hyphens',
       }),
     phone: Joi.string().pattern(/^(\+?[1-9]\d{1,14}|0\d{9,14})$/).trim().optional()
       .messages({
@@ -67,9 +67,9 @@ export const schemas = {
     firstName: Joi.string().min(2).max(50).optional(),
     lastName: Joi.string().min(2).max(50).optional(),
     email: Joi.string().email().optional(),
-    username: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(3).max(30).optional()
+    username: Joi.string().pattern(/^[a-zA-Z0-9._-]+$/).min(3).max(30).optional()
       .messages({
-        'string.pattern.base': 'Username must only contain letters, numbers, underscores, and hyphens',
+        'string.pattern.base': 'Username must only contain letters, numbers, dots, underscores, and hyphens',
       }),
     phone: Joi.string().pattern(/^(\+?[1-9]\d{1,14}|0\d{9,14})$/).optional()
       .messages({
@@ -88,9 +88,9 @@ export const schemas = {
     firstName: Joi.string().min(2).max(50).required(),
     lastName: Joi.string().min(2).max(50).required(),
     email: Joi.string().email().required(),
-    username: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(3).max(30).required()
+    username: Joi.string().pattern(/^[a-zA-Z0-9._-]+$/).min(3).max(30).required()
       .messages({
-        'string.pattern.base': 'Username must only contain letters, numbers, underscores, and hyphens',
+        'string.pattern.base': 'Username must only contain letters, numbers, dots, underscores, and hyphens',
       }),
     phone: Joi.string().pattern(/^(\+?[1-9]\d{1,14}|0\d{9,14})$/).optional()
       .messages({

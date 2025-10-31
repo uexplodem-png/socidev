@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "setup": "npm run db:init",
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "npx sequelize-cli db:migrate",
@@ -17,8 +18,7 @@
     "db:init": "npm run migrate && npm run seed",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "build": "echo 'No build step required for Node.js'",
-    "postinstall": "npm run db:init"
+    "build": "echo 'No build step required for Node.js'"
   },
   "keywords": [
     "express",
