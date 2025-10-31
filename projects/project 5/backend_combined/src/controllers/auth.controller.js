@@ -703,20 +703,21 @@ export class AuthController {
 
       logger.info('Email verification attempt', { token: token.substring(0, 20) + '...' });
 
-      // Verify the token
+      // Verify the token (checks signature, type, and expiry)
       const decoded = emailVerificationService.verifyToken(token);
 
-      // Find user
-      const user = await User.findOne({ 
-        where: { 
-          email: decoded.email,
-          emailVerificationToken: token
-        }
-      });
+      // Prefer lookup by userId from token for robustness
+      const user = await User.findByPk(decoded.userId);
 
       if (!user) {
-        logger.warn('Email verification failed: User not found or token mismatch', { email: decoded.email });
+        logger.warn('Email verification failed: User not found for decoded token', { userId: decoded.userId });
         throw new ApiError(404, 'Invalid or expired verification token');
+      }
+
+      // Ensure the verification token currently stored matches the provided token
+      if (!user.emailVerificationToken || user.emailVerificationToken !== token) {
+        logger.warn('Email verification failed: Token mismatch or already rotated', { userId: user.id });
+        throw new ApiError(400, 'This verification link is no longer valid. Please request a new verification email.');
       }
 
       // Check if already verified
@@ -731,8 +732,8 @@ export class AuthController {
         });
       }
 
-      // Check if token is expired
-      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+  // Check if token is expired based on stored expiry as an extra guard
+  if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
         logger.warn('Email verification failed: Token expired', { userId: user.id, email: user.email });
         throw new ApiError(400, 'Verification token has expired. Please request a new one.');
       }
